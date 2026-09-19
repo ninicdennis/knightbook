@@ -14,6 +14,7 @@ import { forgetProject, readAppState, rememberProject } from './app-state.js'
 import { guard } from './guard.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
 import { describeRememberedProjects } from './remembered-projects.js'
+import { allowSetupFor } from './setup-permit.js'
 import { toTicketDetail, toTicketView } from './ticket-view.js'
 import type { ProjectView } from '../shared/contract.js'
 
@@ -59,7 +60,10 @@ export function registerProjectHandlers(): void {
     if (chosen.canceled || !chosen.filePaths[0]) return null
 
     const root = await resolveProjectRoot(chosen.filePaths[0])
-    return { path: root.path, initialized: await projectExists(root) }
+    const initialized = await projectExists(root)
+    // Setup may write here, so it is allowed for this one folder and nothing else.
+    allowSetupFor(initialized ? null : root.path)
+    return { path: root.path, initialized }
   })
 
   ipcMain.handle('project:read', async (_event, rootPath: unknown) =>

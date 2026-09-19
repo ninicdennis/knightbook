@@ -1,21 +1,19 @@
-import { Alert, Button, Card, Center, Group, Stack, Text, Title, UnstyledButton } from '@mantine/core'
-import { IconFolderOpen, IconHistory, IconInfoCircle } from '@tabler/icons-react'
+import { Button, Card, Center, Group, Stack, Text, Title, UnstyledButton } from '@mantine/core'
+import { IconFolderOpen, IconHistory } from '@tabler/icons-react'
 import type { RememberedProject } from '../../shared/contract.js'
 
 /**
- * The state before a project is open, and the state where a folder was chosen
- * but holds no project records. The second one is not an error: it is the normal
- * situation when the user picks a repository an AI tool has not set up yet.
+ * The state before a project is open. A chosen folder with no project records is
+ * not handled here: it goes to the setup screen.
  */
 
 interface Props {
   recentProjects: RememberedProject[]
-  notAProject: string | null
   onChoose: () => void
   onOpenRecent: (path: string) => void
 }
 
-export function Welcome({ recentProjects, notAProject, onChoose, onOpenRecent }: Props) {
+export function Welcome({ recentProjects, onChoose, onOpenRecent }: Props) {
   return (
     <Center style={{ height: '100%' }}>
       <Stack gap="lg" w={520} maw="100%">
@@ -26,26 +24,6 @@ export function Welcome({ recentProjects, notAProject, onChoose, onOpenRecent }:
             code repository.
           </Text>
         </Stack>
-
-        {notAProject && (
-          <Alert
-            icon={<IconInfoCircle size={18} />}
-            color="blue"
-            variant="light"
-            title="No project records here yet"
-          >
-            <Stack gap={6}>
-              <Text size="sm" style={{ wordBreak: 'break-all' }}>
-                {notAProject}
-              </Text>
-              <Text size="sm">
-                Nothing was changed. An AI tool connected to this folder can create the project
-                through MCP, which also fills in documentation for an application that already
-                exists.
-              </Text>
-            </Stack>
-          </Alert>
-        )}
 
         <Button
           leftSection={<IconFolderOpen size={18} />}

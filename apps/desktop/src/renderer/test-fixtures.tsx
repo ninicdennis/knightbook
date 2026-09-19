@@ -63,6 +63,8 @@ export function makeApi(): ProjectspaceApi {
     rememberedProjects: vi.fn().mockResolvedValue([REMEMBERED]),
     forgetProject: vi.fn().mockResolvedValue([]),
     chooseProject: vi.fn(),
+    inspectFolder: vi.fn().mockResolvedValue({ ok: true, value: { name: 'app', suggestions: [] } }),
+    setUpFolder: vi.fn(),
     readProject: vi.fn().mockResolvedValue({ ok: true, value: project() }),
     setTicketStatus: vi.fn(),
     completeTicket: vi.fn(),

@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { registerDocumentHandlers } from './documents-ipc.js'
 import { registerProjectHandlers } from './ipc.js'
+import { registerSetupHandlers } from './setup-ipc.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
 
 /**
@@ -73,6 +74,7 @@ function openExternalIfSafe(url: string): void {
 void app.whenReady().then(() => {
   registerProjectHandlers()
   registerDocumentHandlers()
+  registerSetupHandlers()
   process.stdout.write(`MCP launch command: ${JSON.stringify(mcpLaunchCommand('<project>'))}\n`)
   createWindow()
 

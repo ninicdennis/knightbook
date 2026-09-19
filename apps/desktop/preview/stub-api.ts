@@ -121,7 +121,19 @@ export const stubApi: ProjectspaceApi = {
     record('forgetProject', path)
     return REMEMBERED.filter((project) => project.path !== path)
   },
-  chooseProject: async () => ({ path: PROJECT.checkoutPath, initialized: true }),
+  // Add ?setup to the preview URL to walk the uninitialized-folder screen.
+  chooseProject: async () =>
+    new URLSearchParams(window.location.search).has('setup')
+      ? { path: 'C:\\code\\my-app', initialized: false }
+      : { path: PROJECT.checkoutPath, initialized: true },
+  inspectFolder: async () => ({
+    ok: true,
+    value: { name: 'my-app', suggestions: ['README.md', 'docs'] },
+  }),
+  setUpFolder: async (path, name, include) => {
+    record('setUpFolder', path, name, include)
+    return { ok: true, value: { path, warning: null } }
+  },
   readProject: async () => {
     record('readProject')
     return { ok: true, value: PROJECT }
