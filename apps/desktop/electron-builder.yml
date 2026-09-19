@@ -1,0 +1,40 @@
+appId: dev.projectspace.app
+productName: Projectspace
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**
+  - package.json
+
+# Technical design section 2: the Node runtime and the bundled MCP server ship
+# outside the ASAR archive so the AI client can execute them directly. The
+# installed path is what the user saves in their client configuration, so it has
+# to stay stable across updates.
+extraResources:
+  - from: resources/mcp
+    to: mcp
+    filter:
+      - '**/*'
+
+asar: true
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+
+mac:
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+  category: public.app-category.developer-tools
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: deb
+      arch: [x64]
+  category: Development

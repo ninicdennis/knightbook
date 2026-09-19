@@ -1,0 +1,19 @@
+{
+  "name": "projectspace",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "check": "pnpm typecheck && pnpm test",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "build:mcp": "pnpm --filter @projectspace/mcp build",
+    "pack:dir": "pnpm build:mcp && pnpm --filter @projectspace/desktop pack:dir",
+    "preview:board": "pnpm --filter @projectspace/desktop preview:board",
+    "experiment:editor": "pnpm --filter @projectspace/experiment-editor-preservation report"
+  }
+}

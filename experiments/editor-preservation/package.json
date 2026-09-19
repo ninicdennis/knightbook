@@ -1,0 +1,21 @@
+{
+  "name": "@projectspace/experiment-editor-preservation",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run src/preservation.test.ts src/limitations.test.ts",
+    "test:watch": "vitest",
+    "report": "vitest run src/report-runner.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@milkdown/kit": "7.22.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "jsdom": "^27.0.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

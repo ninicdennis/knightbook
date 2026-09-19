@@ -1,0 +1,114 @@
+# Editor preservation experiment — findings
+
+Status: complete, 2026-09-19. Answers the "Markdown preservation" row of
+[Technical Design v0.3](../project-workspace-technical-design.md) section 11, and
+informs **T-001** and **D-018** in the [Product Specification v0.18](../project-workspace-spec.md).
+
+Measured against **`@milkdown/kit` 7.22.1**, the latest published release
+(2026-08-12), running the real editor through jsdom. Reproduce with
+`pnpm --filter @projectspace/experiment-editor-preservation report`.
+
+## Result
+
+Milkdown meets the preservation requirement for every fixture **except documents
+containing true inline HTML**, and only after the serializer is configured. With
+its default settings it rewrites every list and every table in every document.
+
+| Fixture | Defaults | Configured | Stable | Markup dropped |
+| --- | --- | --- | --- | --- |
+| `01-basic.md` | rewritten | identical | yes | none |
+| `02-frontmatter.md` | rewritten | identical | yes | none |
+| `03-tables-code.md` | rewritten | delimiter row only | yes | none |
+| `04-regression-br.md` | rewritten | **content lost** | yes | `<br>` |
+| `05-regression-autolink.md` | identical | identical | yes | none |
+| `06-unsupported.md` | identical | identical | yes | none |
+| `07-real-excerpt.md` | rewritten | delimiter row only | yes | none |
+| `08-code-span-html.md` | rewritten | identical | yes | none |
+
+Every fixture converges after one pass: there is no amplifying corruption across
+repeated saves.
+
+## What configuration fixes
+
+Setting `remarkStringifyOptions` (`bullet: '-'`, `emphasis`/`strong: '*'`,
+`rule: '-'`, `listItemIndent: 'one'`) and remark-gfm's `tablePipeAlign: false`
+removes the two rewrites that would otherwise touch nearly every document:
+
+- `- item` was being rewritten to `* item` on every save.
+- Table cells were being padded to column width, reformatting whole tables.
+
+Without this configuration the app would produce an unreadable Git diff the first
+time any document was opened and saved, which conflicts with the product
+requirement to avoid rewrites that make changes difficult to review.
+
+## What configuration cannot fix
+
+### 1. Inline HTML is silently deleted — blocking
+
+`foo<br>bar` round-trips to `foobar`. The element is removed and the surrounding
+words are joined, with no error and no warning. `A line<br />with a break` becomes
+`A linewith a break`. This is upstream
+[issue #2428](https://github.com/Milkdown/milkdown/issues/2428).
+
+The technical design anticipated this and noted that
+[fix #2463](https://github.com/Milkdown/milkdown/pull/2463) was merged on
+2026-08-29. **That fix is not in any published release.** 7.22.1 shipped on
+2026-08-12, seventeen days before the merge, and is still the only release
+available. The design's instruction to "verify the selected release includes it"
+resolves to: it does not.
+
+Block-level HTML is unaffected — a `<div>` block survives byte-identically. So is
+HTML inside a code span: `` `foo<br>bar` `` is preserved exactly. The defect is
+specific to inline HTML in prose.
+
+Neither of the two spec documents in this repository contains true inline HTML.
+Their nine angle-bracket constructs are all inside code spans or fenced blocks,
+and fixture `08-code-span-html.md` — a verbatim excerpt of the design document's
+own preservation section — round-trips unchanged.
+
+### 2. GFM table delimiter rows are narrowed — cosmetic
+
+`| --- | --- |` is rewritten to `| - | - |`. remark-gfm offers no option for
+this: `tablePipeAlign: true` pads delimiters to the column width, and `false`
+emits a single dash. Neither produces the conventional three.
+
+The output is valid GFM and renders identically, so no content is lost, but every
+table-bearing document would show a one-time delimiter change on first save.
+Our own editor boundary can restore the conventional form on write, since
+delimiter rows are unambiguous to detect. This is not a reason to reject Milkdown.
+
+## Correction to the design document's research
+
+[Issue #2349](https://github.com/Milkdown/milkdown/issues/2349), autolink
+backslashes multiplying across repeated saves, **does not reproduce** on 7.22.1.
+`05-regression-autolink.md` is byte-identical after one round trip and after two.
+The design recorded this as open upstream; on the version we would ship, it is not
+a problem.
+
+Issue #2446, inline code altered while typing, is **not covered** by this
+experiment. It only manifests during incremental keystrokes, which jsdom's
+round-trip harness does not exercise. It needs a Playwright or in-app test once a
+real editor surface exists, as the design's own section 10 notes.
+
+## What this does not establish
+
+- Typing behavior, as above.
+- Milkdown's own UI components, which this harness does not mount.
+- Behavior on Windows, macOS, and Linux separately — this ran on Windows only,
+  though the code path is platform-independent.
+
+## Recommendation
+
+**Keep Milkdown, with the configured serializer, and treat inline HTML as an
+unsupported construct** under technical design section 10's existing rule:
+detect it before editable rendering, show a read-only fallback with an "Open in
+external editor" action, and never silently drop it. That rule was written for
+exactly this situation, so honoring it needs no change to the accepted decisions.
+
+The alternative — switching to Tiptap — is not justified by this evidence. The
+single blocking defect has a merged upstream fix awaiting release, and the
+detection fallback is required regardless of which editor is chosen.
+
+Re-check when Milkdown publishes a release after 2026-08-29. The test asserting
+the broken behavior in `src/limitations.test.ts` will start failing, which is the
+signal to drop the inline-HTML restriction.

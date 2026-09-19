@@ -1,0 +1,24 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+  - 'experiments/*'
+
+# electron-vite and electron-builder call require.resolve('electron/package.json')
+# from their own install location, which pnpm's strict linking hides. Hoisting
+# electron to the workspace root is the supported way to let them find it.
+publicHoistPattern:
+  - electron
+
+# pnpm blocks dependency build scripts unless a decision is recorded here.
+allowBuilds:
+  # vite/vitest's bundler; its postinstall places the platform binary.
+  esbuild: true
+  # Downloads the Electron runtime for this platform.
+  electron: true
+  # Squirrel.Windows installer support. We do not build Squirrel installers,
+  # so its build script has no reason to run.
+  electron-winstaller: false
+
+minimumReleaseAgeExclude:
+  - '@tabler/icons-react@3.47.0'
+  - '@tabler/icons@3.47.0'

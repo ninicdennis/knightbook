@@ -1,0 +1,11 @@
+node_modules/
+dist/
+out/
+build/
+release/
+coverage/
+*.log
+.DS_Store
+Thumbs.db
+.vite/
+.turbo/

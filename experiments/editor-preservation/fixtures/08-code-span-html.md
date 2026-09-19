@@ -1,0 +1,7 @@
+### Preservation research evidence
+
+Upstream reports confirm that content-preservation failures have occurred. This is issue/documentation research, not a reproduction against our selected package versions:
+
+- **Inline line breaks removed:** issue #2428 reports `foo<br>bar` becoming `foobar` with preset-commonmark 7.21.3. The issue is closed and fix #2463 was merged August 29, 2026. Verify the selected release includes it rather than treating the historical report as an unfixed limitation. [Report](https://github.com/Milkdown/milkdown/issues/2428), [merged fix](https://github.com/Milkdown/milkdown/pull/2463)
+- **Autolink backslashes multiply:** issue #2349 reports repeated parse/save cycles doubling certain backslashes inside autolink URLs with Crepe/transformer 7.20.0. Both Milkdown's issue and the linked underlying serializer issue were open when checked. This is a specific URL edge case, not evidence that all links are affected. [Milkdown report](https://github.com/Milkdown/milkdown/issues/2349), [upstream report](https://github.com/syntax-tree/mdast-util-to-markdown/issues/73)
+- **Inline code altered while typing:** issue #2446 reports emphasis input rules consuming literal characters inside code spans on 7.22.0. Loading the same complete Markdown worked; incremental typing triggered the bug. Fix #2445 was merged August 8, 2026. Include typing interactions alongside import/export checks. [Report](https://github.com/Milkdown/milkdown/issues/2446), [merged fix](https://github.com/Milkdown/milkdown/pull/2445)
