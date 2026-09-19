@@ -5,6 +5,7 @@ import { App } from './App.js'
 import type {
   ProjectView,
   ProjectspaceApi,
+  RememberedProject,
   TicketDetailView,
   TicketView,
 } from '../shared/contract.js'
@@ -55,9 +56,12 @@ export function detail(overrides: Partial<TicketDetailView> = {}): TicketDetailV
   }
 }
 
+export const REMEMBERED: RememberedProject = { path: CHECKOUT, name: 'Demo', unavailable: null }
+
 export function makeApi(): ProjectspaceApi {
   return {
-    recentProjects: vi.fn().mockResolvedValue([CHECKOUT]),
+    rememberedProjects: vi.fn().mockResolvedValue([REMEMBERED]),
+    forgetProject: vi.fn().mockResolvedValue([]),
     chooseProject: vi.fn(),
     readProject: vi.fn().mockResolvedValue({ ok: true, value: project() }),
     setTicketStatus: vi.fn(),

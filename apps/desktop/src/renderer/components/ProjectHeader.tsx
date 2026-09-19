@@ -9,9 +9,10 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import { IconCheck, IconFolderOpen, IconPlugConnected, IconRefresh } from '@tabler/icons-react'
+import { IconCheck, IconPlugConnected, IconRefresh } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import type { McpLaunchCommand } from '../../shared/contract.js'
+import { ProjectSwitcher } from './ProjectSwitcher.js'
 
 /**
  * The header names the project and the checkout it came from. Technical design
@@ -31,7 +32,10 @@ interface Props {
   onViewChange: (view: View) => void
   refreshing: boolean
   onRefresh: () => void
-  onOpenAnother: () => void
+  /** Why switching is unsafe right now, or null. */
+  switchBlockedReason: string | null
+  onSwitchProject: (path: string) => void
+  onOpenFolder: () => void
 }
 
 export function ProjectHeader({
@@ -41,7 +45,9 @@ export function ProjectHeader({
   onViewChange,
   refreshing,
   onRefresh,
-  onOpenAnother,
+  switchBlockedReason,
+  onSwitchProject,
+  onOpenFolder,
 }: Props) {
   const [launch, setLaunch] = useState<McpLaunchCommand | null>(null)
 
@@ -61,12 +67,20 @@ export function ProjectHeader({
 
   return (
     <Group justify="space-between" align="flex-start" wrap="nowrap">
-      <Stack gap={2} style={{ minWidth: 0 }}>
-        <Title order={3}>{name}</Title>
-        <Text size="xs" c="dimmed" style={{ wordBreak: 'break-all' }}>
-          {checkoutPath}
-        </Text>
-      </Stack>
+      <Group gap="sm" align="flex-start" wrap="nowrap" style={{ minWidth: 0 }}>
+        <ProjectSwitcher
+          currentPath={checkoutPath}
+          blockedReason={switchBlockedReason}
+          onSwitch={onSwitchProject}
+          onOpenFolder={onOpenFolder}
+        />
+        <Stack gap={2} style={{ minWidth: 0 }}>
+          <Title order={3}>{name}</Title>
+          <Text size="xs" c="dimmed" style={{ wordBreak: 'break-all' }}>
+            {checkoutPath}
+          </Text>
+        </Stack>
+      </Group>
 
       <Group gap="xs" wrap="nowrap">
         <SegmentedControl
@@ -121,17 +135,6 @@ export function ProjectHeader({
             )}
           </CopyButton>
         )}
-
-        <Tooltip label="Open another project folder" withArrow>
-          <ActionIcon
-            variant="default"
-            size="lg"
-            onClick={onOpenAnother}
-            aria-label="Open another project"
-          >
-            <IconFolderOpen size={18} />
-          </ActionIcon>
-        </Tooltip>
       </Group>
     </Group>
   )

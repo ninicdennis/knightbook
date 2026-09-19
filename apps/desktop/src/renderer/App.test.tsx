@@ -31,7 +31,7 @@ describe('opening a project', () => {
   })
 
   it('explains a folder that holds no project records without calling it an error', async () => {
-    api.recentProjects = vi.fn().mockResolvedValue([])
+    api.rememberedProjects = vi.fn().mockResolvedValue([])
     api.chooseProject = vi.fn().mockResolvedValue({ path: 'C:\\code\\app', initialized: false })
     renderApp()
 

@@ -1,4 +1,9 @@
-import type { ProjectView, ProjectspaceApi, TicketView } from '../src/shared/contract.js'
+import type {
+  ProjectView,
+  ProjectspaceApi,
+  RememberedProject,
+  TicketView,
+} from '../src/shared/contract.js'
 import { SAMPLE_DOCUMENT } from './sample-document.js'
 import { stubTicketDetail } from './ticket-detail-stub.js'
 
@@ -100,8 +105,22 @@ function record(name: string, ...args: unknown[]): void {
   log.push([name, ...args])
 }
 
+const REMEMBERED: RememberedProject[] = [
+  { path: PROJECT.checkoutPath, name: PROJECT.name, unavailable: null },
+  { path: 'C:\\projects\\second-app', name: 'Second app', unavailable: null },
+  {
+    path: 'D:\\old\\archived',
+    name: 'Archived',
+    unavailable: 'This folder was not found. It may have been moved, renamed, or deleted.',
+  },
+]
+
 export const stubApi: ProjectspaceApi = {
-  recentProjects: async () => [PROJECT.checkoutPath],
+  rememberedProjects: async () => REMEMBERED,
+  forgetProject: async (path) => {
+    record('forgetProject', path)
+    return REMEMBERED.filter((project) => project.path !== path)
+  },
   chooseProject: async () => ({ path: PROJECT.checkoutPath, initialized: true }),
   readProject: async () => {
     record('readProject')
