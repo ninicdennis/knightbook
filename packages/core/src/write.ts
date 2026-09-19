@@ -122,7 +122,11 @@ export async function writeRecord(
         throw new ProjectError('not_found', `No such record: ${absolutePath}`)
       }
       if (options.expectedRevision === undefined) {
-        throw new ProjectError('revision_conflict', 'A write to an existing record needs expectedRevision', current)
+        throw new ProjectError(
+          'revision_conflict',
+          'A write to an existing record needs expectedRevision',
+          current,
+        )
       }
       if (options.expectedRevision !== current) {
         throw new ProjectError(

@@ -55,7 +55,11 @@ export function Board({ project, busyTicketId, onMove, onComplete, onReview, onO
                   <EmptyColumn status={status} project={project} />
                 ) : (
                   tickets.map((ticket) => (
-                    <DraggableTicket key={ticket.id} id={ticket.id} disabled={busyTicketId !== null}>
+                    <DraggableTicket
+                      key={ticket.id}
+                      id={ticket.id}
+                      disabled={busyTicketId !== null}
+                    >
                       <TicketCard
                         ticket={ticket}
                         isNext={project.nextTicketId === ticket.id}
@@ -116,7 +120,10 @@ function Column({
         </Badge>
       </Group>
 
-      <ScrollArea.Autosize mah={shortened ? 'calc(100vh - 290px)' : 'calc(100vh - 230px)'} type="hover">
+      <ScrollArea.Autosize
+        mah={shortened ? 'calc(100vh - 290px)' : 'calc(100vh - 230px)'}
+        type="hover"
+      >
         <Stack gap="xs" pr={4}>
           {children}
         </Stack>

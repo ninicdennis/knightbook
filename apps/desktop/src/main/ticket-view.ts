@@ -75,7 +75,10 @@ export async function toTicketDetail(project: Project, id: string): Promise<Tick
   if (!ticket) {
     const problem = listing.problems.find((p) => p.id === id)
     if (problem) {
-      throw new ProjectError('invalid_record', `${problem.file} could not be read: ${problem.reason}`)
+      throw new ProjectError(
+        'invalid_record',
+        `${problem.file} could not be read: ${problem.reason}`,
+      )
     }
     // A ticket can be deleted or renamed by an external tool between the board
     // loading and the user opening it, so this is an expected outcome.

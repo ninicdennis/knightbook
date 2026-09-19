@@ -69,7 +69,9 @@ describe('the board distinguishes states that must not look alike', () => {
     api.readProject = vi.fn().mockResolvedValue({
       ok: true,
       value: project({
-        tickets: [ticket({ title: 'Edited elsewhere', status: 'done', completionUnattributed: true })],
+        tickets: [
+          ticket({ title: 'Edited elsewhere', status: 'done', completionUnattributed: true }),
+        ],
       }),
     })
     renderApp()
@@ -206,7 +208,11 @@ describe('human review (D-003, D-004)', () => {
       value: project({
         tickets: [
           ticket({
-            review: { state: 'reviewed', lastReviewedAt: '2026-09-19T10:00:00Z', changeSummary: null },
+            review: {
+              state: 'reviewed',
+              lastReviewedAt: '2026-09-19T10:00:00Z',
+              changeSummary: null,
+            },
           }),
         ],
       }),
@@ -264,7 +270,11 @@ describe('human review (D-003, D-004)', () => {
       value: project({
         tickets: [
           ticket({
-            review: { state: 'reviewed', lastReviewedAt: '2026-09-19T10:00:00Z', changeSummary: null },
+            review: {
+              state: 'reviewed',
+              lastReviewedAt: '2026-09-19T10:00:00Z',
+              changeSummary: null,
+            },
           }),
         ],
       }),

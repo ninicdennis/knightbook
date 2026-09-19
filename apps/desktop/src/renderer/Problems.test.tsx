@@ -48,14 +48,18 @@ describe('a board with unreadable records', () => {
     withProblems([CONFLICT, BAD_STATUS])
     renderApp()
 
-    expect(await screen.findByText(/2 records could not be read, so they are not on the board/i)).toBeTruthy()
+    expect(
+      await screen.findByText(/2 records could not be read, so they are not on the board/i),
+    ).toBeTruthy()
   })
 
   it('uses the singular for one record', async () => {
     withProblems([CONFLICT])
     renderApp()
 
-    expect(await screen.findByText(/1 record could not be read, so it is not on the board/i)).toBeTruthy()
+    expect(
+      await screen.findByText(/1 record could not be read, so it is not on the board/i),
+    ).toBeTruthy()
   })
 
   it('lists each file with its reason once asked, and says nothing was rewritten', async () => {
@@ -78,10 +82,12 @@ describe('a board with unreadable records', () => {
     await screen.findByText('A ticket')
     await user.click(screen.getByRole('button', { name: /show files/i }))
 
-    const banner = (await screen.findByText(/could not be read, so it is not on the board/i)).closest(
-      '[role="alert"]',
-    ) as HTMLElement
-    const buttons = within(banner).getAllByRole('button').map((b) => b.textContent)
+    const banner = (
+      await screen.findByText(/could not be read, so it is not on the board/i)
+    ).closest('[role="alert"]') as HTMLElement
+    const buttons = within(banner)
+      .getAllByRole('button')
+      .map((b) => b.textContent)
 
     expect(buttons).toEqual(['Hide files'])
   })
@@ -111,7 +117,9 @@ describe('the detail view around unreadable records', () => {
 
     expect(await within(dialog).findByText('Ticket aaaa could not be read')).toBeTruthy()
     expect(within(dialog).getByText('Unreadable')).toBeTruthy()
-    expect(within(dialog).getByText(/its file could not be read, so this cannot be checked/i)).toBeTruthy()
+    expect(
+      within(dialog).getByText(/its file could not be read, so this cannot be checked/i),
+    ).toBeTruthy()
     expect(within(dialog).queryByText(/missing from this project/i)).toBeNull()
   })
 
@@ -119,7 +127,8 @@ describe('the detail view around unreadable records', () => {
     api.readTicket = vi.fn().mockResolvedValue({
       ok: false,
       code: 'invalid_record',
-      message: '.projectspace/tickets/aaaa.md could not be read: contains unresolved merge conflict markers.',
+      message:
+        '.projectspace/tickets/aaaa.md could not be read: contains unresolved merge conflict markers.',
     })
     renderApp()
     await user.click(await screen.findByText('A ticket'))

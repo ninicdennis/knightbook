@@ -241,7 +241,11 @@ export function registerTools(server: McpServer, rootPath: string): void {
           ...(input.depends_on !== undefined ? { dependsOn: input.depends_on } : {}),
           ...(input.blocker !== undefined ? { blocker: input.blocker } : {}),
         })
-        return ok({ id: ticket.frontmatter.id, status: ticket.frontmatter.status, revision: ticket.revision })
+        return ok({
+          id: ticket.frontmatter.id,
+          status: ticket.frontmatter.status,
+          revision: ticket.revision,
+        })
       }),
   )
 

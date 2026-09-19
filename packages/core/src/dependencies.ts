@@ -64,10 +64,7 @@ export function evaluateReadiness(
 }
 
 /** Returns the cycle path if this ticket participates in one, else null. */
-function findCycle(
-  start: string,
-  all: ReadonlyMap<string, TicketFrontmatter>,
-): string[] | null {
+function findCycle(start: string, all: ReadonlyMap<string, TicketFrontmatter>): string[] | null {
   const path: string[] = []
   const onPath = new Set<string>()
   const settled = new Set<string>()

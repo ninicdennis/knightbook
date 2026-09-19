@@ -48,10 +48,7 @@ describe('including existing documents in place', () => {
       const { documents, problems } = await listIncludedDocuments(updated)
 
       expect(problems).toEqual([])
-      expect(documents.map((d) => d.path)).toEqual([
-        'docs/architecture.md',
-        'docs/deep/notes.md',
-      ])
+      expect(documents.map((d) => d.path)).toEqual(['docs/architecture.md', 'docs/deep/notes.md'])
       expect(documents.every((d) => d.includedVia === 'docs')).toBe(true)
     })
   })

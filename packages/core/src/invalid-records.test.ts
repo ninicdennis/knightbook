@@ -6,7 +6,13 @@ import { reservedPaths } from './paths.js'
 import type { Project } from './project.js'
 import { searchProject } from './search.js'
 import { selectNextTicket } from './selection.js'
-import { createTicket, listTicketRecords, listTickets, readTicket, updateTicket } from './tickets.js'
+import {
+  createTicket,
+  listTicketRecords,
+  listTickets,
+  readTicket,
+  updateTicket,
+} from './tickets.js'
 
 /**
  * One malformed ticket or an unresolved merge conflict used to make listTickets
@@ -16,7 +22,8 @@ import { createTicket, listTicketRecords, listTickets, readTicket, updateTicket 
  */
 
 const CONFLICTED = (valid: string) =>
-  valid.replace('title:', '<<<<<<< HEAD\ntitle:').replace('status:', '=======\nstatus:') + '\n>>>>>>> branch\n'
+  valid.replace('title:', '<<<<<<< HEAD\ntitle:').replace('status:', '=======\nstatus:') +
+  '\n>>>>>>> branch\n'
 
 async function corrupt(
   project: Project,
@@ -37,7 +44,9 @@ describe('listing when some records are invalid', () => {
       const badStatus = await createTicket(project, { title: 'Bad status' })
 
       await corrupt(project, conflicted.frontmatter.id, CONFLICTED)
-      await corrupt(project, badStatus.frontmatter.id, (c) => c.replace('status: backlog', 'status: sideways'))
+      await corrupt(project, badStatus.frontmatter.id, (c) =>
+        c.replace('status: backlog', 'status: sideways'),
+      )
 
       const { tickets, problems } = await listTicketRecords(project)
 
@@ -61,7 +70,9 @@ describe('listing when some records are invalid', () => {
       await corrupt(project, renamed.frontmatter.id, (c) =>
         c.replace(renamed.frontmatter.id, '99999999-9999-4999-8999-999999999999'),
       )
-      await corrupt(project, yaml.frontmatter.id, (c) => c.replace('status: backlog', 'status: [unclosed'))
+      await corrupt(project, yaml.frontmatter.id, (c) =>
+        c.replace('status: backlog', 'status: [unclosed'),
+      )
 
       const { tickets, problems } = await listTicketRecords(project)
 
@@ -82,7 +93,10 @@ describe('listing when some records are invalid', () => {
       await selectNextTicket(project)
       await searchProject(project, 'anything')
 
-      const after = await readFile(reservedPaths.ticketFile(project.root, conflicted.frontmatter.id), 'utf8')
+      const after = await readFile(
+        reservedPaths.ticketFile(project.root, conflicted.frontmatter.id),
+        'utf8',
+      )
       expect(after).toBe(before)
     })
   })
@@ -101,7 +115,9 @@ describe('listing when some records are invalid', () => {
       const bad = await createTicket(project, { title: 'Bad' })
       await corrupt(project, bad.frontmatter.id, CONFLICTED)
 
-      expect((await listTickets(project)).map((t) => t.frontmatter.id)).toEqual([good.frontmatter.id])
+      expect((await listTickets(project)).map((t) => t.frontmatter.id)).toEqual([
+        good.frontmatter.id,
+      ])
     })
   })
 })
@@ -119,7 +135,10 @@ describe('writes to an invalid record stay blocked', () => {
         }),
       ).rejects.toMatchObject({ code: 'invalid_record' })
 
-      const after = await readFile(reservedPaths.ticketFile(project.root, ticket.frontmatter.id), 'utf8')
+      const after = await readFile(
+        reservedPaths.ticketFile(project.root, ticket.frontmatter.id),
+        'utf8',
+      )
       expect(after).toBe(before)
     })
   })
@@ -138,7 +157,10 @@ describe('writes to an invalid record stay blocked', () => {
         }),
       ).rejects.toMatchObject({ code: 'invalid_record' })
 
-      const after = await readFile(reservedPaths.ticketFile(project.root, ticket.frontmatter.id), 'utf8')
+      const after = await readFile(
+        reservedPaths.ticketFile(project.root, ticket.frontmatter.id),
+        'utf8',
+      )
       expect(after).toBe(before)
     })
   })

@@ -2,7 +2,13 @@ import { readdir, stat } from 'node:fs/promises'
 import { join, posix } from 'node:path'
 import { ProjectError } from './errors.js'
 import { parseRecord, serializeRecord } from './frontmatter.js'
-import { assertRealPathInRoot, RESERVED_DIR, reservedPaths, resolveInRoot, toProjectRelative } from './paths.js'
+import {
+  assertRealPathInRoot,
+  RESERVED_DIR,
+  reservedPaths,
+  resolveInRoot,
+  toProjectRelative,
+} from './paths.js'
 import type { Project } from './project.js'
 import type { Revision } from './revision.js'
 import { readRecord, writeRecord } from './write.js'

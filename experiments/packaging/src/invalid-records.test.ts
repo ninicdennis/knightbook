@@ -36,7 +36,9 @@ beforeAll(async () => {
   // What a bad merge leaves behind.
   badFile = join(projectRoot, '.projectspace', 'tickets', `${badId}.md`)
   const original = await readFile(badFile, 'utf8')
-  badContent = original.replace('title:', '<<<<<<< HEAD\ntitle:').replace('status:', '=======\nstatus:') + '\n>>>>>>> other\n'
+  badContent =
+    original.replace('title:', '<<<<<<< HEAD\ntitle:').replace('status:', '=======\nstatus:') +
+    '\n>>>>>>> other\n'
   await writeFile(badFile, badContent, 'utf8')
 })
 

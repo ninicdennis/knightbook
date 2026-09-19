@@ -64,7 +64,10 @@ export async function createTicket(project: Project, input: CreateTicketInput): 
  * and writes both go through this, so a record that fails to load also refuses
  * to be edited (technical design section 3).
  */
-function parseTicket(content: string, id: string): { frontmatter: TicketFrontmatter; body: string } {
+function parseTicket(
+  content: string,
+  id: string,
+): { frontmatter: TicketFrontmatter; body: string } {
   assertNoConflictMarkers(content, `tickets/${id}.md`)
   const record = parseRecord(content)
   assertSupportedSchema(record)
@@ -184,7 +187,7 @@ export async function updateTicket(
     throw new ProjectError(
       'invalid_transition',
       `A general update cannot set status to "${input.status}". ` +
-        'Recording completion requires the user\'s explicit instruction through ticket_record_user_completion.',
+        "Recording completion requires the user's explicit instruction through ticket_record_user_completion.",
     )
   }
 

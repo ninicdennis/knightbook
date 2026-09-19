@@ -13,7 +13,9 @@ import { stubTicketDetail } from './ticket-detail-stub.js'
  * a mock-up of them.
  */
 
-function ticket(partial: Partial<TicketView> & Pick<TicketView, 'id' | 'title' | 'status'>): TicketView {
+function ticket(
+  partial: Partial<TicketView> & Pick<TicketView, 'id' | 'title' | 'status'>,
+): TicketView {
   return {
     revision: `rev-${partial.id}`,
     dependsOn: [],
@@ -37,7 +39,8 @@ const UNREADABLE = new URLSearchParams(window.location.search).has('problems')
       },
       {
         file: '.projectspace/tickets/b81d0e22-5c3f-4a17-8f60-92aa1d3c6e05.md',
-        reason: 'Ticket b81d0e22 is not valid: status must be one of backlog, in_progress, verification, done.',
+        reason:
+          'Ticket b81d0e22 is not valid: status must be one of backlog, in_progress, verification, done.',
       },
     ]
   : []
@@ -189,7 +192,11 @@ export const stubApi: ProjectspaceApi = {
           path: 'docs/architecture.md',
           title: 'architecture',
           includedVia: 'docs',
-          review: { state: 'reviewed', lastReviewedAt: '2026-09-18T09:00:00Z', changeSummary: null },
+          review: {
+            state: 'reviewed',
+            lastReviewedAt: '2026-09-18T09:00:00Z',
+            changeSummary: null,
+          },
         },
       ],
       problems: [{ path: 'docs/moved-away.md', reason: 'missing' }],

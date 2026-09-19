@@ -18,9 +18,15 @@
   line-height: 1.25;
 }
 
-.markdown-body h1 { font-size: 1.5rem; }
-.markdown-body h2 { font-size: 1.2rem; }
-.markdown-body h3 { font-size: 1.02rem; }
+.markdown-body h1 {
+  font-size: 1.5rem;
+}
+.markdown-body h2 {
+  font-size: 1.2rem;
+}
+.markdown-body h3 {
+  font-size: 1.02rem;
+}
 
 .markdown-body > :first-child {
   margin-top: 0;
@@ -114,6 +120,13 @@
 }
 
 /* Prose inside a dialog: the page-sized headings would dwarf the dialog title. */
-.markdown-body.compact h1 { font-size: 1.15rem; margin-top: 0.4em; }
-.markdown-body.compact h2 { font-size: 1.02rem; }
-.markdown-body.compact h3 { font-size: 0.95rem; }
+.markdown-body.compact h1 {
+  font-size: 1.15rem;
+  margin-top: 0.4em;
+}
+.markdown-body.compact h2 {
+  font-size: 1.02rem;
+}
+.markdown-body.compact h3 {
+  font-size: 0.95rem;
+}

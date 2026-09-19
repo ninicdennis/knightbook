@@ -8,11 +8,7 @@ import { createTicket, listTickets, readTicket, updateTicket } from './tickets.j
 import { withFixtureProject } from './fixture-project.js'
 
 /** Moves a ticket forward through the real transitions rather than editing status directly. */
-async function moveTo(
-  project: Project,
-  id: string,
-  status: 'in_progress' | 'verification',
-) {
+async function moveTo(project: Project, id: string, status: 'in_progress' | 'verification') {
   const current = await readTicket(project, id)
   if (status === 'verification' && current.frontmatter.status === 'backlog') {
     const started = await updateTicket(project, id, {

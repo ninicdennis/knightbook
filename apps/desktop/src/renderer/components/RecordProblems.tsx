@@ -21,7 +21,8 @@ export function RecordProblems({ problems }: { problems: RecordProblemView[] }) 
       <Stack gap={6}>
         <Group justify="space-between" wrap="nowrap" gap="sm">
           <Text size="sm" fw={600}>
-            {problems.length} {noun} could not be read, so {problems.length === 1 ? 'it is' : 'they are'} not on the board
+            {problems.length} {noun} could not be read, so{' '}
+            {problems.length === 1 ? 'it is' : 'they are'} not on the board
           </Text>
           <Button size="compact-xs" variant="subtle" color="orange" onClick={list.toggle}>
             {open ? 'Hide files' : 'Show files'}

@@ -126,8 +126,7 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
         'snippets. Use this to find the relevant record instead of reading everything.',
       inputSchema: z.object({ query: z.string().min(1) }),
     },
-    async ({ query }) =>
-      await guard(async () => ok(await searchProject(await load(), query))),
+    async ({ query }) => await guard(async () => ok(await searchProject(await load(), query))),
   )
 
   server.registerTool(
@@ -153,7 +152,10 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
         }
 
         const { recordId, source } = input.ticket_id
-          ? { recordId: ticketRecordId(input.ticket_id), source: await ticketSource(project, input.ticket_id) }
+          ? {
+              recordId: ticketRecordId(input.ticket_id),
+              source: await ticketSource(project, input.ticket_id),
+            }
           : {
               recordId: documentRecordId(project, input.document_path!),
               source: (await readDocument(project, input.document_path!)).content,
@@ -189,4 +191,3 @@ async function documentReview(project: Project, path: string) {
     return { state: 'unreviewed' as const, last_reviewed_at: null }
   }
 }
-

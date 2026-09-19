@@ -75,8 +75,7 @@ export interface ProjectView {
 }
 
 export type Result<T> =
-  | { ok: true; value: T }
-  | { ok: false; code: string; message: string; currentRevision?: string }
+  { ok: true; value: T } | { ok: false; code: string; message: string; currentRevision?: string }
 
 export interface ChosenFolder {
   path: string

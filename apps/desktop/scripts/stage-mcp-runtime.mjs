@@ -24,7 +24,9 @@ const server = join(REPO_ROOT, 'packages', 'mcp', 'dist', 'server.mjs')
 try {
   await stat(server)
 } catch {
-  console.error(`Bundled server is missing: ${server}\nRun "pnpm --filter @projectspace/mcp build" first.`)
+  console.error(
+    `Bundled server is missing: ${server}\nRun "pnpm --filter @projectspace/mcp build" first.`,
+  )
   process.exit(1)
 }
 

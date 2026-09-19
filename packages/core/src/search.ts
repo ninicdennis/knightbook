@@ -70,8 +70,7 @@ export async function searchProject(project: Project, query: string): Promise<Se
       continue
     }
 
-    const match =
-      content.length > MAX_SCANNED_BYTES ? null : findMatch(content, needle)
+    const match = content.length > MAX_SCANNED_BYTES ? null : findMatch(content, needle)
     if (!match && !inTitle) continue
 
     hits.push({

@@ -27,9 +27,9 @@ const MARKUP_PATTERNS: Array<[string, RegExp]> = [
 ]
 
 function findDroppedMarkup(before: string, after: string): string[] {
-  return MARKUP_PATTERNS.filter(
-    ([, pattern]) => pattern.test(before) && !pattern.test(after),
-  ).map(([label]) => label)
+  return MARKUP_PATTERNS.filter(([, pattern]) => pattern.test(before) && !pattern.test(after)).map(
+    ([label]) => label,
+  )
 }
 
 function firstDifference(before: string, after: string) {

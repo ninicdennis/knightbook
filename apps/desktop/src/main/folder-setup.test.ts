@@ -132,7 +132,9 @@ describe('explaining a failure', () => {
 
   it('says permission was denied, and that no project was created', () => {
     for (const code of ['EACCES', 'EPERM']) {
-      expect(explainSetupFailure(errno(code)).message).toMatch(/permission denied.*no project was created/i)
+      expect(explainSetupFailure(errno(code)).message).toMatch(
+        /permission denied.*no project was created/i,
+      )
     }
   })
 

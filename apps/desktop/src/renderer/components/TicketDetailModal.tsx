@@ -19,11 +19,7 @@ import {
   IconUserCheck,
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import type {
-  MovableStatus,
-  TicketDetailView,
-  TicketView,
-} from '../../shared/contract.js'
+import type { MovableStatus, TicketDetailView, TicketView } from '../../shared/contract.js'
 import { renderMarkdown } from '../markdown.js'
 import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
 import { MarkdownBody } from './MarkdownBody.js'
@@ -92,7 +88,14 @@ export function TicketDetailModal({
   )
 
   return (
-    <Modal opened onClose={onClose} title={ticket.title} size="xl" centered scrollAreaComponent={ScrollArea.Autosize}>
+    <Modal
+      opened
+      onClose={onClose}
+      title={ticket.title}
+      size="xl"
+      centered
+      scrollAreaComponent={ScrollArea.Autosize}
+    >
       <Stack gap="md">
         <Group gap="xs">
           <Badge variant="light" color={STATUS_COLOR[ticket.status]}>
@@ -107,13 +110,23 @@ export function TicketDetailModal({
         </Group>
 
         {ticket.blocker && (
-          <Alert icon={<IconAlertTriangle size={16} />} color="orange" variant="light" title="Blocked">
+          <Alert
+            icon={<IconAlertTriangle size={16} />}
+            color="orange"
+            variant="light"
+            title="Blocked"
+          >
             {ticket.blocker}
           </Alert>
         )}
 
         {ticket.completionUnattributed && (
-          <Alert icon={<IconAlertTriangle size={16} />} color="orange" variant="light" title="Unattributed">
+          <Alert
+            icon={<IconAlertTriangle size={16} />}
+            color="orange"
+            variant="light"
+            title="Unattributed"
+          >
             This was set to Done outside the app, with no recorded decision. Nothing here shows who
             accepted it.
           </Alert>
@@ -122,7 +135,12 @@ export function TicketDetailModal({
         {ticket.completion && <CompletionRecord completion={ticket.completion} />}
 
         {error && (
-          <Alert icon={<IconAlertTriangle size={16} />} color="orange" variant="light" title="Could not read this ticket">
+          <Alert
+            icon={<IconAlertTriangle size={16} />}
+            color="orange"
+            variant="light"
+            title="Could not read this ticket"
+          >
             {error} Nothing was changed.
           </Alert>
         )}
@@ -164,7 +182,8 @@ export function TicketDetailModal({
             <Text size="xs" c="dimmed">
               Created {formatWhen(detail.createdAt)} · Updated {formatWhen(detail.updatedAt)} ·
               Revision {detail.revision.slice(0, 8)}
-              {ticket.review.lastReviewedAt && ` · Last reviewed ${formatWhen(ticket.review.lastReviewedAt)}`}
+              {ticket.review.lastReviewedAt &&
+                ` · Last reviewed ${formatWhen(ticket.review.lastReviewedAt)}`}
             </Text>
           </>
         )}
@@ -188,14 +207,24 @@ export function TicketDetailModal({
 
           <Group gap="xs">
             {ticket.review.state !== 'reviewed' && (
-              <Button variant="default" size="xs" leftSection={<IconEye size={14} />} onClick={onReview}>
+              <Button
+                variant="default"
+                size="xs"
+                leftSection={<IconEye size={14} />}
+                onClick={onReview}
+              >
                 {ticket.review.state === 'changed_since_review'
                   ? 'Mark reviewed again'
                   : 'Mark content reviewed'}
               </Button>
             )}
             {ticket.status === 'verification' && (
-              <Button color="teal" size="xs" leftSection={<IconUserCheck size={14} />} onClick={onComplete}>
+              <Button
+                color="teal"
+                size="xs"
+                leftSection={<IconUserCheck size={14} />}
+                onClick={onComplete}
+              >
                 Accept as done
               </Button>
             )}

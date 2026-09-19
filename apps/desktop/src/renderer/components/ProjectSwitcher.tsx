@@ -75,7 +75,12 @@ export function ProjectSwitcher({ currentPath, blockedReason, onSwitch, onOpenFo
   return (
     <>
       <Tooltip label="Projects" withArrow>
-        <ActionIcon variant="default" size="lg" onClick={drawer.open} aria-label="Open project menu">
+        <ActionIcon
+          variant="default"
+          size="lg"
+          onClick={drawer.open}
+          aria-label="Open project menu"
+        >
           <IconMenu2 size={18} />
         </ActionIcon>
       </Tooltip>
@@ -136,9 +141,9 @@ export function ProjectSwitcher({ currentPath, blockedReason, onSwitch, onOpenFo
             <Group gap={6} align="flex-start" wrap="nowrap">
               <IconInfoCircle size={14} style={{ flexShrink: 0, marginTop: 2 }} opacity={0.6} />
               <Text size="xs" c="dimmed">
-                Switching only changes what this window shows. AI tools already connected keep
-                using the project they were started with. This list is remembered on this machine
-                only; forgetting a project never touches its files.
+                Switching only changes what this window shows. AI tools already connected keep using
+                the project they were started with. This list is remembered on this machine only;
+                forgetting a project never touches its files.
               </Text>
             </Group>
           </Stack>

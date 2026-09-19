@@ -20,17 +20,12 @@ export function Welcome({ recentProjects, onChoose, onOpenRecent }: Props) {
         <Stack gap={4}>
           <Title order={2}>Projectspace</Title>
           <Text c="dimmed" size="sm">
-            Open a project folder to see its documents and board. The folder can be an existing
-            code repository.
+            Open a project folder to see its documents and board. The folder can be an existing code
+            repository.
           </Text>
         </Stack>
 
-        <Button
-          leftSection={<IconFolderOpen size={18} />}
-          size="md"
-          onClick={onChoose}
-          fullWidth
-        >
+        <Button leftSection={<IconFolderOpen size={18} />} size="md" onClick={onChoose} fullWidth>
           Choose a project folder
         </Button>
 
@@ -38,7 +33,13 @@ export function Welcome({ recentProjects, onChoose, onOpenRecent }: Props) {
           <Stack gap="xs">
             <Group gap={6}>
               <IconHistory size={14} opacity={0.6} />
-              <Text size="xs" fw={600} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>
+              <Text
+                size="xs"
+                fw={600}
+                tt="uppercase"
+                c="dimmed"
+                style={{ letterSpacing: '0.05em' }}
+              >
                 Recent
               </Text>
             </Group>

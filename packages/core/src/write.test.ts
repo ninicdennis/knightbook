@@ -46,7 +46,9 @@ describe('safe write path', () => {
   it('refuses to create over an existing file', async () => {
     await withFixtureProject(async (project) => {
       const path = reservedPaths.projectFile(project.root)
-      const error = await writeRecord(project.root, path, 'x', { mustNotExist: true }).catch((e) => e)
+      const error = await writeRecord(project.root, path, 'x', { mustNotExist: true }).catch(
+        (e) => e,
+      )
       expect(error.code).toBe('already_exists')
     })
   })
@@ -54,7 +56,9 @@ describe('safe write path', () => {
   it('rejects a path that escapes the project', async () => {
     await withFixtureProject(async (project) => {
       const outside = `${project.root.path}/../escaped.md`
-      const error = await writeRecord(project.root, outside, 'x', { mustNotExist: true }).catch((e) => e)
+      const error = await writeRecord(project.root, outside, 'x', { mustNotExist: true }).catch(
+        (e) => e,
+      )
       expect(error.code).toBe('outside_project')
     })
   })
