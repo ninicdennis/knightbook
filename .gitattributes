@@ -1,0 +1,5 @@
+# The editor-preservation experiment asserts byte-for-byte round trips, so its
+# input files must not change with the line-ending setting of whoever checks them
+# out. Without this, a Windows checkout (core.autocrlf=true, GitHub's Windows
+# runners included) turns them into CRLF and the tests fail.
+experiments/editor-preservation/fixtures/** text eol=lf
