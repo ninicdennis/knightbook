@@ -23,6 +23,7 @@ verified path.
 | MCP surface | Fourteen tools: the ten section 9 operations plus ticket_next, ticket_read, documents_list and review_status; packaged and validated |
 | Desktop board | Four columns, drag and menu moves, a ticket detail dialog, a project switcher, completion and review with provenance, refresh (button, and whenever the window regains focus) |
 | Document viewer | Read-only rendering of included documents, in-app review, external-editor handoff |
+| AI workflow guidance | A portable skill file plus rules sent by the server on connect; not yet exercised in a real AI session |
 | Human review tracking | Tracked and surfaced for both tickets and documents, in the app and through MCP |
 | Document editing | Not started — the formatted editor is blocked on the Milkdown finding; reading works now |
 | macOS and Linux | Not yet validated; only Windows has been built and run |
@@ -71,6 +72,7 @@ layout without packaging the app. Not part of any shipped build.
 packages/core      Records, safe writes, dependencies, completion, documents, search, review
 packages/mcp       The separately launchable stdio MCP server
 apps/desktop       Electron app: main process, preload bridge, Mantine board
+skills/            The workflow skill that teaches AI tools how to use the MCP tools
 experiments/       The two section 11 experiments, kept as regression tests
 docs/              Specification, technical design, and experiment findings
 ```
@@ -95,6 +97,24 @@ install it points at the runtime shipped beside the application:
 The AI client starts that process itself, so project access does not depend on
 the desktop window being open. The root is bound at launch rather than supplied
 per call, so a connection reaches exactly one checkout.
+
+## Teaching an AI tool the workflow
+
+Connecting the server gives an AI the tools. [`skills/projectspace/SKILL.md`](skills/projectspace/SKILL.md)
+tells it how to use them: read the board, start work only when asked, hand off in
+Verification, and never decide Done. It is plain Markdown, so it works in any client.
+
+- **Claude Code:** copy the `skills/projectspace` folder into your personal skills
+  folder (`~/.claude/skills/`), or into a project's `.claude/skills/`. It is used
+  automatically when the `projectspace` tools are connected.
+- **Any other client:** paste the file into that project's instructions
+  (`AGENTS.md`, `CLAUDE.md`, a system prompt).
+- **With nothing installed:** the server sends a short version of the core rules to
+  every client when it connects, so an AI still learns the Done and review rules.
+
+None of this enforces the rules; MCP alone cannot. See the three rules below for
+what the code does enforce. `packages/mcp/src/guidance.test.ts` fails if the skill
+and the real tool list drift apart.
 
 ## Three rules the code enforces
 
