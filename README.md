@@ -42,7 +42,9 @@ pnpm install
 pnpm check
 ```
 
-`pnpm check` runs typecheck and every test suite. Other useful commands:
+`pnpm check` runs the linter (Oxlint), the formatting check (Prettier), typecheck, and
+every test suite. `pnpm format` rewrites files to the project style; it leaves Markdown
+and the `.projectspace/` records alone. Other useful commands:
 
 ```bash
 pnpm pack:dir

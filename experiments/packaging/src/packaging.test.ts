@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { call, callExpectingError, connect, type Connection } from './client.js'
+import { call, callExpectingError, connect } from './client.js'
 import { stageResources, type StagedResources } from './stage.js'
 
 /**
