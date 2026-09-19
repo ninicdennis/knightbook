@@ -52,6 +52,17 @@ describe('the shipped runtime starts without a system Node', () => {
     }
   })
 
+  it('tells a connecting client the rules, without any skill installed', async () => {
+    const connection = await connect(resources, projectRoot, unrelatedCwd)
+    try {
+      const instructions = connection.client.getInstructions() ?? ''
+      expect(instructions).toMatch(/only the user decides done/i)
+      expect(instructions).toContain('project_get')
+    } finally {
+      await connection.close()
+    }
+  })
+
   it('runs on the runtime we shipped, not one found on PATH', async () => {
     const connection = await connect(resources, projectRoot, unrelatedCwd)
     try {

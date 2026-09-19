@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/server'
 import { serveStdio } from '@modelcontextprotocol/server/stdio'
 import { parseRootArgument } from './root.js'
 import { registerDocumentTools } from './document-tools.js'
+import { SERVER_INSTRUCTIONS } from './instructions.js'
 import { registerTools } from './tools.js'
 
 /**
@@ -27,7 +28,10 @@ function main(): void {
   process.stderr.write(`${NAME} ${VERSION} serving ${root}\n`)
 
   serveStdio(() => {
-    const server = new McpServer({ name: NAME, version: VERSION }, { capabilities: { tools: {} } })
+    const server = new McpServer(
+      { name: NAME, version: VERSION },
+      { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS },
+    )
     registerTools(server, root)
     registerDocumentTools(server, root)
     return server
