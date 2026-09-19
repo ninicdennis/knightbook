@@ -9,3 +9,6 @@ coverage/
 Thumbs.db
 .vite/
 .turbo/
+
+# Coordination state for the app and MCP write lock; never project content.
+.projectspace/.write-lock

@@ -112,3 +112,8 @@
   font-size: 0.85em;
   font-style: italic;
 }
+
+/* Prose inside a dialog: the page-sized headings would dwarf the dialog title. */
+.markdown-body.compact h1 { font-size: 1.15rem; margin-top: 0.4em; }
+.markdown-body.compact h2 { font-size: 1.02rem; }
+.markdown-body.compact h3 { font-size: 0.95rem; }

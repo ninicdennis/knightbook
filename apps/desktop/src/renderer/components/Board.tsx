@@ -22,9 +22,10 @@ interface BoardProps {
   onMove: (ticketId: string, status: MovableStatus) => void
   onComplete: (ticketId: string) => void
   onReview: (ticketId: string) => void
+  onOpen: (ticketId: string) => void
 }
 
-export function Board({ project, busyTicketId, onMove, onComplete, onReview }: BoardProps) {
+export function Board({ project, busyTicketId, onMove, onComplete, onReview, onOpen }: BoardProps) {
   const handleDragEnd = (event: { operation: { source: unknown; target: unknown } }) => {
     const source = event.operation.source as { id?: string } | null
     const target = event.operation.target as { id?: string } | null
@@ -57,6 +58,7 @@ export function Board({ project, busyTicketId, onMove, onComplete, onReview }: B
                       onMove={(next) => onMove(ticket.id, next)}
                       onComplete={() => onComplete(ticket.id)}
                       onReview={() => onReview(ticket.id)}
+                      onOpen={() => onOpen(ticket.id)}
                     />
                   </DraggableTicket>
                 ))

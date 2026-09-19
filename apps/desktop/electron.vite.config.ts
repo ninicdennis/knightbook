@@ -11,6 +11,12 @@ import { resolve } from 'node:path'
  * `@projectspace/core` is a devDependency rather than a dependency for exactly
  * this reason: Vite externalizes runtime dependencies for the main and preload
  * builds, and the workspace library has to be bundled in instead.
+ *
+ * The same goes for the renderer's libraries (React, Mantine, the icon set and
+ * so on). Vite bundles everything the renderer imports into dist/, so listing
+ * them as dependencies makes electron-builder ship all of node_modules a second
+ * time: it took app.asar from 0.4 MB to 99 MB. This package therefore has no
+ * runtime dependencies at all.
  */
 const RUNTIME_PROVIDED = new Set([
   'electron',

@@ -1,9 +1,8 @@
-import { MantineProvider } from '@mantine/core'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from './App.js'
-import type { ProjectView, ProjectspaceApi, TicketView } from '../shared/contract.js'
+import type { ProjectspaceApi } from '../shared/contract.js'
+import { makeApi, project, renderApp, ticket } from './test-fixtures.js'
 
 /**
  * These cover the states the specification says must stay distinguishable: work
@@ -13,67 +12,15 @@ import type { ProjectView, ProjectspaceApi, TicketView } from '../shared/contrac
  * keyboard user takes.
  */
 
-function ticket(overrides: Partial<TicketView> = {}): TicketView {
-  return {
-    id: '11111111-1111-4111-8111-111111111111',
-    title: 'A ticket',
-    status: 'backlog',
-    revision: 'rev-1',
-    dependsOn: [],
-    dependencyReady: true,
-    dependencyNotes: [],
-    blocker: null,
-    completion: null,
-    completionUnattributed: false,
-    review: { state: 'unreviewed', lastReviewedAt: null, changeSummary: null },
-    ...overrides,
-  }
-}
-
-function project(overrides: Partial<ProjectView> = {}): ProjectView {
-  return {
-    name: 'Demo',
-    checkoutPath: 'C:\\projects\\demo',
-    tickets: [ticket()],
-    nextTicketId: null,
-    nextExplanation: '',
-    ...overrides,
-  }
-}
-
 let api: ProjectspaceApi
 /** A fresh instance per test: the shared default keeps pointer state between tests. */
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
   user = userEvent.setup()
-  api = {
-    recentProjects: vi.fn().mockResolvedValue(['C:\\projects\\demo']),
-    chooseProject: vi.fn(),
-    readProject: vi.fn().mockResolvedValue({ ok: true, value: project() }),
-    setTicketStatus: vi.fn(),
-    completeTicket: vi.fn(),
-    recordTicketReview: vi.fn(),
-    readTicket: vi.fn(),
-    listDocuments: vi.fn().mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
-    readDocument: vi.fn(),
-    reviewDocument: vi.fn(),
-    openDocumentExternally: vi.fn(),
-    openExternalLink: vi.fn(),
-    mcpLaunchCommand: vi
-      .fn()
-      .mockResolvedValue({ command: 'node.exe', args: ['server.mjs', '--root', 'demo'] }),
-  }
+  api = makeApi()
   window.projectspace = api
 })
-
-function renderApp() {
-  return render(
-    <MantineProvider env="test">
-      <App />
-    </MantineProvider>,
-  )
-}
 
 describe('opening a project', () => {
   it('reopens the most recent project and shows its checkout path', async () => {
@@ -195,7 +142,7 @@ describe('moving work', () => {
     renderApp()
 
     await screen.findByText('A ticket')
-    await user.click(screen.getByRole('button', { name: /move a ticket/i }))
+    await user.click(screen.getByRole('button', { name: /actions for a ticket/i }))
 
     // Done is absent from the move menu: it is not an ordinary status change.
     const menu = await screen.findByRole('menu')
@@ -224,7 +171,7 @@ describe('moving work', () => {
     renderApp()
 
     await screen.findByText('A ticket')
-    await user.click(screen.getByRole('button', { name: /move a ticket/i }))
+    await user.click(screen.getByRole('button', { name: /actions for a ticket/i }))
     await user.click(await screen.findByText(/accept as done/i))
 
     expect(await screen.findByText(/records that you accepted the work/i)).toBeTruthy()
@@ -246,7 +193,7 @@ describe('moving work', () => {
     renderApp()
 
     await screen.findByText('A ticket')
-    await user.click(screen.getByRole('button', { name: /move a ticket/i }))
+    await user.click(screen.getByRole('button', { name: /actions for a ticket/i }))
     await user.click(within(await screen.findByRole('menu')).getByText('In progress'))
 
     expect(await screen.findByText(/changed somewhere else/i)).toBeTruthy()
@@ -277,7 +224,7 @@ describe('human review (D-003, D-004)', () => {
     renderApp()
 
     await screen.findByText('A ticket')
-    await user.click(screen.getByRole('button', { name: /move a ticket/i }))
+    await user.click(screen.getByRole('button', { name: /actions for a ticket/i }))
     await user.click(await screen.findByText(/mark content reviewed/i))
 
     await waitFor(() =>
@@ -315,7 +262,7 @@ describe('human review (D-003, D-004)', () => {
     await screen.findByText('A ticket')
     expect(screen.getByText(/^unreviewed$/i)).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: /move a ticket/i }))
+    await user.click(screen.getByRole('button', { name: /actions for a ticket/i }))
     await user.click(within(await screen.findByRole('menu')).getByText('In progress'))
 
     await waitFor(() => expect(api.setTicketStatus).toHaveBeenCalled())
@@ -335,7 +282,7 @@ describe('human review (D-003, D-004)', () => {
     renderApp()
 
     await screen.findByText('A ticket')
-    await user.click(screen.getByRole('button', { name: /move a ticket/i }))
+    await user.click(screen.getByRole('button', { name: /actions for a ticket/i }))
     const menu = await screen.findByRole('menu')
     expect(within(menu).queryByText(/mark content reviewed/i)).toBeNull()
   })
