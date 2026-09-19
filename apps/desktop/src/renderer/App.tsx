@@ -11,7 +11,12 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
-import type { MovableStatus, ProjectView, Result } from '../shared/contract.js'
+import type {
+  MovableStatus,
+  ProjectView,
+  RememberedProject,
+  Result,
+} from '../shared/contract.js'
 import { Board } from './components/Board.js'
 import { CompletionDialog } from './components/CompletionDialog.js'
 import { DocumentsView } from './components/DocumentsView.js'
@@ -35,7 +40,7 @@ type Screen =
 
 export function App() {
   const [screen, setScreen] = useState<Screen>({ kind: 'welcome' })
-  const [recentProjects, setRecentProjects] = useState<string[]>([])
+  const [recentProjects, setRecentProjects] = useState<RememberedProject[]>([])
   const [busyTicketId, setBusyTicketId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [pendingCompletion, setPendingCompletion] = useState<string | null>(null)
@@ -52,7 +57,7 @@ export function App() {
     const result = await window.projectspace.readProject(path)
     if (result.ok) {
       setScreen({ kind: 'open', path, project: result.value })
-      void window.projectspace.recentProjects().then(setRecentProjects)
+      void window.projectspace.rememberedProjects().then(setRecentProjects)
     } else {
       setScreen({ kind: 'failed', path, code: result.code, message: result.message })
     }
@@ -64,9 +69,9 @@ export function App() {
    * screen rather than silently showing nothing.
    */
   useEffect(() => {
-    void window.projectspace.recentProjects().then((recent) => {
+    void window.projectspace.rememberedProjects().then((recent) => {
       setRecentProjects(recent)
-      if (recent[0]) void load(recent[0])
+      if (recent[0]) void load(recent[0].path)
     })
   }, [load])
 
@@ -202,6 +207,17 @@ export function App() {
     if (detailId && !detailTicket) setDetailId(null)
   }, [detailId, detailTicket])
 
+  const switchProject = useCallback(
+    (path: string) => {
+      if (screen.kind === 'open' && screen.path === path) return
+      setView('board')
+      setDetailId(null)
+      setDocumentTarget(null)
+      void load(path)
+    },
+    [screen, load],
+  )
+
   const openDocument = useCallback((path: string) => {
     setDetailId(null)
     setView('documents')
@@ -219,7 +235,13 @@ export function App() {
             onViewChange={setView}
             refreshing={refreshing}
             onRefresh={() => void refresh()}
-            onOpenAnother={() => void choose()}
+            switchBlockedReason={
+              busyTicketId !== null
+                ? 'A ticket is being updated. Switching is available once that finishes.'
+                : null
+            }
+            onSwitchProject={switchProject}
+            onOpenFolder={() => void choose()}
           />
         </AppShell.Header>
       )}

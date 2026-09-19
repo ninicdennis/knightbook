@@ -7,7 +7,8 @@ import type { ProjectspaceApi } from '../shared/contract.js'
  * arbitrary IPC channel.
  */
 const api: ProjectspaceApi = {
-  recentProjects: () => ipcRenderer.invoke('app:recentProjects'),
+  rememberedProjects: () => ipcRenderer.invoke('app:rememberedProjects'),
+  forgetProject: (path) => ipcRenderer.invoke('app:forgetProject', path),
   chooseProject: () => ipcRenderer.invoke('project:choose'),
   readProject: (rootPath) => ipcRenderer.invoke('project:read', rootPath),
   setTicketStatus: (rootPath, id, status, revision) =>

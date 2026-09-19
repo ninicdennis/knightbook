@@ -1,5 +1,6 @@
 import { Alert, Button, Card, Center, Group, Stack, Text, Title, UnstyledButton } from '@mantine/core'
 import { IconFolderOpen, IconHistory, IconInfoCircle } from '@tabler/icons-react'
+import type { RememberedProject } from '../../shared/contract.js'
 
 /**
  * The state before a project is open, and the state where a folder was chosen
@@ -8,7 +9,7 @@ import { IconFolderOpen, IconHistory, IconInfoCircle } from '@tabler/icons-react
  */
 
 interface Props {
-  recentProjects: string[]
+  recentProjects: RememberedProject[]
   notAProject: string | null
   onChoose: () => void
   onOpenRecent: (path: string) => void
@@ -63,10 +64,13 @@ export function Welcome({ recentProjects, notAProject, onChoose, onOpenRecent }:
                 Recent
               </Text>
             </Group>
-            {recentProjects.map((path) => (
+            {recentProjects.map(({ path, name }) => (
               <UnstyledButton key={path} onClick={() => onOpenRecent(path)}>
                 <Card withBorder padding="xs" radius="sm">
-                  <Text size="sm" style={{ wordBreak: 'break-all' }}>
+                  <Text size="sm" fw={500}>
+                    {name}
+                  </Text>
+                  <Text size="xs" c="dimmed" style={{ wordBreak: 'break-all' }}>
                     {path}
                   </Text>
                 </Card>

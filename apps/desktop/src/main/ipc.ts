@@ -10,9 +10,10 @@ import {
   updateTicket,
   type Project,
 } from '@projectspace/core'
-import { readAppState, rememberProject } from './app-state.js'
+import { forgetProject, readAppState, rememberProject } from './app-state.js'
 import { guard } from './guard.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
+import { describeRememberedProjects } from './remembered-projects.js'
 import { toTicketDetail, toTicketView } from './ticket-view.js'
 import type { ProjectView } from '../shared/contract.js'
 
@@ -41,7 +42,14 @@ async function buildView(project: Project): Promise<ProjectView> {
 }
 
 export function registerProjectHandlers(): void {
-  ipcMain.handle('app:recentProjects', async () => (await readAppState()).recentProjects)
+  ipcMain.handle('app:rememberedProjects', async () =>
+    await describeRememberedProjects((await readAppState()).recentProjects),
+  )
+
+  ipcMain.handle('app:forgetProject', async (_event, path: unknown) => {
+    if (typeof path !== 'string') throw new Error('A project path is required.')
+    return await describeRememberedProjects((await forgetProject(path)).recentProjects)
+  })
 
   ipcMain.handle('project:choose', async () => {
     const chosen = await dialog.showOpenDialog({
@@ -60,7 +68,7 @@ export function registerProjectHandlers(): void {
         throw new Error('A project path is required.')
       }
       const project = await openProject(rootPath)
-      await rememberProject(project.root.path)
+      await rememberProject(project.root.path, project.frontmatter.name)
       return await buildView(project)
     }),
   )

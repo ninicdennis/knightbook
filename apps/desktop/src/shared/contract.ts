@@ -73,13 +73,23 @@ export interface ChosenFolder {
   initialized: boolean
 }
 
+export interface RememberedProject {
+  path: string
+  name: string
+  /** Why it cannot be opened right now, or null when it can. */
+  unavailable: string | null
+}
+
 export interface McpLaunchCommand {
   command: string
   args: string[]
 }
 
 export interface ProjectspaceApi extends DocumentsApi {
-  recentProjects(): Promise<string[]>
+  /** Projects this machine has opened, most recent first, each checked for availability. */
+  rememberedProjects(): Promise<RememberedProject[]>
+  /** Forgets one entry and returns the updated list. Deletes nothing on disk. */
+  forgetProject(path: string): Promise<RememberedProject[]>
   chooseProject(): Promise<ChosenFolder | null>
   readProject(rootPath: string): Promise<Result<ProjectView>>
   setTicketStatus(
