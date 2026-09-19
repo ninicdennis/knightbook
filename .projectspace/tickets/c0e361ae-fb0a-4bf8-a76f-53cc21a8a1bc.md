@@ -2,11 +2,17 @@
 schema_version: 1
 id: c0e361ae-fb0a-4bf8-a76f-53cc21a8a1bc
 title: "MCP server exposing the section 9 operations over stdio"
-status: verification
+status: done
 depends_on: []
 created_at: 2026-09-19T20:05:15.070Z
-updated_at: 2026-09-19T20:05:15.084Z
+updated_at: 2026-09-19T21:35:33.372Z
 related_documents: [ "docs/project-workspace-technical-design.md" ]
+completion:
+  decision_source: direct_user_action
+  recorded_by: user
+  recorded_at: 2026-09-19T21:35:33.372Z
+  instruction: Moved to Done in the app.
+  accepted_revision: b013447a894ab471db9e90c75dd5fae1
 ---
 
 # MCP server
