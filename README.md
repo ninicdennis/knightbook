@@ -24,10 +24,10 @@ verified path.
 | Desktop board | Four columns, drag and menu moves, a ticket detail dialog, a project switcher, one-click setup for a folder with no project yet, completion and review with provenance, refresh (button, and whenever the window regains focus); a malformed ticket or merge conflict is listed instead of blocking the board |
 | Document viewer | Read-only rendering of included documents, in-app review, external-editor handoff |
 | AI workflow guidance | A portable skill file plus rules sent by the server on connect; not yet exercised in a real AI session |
-| Continuous integration | A GitHub Actions workflow checks and builds every pull request on Windows, Linux and macOS; written but not yet run on GitHub |
+| Continuous integration | A GitHub Actions workflow lints, format-checks, typechecks, tests, builds and packages every pull request on Windows, Linux and macOS; green on all three. It reports results but is not yet a required check |
 | Human review tracking | Tracked and surfaced for both tickets and documents, in the app and through MCP |
 | Document editing | Not started — the formatted editor is blocked on the Milkdown finding; reading works now |
-| macOS and Linux | Not yet validated; only Windows has been built and run |
+| macOS and Linux | Built, packaged and tested in CI, including the bundled MCP server run from the package. The app window has not been launched on either, and no installer has been built |
 
 ## Continuous integration
 
