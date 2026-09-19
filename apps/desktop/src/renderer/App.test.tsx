@@ -30,16 +30,6 @@ describe('opening a project', () => {
     expect(screen.getByText('C:\\projects\\demo')).toBeTruthy()
   })
 
-  it('explains a folder that holds no project records without calling it an error', async () => {
-    api.rememberedProjects = vi.fn().mockResolvedValue([])
-    api.chooseProject = vi.fn().mockResolvedValue({ path: 'C:\\code\\app', initialized: false })
-    renderApp()
-
-    await user.click(await screen.findByRole('button', { name: /choose a project folder/i }))
-    expect(await screen.findByText(/no project records here yet/i)).toBeTruthy()
-    expect(screen.getByText(/nothing was changed/i)).toBeTruthy()
-  })
-
   it('reports a load failure and says the files were left alone', async () => {
     api.readProject = vi.fn().mockResolvedValue({
       ok: false,

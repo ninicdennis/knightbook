@@ -21,6 +21,7 @@ import { Board } from './components/Board.js'
 import { CompletionDialog } from './components/CompletionDialog.js'
 import { DocumentsView } from './components/DocumentsView.js'
 import { ProjectHeader } from './components/ProjectHeader.js'
+import { SetupFolder } from './components/SetupFolder.js'
 import { TicketDetailModal } from './components/TicketDetailModal.js'
 import { Welcome } from './components/Welcome.js'
 import { useRefreshOnFocus } from './hooks/useRefreshOnFocus.js'
@@ -84,6 +85,15 @@ export function App() {
     }
     await load(chosen.path)
   }, [load])
+
+  const openAfterSetup = useCallback(
+    async (path: string, warning: string | null) => {
+      await load(path)
+      // load() clears any standing message, so this has to come after it.
+      if (warning) setActionError(warning)
+    },
+    [load],
+  )
 
   /** Applies a mutation, then replaces the whole view with what the files now say. */
   const apply = useCallback(
@@ -250,18 +260,16 @@ export function App() {
         {screen.kind === 'welcome' && (
           <Welcome
             recentProjects={recentProjects}
-            notAProject={null}
             onChoose={() => void choose()}
             onOpenRecent={(path) => void load(path)}
           />
         )}
 
         {screen.kind === 'not-a-project' && (
-          <Welcome
-            recentProjects={recentProjects}
-            notAProject={screen.path}
-            onChoose={() => void choose()}
-            onOpenRecent={(path) => void load(path)}
+          <SetupFolder
+            path={screen.path}
+            onSetUp={openAfterSetup}
+            onChooseAnother={() => void choose()}
           />
         )}
 

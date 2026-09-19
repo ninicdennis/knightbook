@@ -1,17 +1,6 @@
-import {
-  ActionIcon,
-  Code,
-  CopyButton,
-  Group,
-  SegmentedControl,
-  Stack,
-  Text,
-  Title,
-  Tooltip,
-} from '@mantine/core'
-import { IconCheck, IconPlugConnected, IconRefresh } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
-import type { McpLaunchCommand } from '../../shared/contract.js'
+import { ActionIcon, Group, SegmentedControl, Stack, Text, Title, Tooltip } from '@mantine/core'
+import { IconRefresh } from '@tabler/icons-react'
+import { CopyMcpConfig } from './CopyMcpConfig.js'
 import { ProjectSwitcher } from './ProjectSwitcher.js'
 
 /**
@@ -49,22 +38,6 @@ export function ProjectHeader({
   onSwitchProject,
   onOpenFolder,
 }: Props) {
-  const [launch, setLaunch] = useState<McpLaunchCommand | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    void window.projectspace.mcpLaunchCommand(checkoutPath).then((command) => {
-      if (!cancelled) setLaunch(command)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [checkoutPath])
-
-  const configJson = launch
-    ? JSON.stringify({ command: launch.command, args: launch.args }, null, 2)
-    : ''
-
   return (
     <Group justify="space-between" align="flex-start" wrap="nowrap">
       <Group gap="sm" align="flex-start" wrap="nowrap" style={{ minWidth: 0 }}>
@@ -110,44 +83,8 @@ export function ProjectHeader({
           </ActionIcon>
         </Tooltip>
 
-        {configJson && (
-          <CopyButton value={configJson} timeout={2000}>
-            {({ copied, copy }) => (
-              <Tooltip
-                multiline
-                w={320}
-                withArrow
-                label={
-                  copied
-                    ? 'Copied. Paste it into your AI client config.'
-                    : 'Copy this project’s MCP configuration for your AI client.'
-                }
-              >
-                <ActionIcon
-                  variant="default"
-                  size="lg"
-                  onClick={copy}
-                  aria-label="Copy MCP configuration"
-                >
-                  {copied ? <IconCheck size={18} /> : <IconPlugConnected size={18} />}
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </CopyButton>
-        )}
+        <CopyMcpConfig rootPath={checkoutPath} />
       </Group>
     </Group>
-  )
-}
-
-/** Shown on the welcome screen so setup is discoverable before a project is open. */
-export function LaunchCommandHint({ command }: { command: McpLaunchCommand }) {
-  return (
-    <Stack gap={4}>
-      <Text size="xs" c="dimmed">
-        Your AI client starts this itself, so project access does not need this window open.
-      </Text>
-      <Code block>{`${command.command}\n${command.args.join(' ')}`}</Code>
-    </Stack>
   )
 }

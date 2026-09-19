@@ -80,6 +80,19 @@ export interface RememberedProject {
   unavailable: string | null
 }
 
+export interface FolderInspection {
+  /** The folder's own name, offered as the default project name. */
+  name: string
+  /** Existing documents worth offering to include, as project-relative paths. */
+  suggestions: string[]
+}
+
+export interface SetupOutcome {
+  path: string
+  /** Set when the project exists but something asked for could not be done. */
+  warning: string | null
+}
+
 export interface McpLaunchCommand {
   command: string
   args: string[]
@@ -91,6 +104,10 @@ export interface ProjectspaceApi extends DocumentsApi {
   /** Forgets one entry and returns the updated list. Deletes nothing on disk. */
   forgetProject(path: string): Promise<RememberedProject[]>
   chooseProject(): Promise<ChosenFolder | null>
+  /** What is in a folder the user just chose that has no project yet. */
+  inspectFolder(path: string): Promise<Result<FolderInspection>>
+  /** Creates project records in that folder, and includes the named documents in place. */
+  setUpFolder(path: string, name: string, include: string[]): Promise<Result<SetupOutcome>>
   readProject(rootPath: string): Promise<Result<ProjectView>>
   setTicketStatus(
     rootPath: string,

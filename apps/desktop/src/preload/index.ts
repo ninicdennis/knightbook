@@ -10,6 +10,8 @@ const api: ProjectspaceApi = {
   rememberedProjects: () => ipcRenderer.invoke('app:rememberedProjects'),
   forgetProject: (path) => ipcRenderer.invoke('app:forgetProject', path),
   chooseProject: () => ipcRenderer.invoke('project:choose'),
+  inspectFolder: (path) => ipcRenderer.invoke('project:inspectFolder', path),
+  setUpFolder: (path, name, include) => ipcRenderer.invoke('project:setUp', path, name, include),
   readProject: (rootPath) => ipcRenderer.invoke('project:read', rootPath),
   setTicketStatus: (rootPath, id, status, revision) =>
     ipcRenderer.invoke('ticket:setStatus', rootPath, id, status, revision),
