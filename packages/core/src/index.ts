@@ -24,12 +24,15 @@ export {
 } from './project.js'
 export {
   createTicket,
+  listTicketRecords,
   listTickets,
   readTicket,
   updateTicket,
   sortByBacklogOrder,
   type CreateTicketInput,
   type Ticket,
+  type TicketListing,
+  type TicketProblem,
   type UpdateTicketInput,
 } from './tickets.js'
 export {

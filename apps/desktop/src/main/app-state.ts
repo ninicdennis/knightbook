@@ -27,7 +27,9 @@ function statePath(): string {
 export async function readAppState(): Promise<AppState> {
   try {
     const parsed = JSON.parse(await readFile(statePath(), 'utf8')) as { recentProjects?: unknown }
-    return { recentProjects: parseRememberedEntries(parsed.recentProjects).slice(0, MAX_REMEMBERED) }
+    return {
+      recentProjects: parseRememberedEntries(parsed.recentProjects).slice(0, MAX_REMEMBERED),
+    }
   } catch {
     // Absent or unreadable state is not an error: it is simply a first run.
     return EMPTY

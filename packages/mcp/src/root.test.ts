@@ -9,7 +9,8 @@ import { parseRootArgument } from './root.js'
 
 describe('root binding', () => {
   it('reads a separate --root argument', () => {
-    expect(parseRootArgument(['--root', 'C:\projects\thing'])).toBe('C:\projects\thing')
+    const path = String.raw`C:\projects\thing`
+    expect(parseRootArgument(['--root', path])).toBe(path)
   })
 
   it('reads an inline --root=value argument', () => {
@@ -17,7 +18,8 @@ describe('root binding', () => {
   })
 
   it('accepts a path containing spaces', () => {
-    expect(parseRootArgument(['--root', 'C:\My Projects\thing'])).toBe('C:\My Projects\thing')
+    const path = String.raw`C:\My Projects\thing`
+    expect(parseRootArgument(['--root', path])).toBe(path)
   })
 
   it('refuses to start without a root rather than guessing one', () => {

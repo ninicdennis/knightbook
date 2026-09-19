@@ -109,10 +109,7 @@ export async function openProject(rootPath: string): Promise<Project> {
 }
 
 /** Reordering the backlog edits only the manifest, never ticket files. */
-export async function setBacklogOrder(
-  project: Project,
-  order: string[],
-): Promise<Project> {
+export async function setBacklogOrder(project: Project, order: string[]): Promise<Project> {
   const path = reservedPaths.projectFile(project.root)
   const { content, revision } = await readRecord(project.root, path)
   const record = parseRecord(content)
@@ -120,7 +117,11 @@ export async function setBacklogOrder(
 
   const next = serializeRecord(record)
   const written = await writeRecord(project.root, path, next, { expectedRevision: revision })
-  return { ...project, frontmatter: { ...project.frontmatter, backlog_order: order }, revision: written.revision }
+  return {
+    ...project,
+    frontmatter: { ...project.frontmatter, backlog_order: order },
+    revision: written.revision,
+  }
 }
 
 function renderProject(frontmatter: ProjectFrontmatter, body: string, _now: string): string {

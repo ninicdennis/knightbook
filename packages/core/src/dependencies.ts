@@ -11,6 +11,7 @@ const SATISFYING_STATUSES = new Set(['verification', 'done'])
 export type IneligibilityReason =
   | { kind: 'prerequisite_not_ready'; ticketId: string; title: string; status: string }
   | { kind: 'prerequisite_missing'; ticketId: string }
+  | { kind: 'prerequisite_unreadable'; ticketId: string }
   | { kind: 'self_dependency' }
   | { kind: 'dependency_cycle'; cycle: string[] }
   | { kind: 'blocked'; explanation: string }
@@ -23,6 +24,8 @@ export interface Readiness {
 export function evaluateReadiness(
   ticket: TicketFrontmatter,
   all: ReadonlyMap<string, TicketFrontmatter>,
+  /** Ids of ticket files that exist but could not be read, so they are not called missing. */
+  unreadable: ReadonlySet<string> = new Set(),
 ): Readiness {
   const reasons: IneligibilityReason[] = []
 
@@ -37,7 +40,11 @@ export function evaluateReadiness(
     }
     const prerequisite = all.get(id)
     if (!prerequisite) {
-      reasons.push({ kind: 'prerequisite_missing', ticketId: id })
+      reasons.push(
+        unreadable.has(id)
+          ? { kind: 'prerequisite_unreadable', ticketId: id }
+          : { kind: 'prerequisite_missing', ticketId: id },
+      )
       continue
     }
     if (!SATISFYING_STATUSES.has(prerequisite.status)) {
@@ -57,10 +64,7 @@ export function evaluateReadiness(
 }
 
 /** Returns the cycle path if this ticket participates in one, else null. */
-function findCycle(
-  start: string,
-  all: ReadonlyMap<string, TicketFrontmatter>,
-): string[] | null {
+function findCycle(start: string, all: ReadonlyMap<string, TicketFrontmatter>): string[] | null {
   const path: string[] = []
   const onPath = new Set<string>()
   const settled = new Set<string>()
@@ -93,6 +97,8 @@ export function describeReason(reason: IneligibilityReason): string {
       return `waiting on "${reason.title}" (${reason.ticketId}), which is ${reason.status}`
     case 'prerequisite_missing':
       return `depends on ${reason.ticketId}, which does not exist in this project`
+    case 'prerequisite_unreadable':
+      return `depends on ${reason.ticketId}, whose file could not be read (see the record problems)`
     case 'self_dependency':
       return 'depends on itself'
     case 'dependency_cycle':

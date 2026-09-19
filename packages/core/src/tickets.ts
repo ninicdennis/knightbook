@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { readdir } from 'node:fs/promises'
-import { ProjectError } from './errors.js'
+import { isProjectError, ProjectError } from './errors.js'
 import {
   assertNoConflictMarkers,
   assertSupportedSchema,
@@ -8,7 +8,7 @@ import {
   serializeRecord,
   SUPPORTED_SCHEMA_VERSION,
 } from './frontmatter.js'
-import { reservedPaths } from './paths.js'
+import { RESERVED_DIR, reservedPaths } from './paths.js'
 import type { Project } from './project.js'
 import type { Revision } from './revision.js'
 import {
@@ -59,10 +59,15 @@ export async function createTicket(project: Project, input: CreateTicketInput): 
   return { frontmatter, body, revision }
 }
 
-export async function readTicket(project: Project, id: string): Promise<Ticket> {
-  const path = reservedPaths.ticketFile(project.root, id)
-  const { content, revision } = await readRecord(project.root, path)
-
+/**
+ * Throws `invalid_record` unless the file is a ticket the app can trust. Reads
+ * and writes both go through this, so a record that fails to load also refuses
+ * to be edited (technical design section 3).
+ */
+function parseTicket(
+  content: string,
+  id: string,
+): { frontmatter: TicketFrontmatter; body: string } {
   assertNoConflictMarkers(content, `tickets/${id}.md`)
   const record = parseRecord(content)
   assertSupportedSchema(record)
@@ -77,23 +82,70 @@ export async function readTicket(project: Project, id: string): Promise<Ticket> 
       `Ticket file ${id}.md declares a different id (${parsed.data.id}).`,
     )
   }
-
-  return { frontmatter: parsed.data, body: record.body, revision }
+  return { frontmatter: parsed.data, body: record.body }
 }
 
-export async function listTickets(project: Project): Promise<Ticket[]> {
+export async function readTicket(project: Project, id: string): Promise<Ticket> {
+  const path = reservedPaths.ticketFile(project.root, id)
+  const { content, revision } = await readRecord(project.root, path)
+  return { ...parseTicket(content, id), revision }
+}
+
+/** A ticket file that could not be used, and why. Its bytes are never touched. */
+export interface TicketProblem {
+  /** The id in the file name. The file's own id cannot be trusted when it is what is wrong. */
+  readonly id: string
+  /** Project-relative path, for showing to a person. */
+  readonly file: string
+  readonly code: string
+  readonly reason: string
+}
+
+export interface TicketListing {
+  readonly tickets: Ticket[]
+  readonly problems: TicketProblem[]
+}
+
+/**
+ * Every ticket file, sorted into the tickets that loaded and the files that did
+ * not. One malformed ticket or an unresolved merge conflict must not take the
+ * whole project down, so failures are collected rather than thrown.
+ */
+export async function listTicketRecords(project: Project): Promise<TicketListing> {
   let files: string[]
   try {
     files = await readdir(reservedPaths.ticketsDir(project.root))
   } catch {
-    return []
+    return { tickets: [], problems: [] }
   }
 
   const tickets: Ticket[] = []
-  for (const file of files.filter((f) => f.endsWith('.md'))) {
-    tickets.push(await readTicket(project, file.slice(0, -3)))
+  const problems: TicketProblem[] = []
+  for (const file of files.filter((f) => f.endsWith('.md')).sort()) {
+    const id = file.slice(0, -3)
+    try {
+      tickets.push(await readTicket(project, id))
+    } catch (error) {
+      problems.push(toProblem(id, file, error))
+    }
   }
-  return sortByBacklogOrder(tickets, project.frontmatter.backlog_order)
+  return { tickets: sortByBacklogOrder(tickets, project.frontmatter.backlog_order), problems }
+}
+
+function toProblem(id: string, file: string, error: unknown): TicketProblem {
+  const path = `${RESERVED_DIR}/tickets/${file}`
+  if (isProjectError(error)) return { id, file: path, code: error.code, reason: error.message }
+  return {
+    id,
+    file: path,
+    code: 'not_readable',
+    reason: `Could not be read: ${error instanceof Error ? error.message : String(error)}`,
+  }
+}
+
+/** The tickets that loaded. Files that did not are reported by listTicketRecords. */
+export async function listTickets(project: Project): Promise<Ticket[]> {
+  return (await listTicketRecords(project)).tickets
 }
 
 /**
@@ -135,12 +187,14 @@ export async function updateTicket(
     throw new ProjectError(
       'invalid_transition',
       `A general update cannot set status to "${input.status}". ` +
-        'Recording completion requires the user\'s explicit instruction through ticket_record_user_completion.',
+        "Recording completion requires the user's explicit instruction through ticket_record_user_completion.",
     )
   }
 
   const path = reservedPaths.ticketFile(project.root, id)
   const { content } = await readRecord(project.root, path)
+  // Refuse before changing anything: an invalid record stays exactly as it is.
+  parseTicket(content, id)
   const record = parseRecord(content)
 
   if (input.title !== undefined) record.data.set('title', input.title)

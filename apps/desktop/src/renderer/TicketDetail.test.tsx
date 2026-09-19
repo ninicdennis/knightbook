@@ -119,9 +119,15 @@ describe('what the detail view says about a ticket', () => {
       ok: true,
       value: detail({
         dependencies: [
-          { id: 'd1', title: 'Safe writes', status: 'in_progress', satisfied: false },
-          { id: 'd2', title: 'Schema', status: 'verification', satisfied: true },
-          { id: 'd3', title: null, status: null, satisfied: false },
+          {
+            id: 'd1',
+            title: 'Safe writes',
+            status: 'in_progress',
+            satisfied: false,
+            unreadable: false,
+          },
+          { id: 'd2', title: 'Schema', status: 'verification', satisfied: true, unreadable: false },
+          { id: 'd3', title: null, status: null, satisfied: false, unreadable: false },
         ],
       }),
     })
@@ -232,7 +238,11 @@ describe('acting from the detail view', () => {
       value: project({
         tickets: [
           ticket({
-            review: { state: 'reviewed', lastReviewedAt: '2026-09-19T12:00:00Z', changeSummary: null },
+            review: {
+              state: 'reviewed',
+              lastReviewedAt: '2026-09-19T12:00:00Z',
+              changeSummary: null,
+            },
           }),
         ],
       }),
@@ -248,7 +258,11 @@ describe('acting from the detail view', () => {
     )
     expect(screen.getByRole('dialog')).toBeTruthy()
     await waitFor(() =>
-      expect(within(screen.getByRole('dialog')).queryByRole('button', { name: /mark content reviewed/i })).toBeNull(),
+      expect(
+        within(screen.getByRole('dialog')).queryByRole('button', {
+          name: /mark content reviewed/i,
+        }),
+      ).toBeNull(),
     )
     expect(within(screen.getByRole('dialog')).getByText(/reviewed by you/i)).toBeTruthy()
     // The dialog re-read the ticket rather than trusting its earlier copy.

@@ -192,7 +192,9 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
           <DocumentReader
             document={document}
             onReview={() => void review()}
-            onOpenExternally={() => void window.projectspace.openDocumentExternally(rootPath, document.path)}
+            onOpenExternally={() =>
+              void window.projectspace.openDocumentExternally(rootPath, document.path)
+            }
             onFollowLink={(path) => setSelected(path)}
           />
         )}
@@ -231,7 +233,12 @@ function DocumentReader({
 
         <Group gap="xs" wrap="nowrap">
           {document.review.state !== 'reviewed' && (
-            <Button size="xs" variant="default" leftSection={<IconEye size={14} />} onClick={onReview}>
+            <Button
+              size="xs"
+              variant="default"
+              leftSection={<IconEye size={14} />}
+              onClick={onReview}
+            >
               Mark reviewed
             </Button>
           )}
@@ -260,4 +267,3 @@ function DocumentReader({
     </Stack>
   )
 }
-

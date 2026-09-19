@@ -25,9 +25,7 @@ let user: ReturnType<typeof userEvent.setup>
 beforeEach(() => {
   user = userEvent.setup()
   api = makeApi()
-  api.rememberedProjects = vi
-    .fn()
-    .mockResolvedValue([REMEMBERED, SECOND_PROJECT, GONE_PROJECT])
+  api.rememberedProjects = vi.fn().mockResolvedValue([REMEMBERED, SECOND_PROJECT, GONE_PROJECT])
   window.projectspace = api
 })
 
@@ -48,7 +46,9 @@ describe('the project menu', () => {
     expect(within(menu).getByText('Second app')).toBeTruthy()
     expect(within(menu).getByText(SECOND)).toBeTruthy()
     expect(
-      within(menu).getByRole('button', { name: /switch to second app/i }).getAttribute('aria-current'),
+      within(menu)
+        .getByRole('button', { name: /switch to second app/i })
+        .getAttribute('aria-current'),
     ).toBeNull()
   })
 
@@ -88,7 +88,9 @@ describe('the project menu', () => {
     await user.click(screen.getByText('Documents'))
     await user.click(screen.getByRole('button', { name: /open project menu/i }))
     await user.click(
-      within(await screen.findByRole('dialog')).getByRole('button', { name: /switch to second app/i }),
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: /switch to second app/i,
+      }),
     )
 
     expect(await screen.findByText('A ticket')).toBeTruthy()
@@ -119,7 +121,9 @@ describe('the project menu', () => {
     renderApp()
     const menu = await openMenu()
 
-    expect(within(menu).getByText(/AI tools already connected keep using the project/i)).toBeTruthy()
+    expect(
+      within(menu).getByText(/AI tools already connected keep using the project/i),
+    ).toBeTruthy()
   })
 })
 
@@ -205,10 +209,14 @@ describe('switching while a move is in flight', () => {
 
     expect(within(menu).getByText(/a ticket is being updated/i)).toBeTruthy()
     expect(
-      within(menu).getByRole('button', { name: /switch to second app/i }).hasAttribute('disabled'),
+      within(menu)
+        .getByRole('button', { name: /switch to second app/i })
+        .hasAttribute('disabled'),
     ).toBe(true)
-    expect(within(menu).getByRole('button', { name: /open folder/i }).hasAttribute('disabled')).toBe(
-      true,
-    )
+    expect(
+      within(menu)
+        .getByRole('button', { name: /open folder/i })
+        .hasAttribute('disabled'),
+    ).toBe(true)
   })
 })

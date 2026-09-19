@@ -94,7 +94,9 @@ export function explainSetupFailure(error: unknown): Error {
           'No project was created. Choose a folder you can write to.',
       )
     case 'ENOSPC':
-      return new Error('The disk is full, so the project could not be created. Free some space and try again.')
+      return new Error(
+        'The disk is full, so the project could not be created. Free some space and try again.',
+      )
     case 'ENOENT':
       return new Error('This folder no longer exists. Choose the folder again.')
     default:

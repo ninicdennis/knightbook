@@ -21,7 +21,7 @@ verified path.
 | Packaging smoke test | Complete on Windows — [findings](docs/experiments/packaging-findings.md) |
 | Shared core library | Safe writes, records, dependencies, completion, documents, search, review |
 | MCP surface | Fourteen tools: the ten section 9 operations plus ticket_next, ticket_read, documents_list and review_status; packaged and validated |
-| Desktop board | Four columns, drag and menu moves, a ticket detail dialog, a project switcher, one-click setup for a folder with no project yet, completion and review with provenance, refresh (button, and whenever the window regains focus) |
+| Desktop board | Four columns, drag and menu moves, a ticket detail dialog, a project switcher, one-click setup for a folder with no project yet, completion and review with provenance, refresh (button, and whenever the window regains focus); a malformed ticket or merge conflict is listed instead of blocking the board |
 | Document viewer | Read-only rendering of included documents, in-app review, external-editor handoff |
 | AI workflow guidance | A portable skill file plus rules sent by the server on connect; not yet exercised in a real AI session |
 | Human review tracking | Tracked and surfaced for both tickets and documents, in the app and through MCP |
@@ -43,7 +43,9 @@ pnpm install
 pnpm check
 ```
 
-`pnpm check` runs typecheck and every test suite. Other useful commands:
+`pnpm check` runs the linter (Oxlint), the formatting check (Prettier), typecheck, and
+every test suite. `pnpm format` rewrites files to the project style; it leaves Markdown
+and the `.projectspace/` records alone. Other useful commands:
 
 ```bash
 pnpm pack:dir

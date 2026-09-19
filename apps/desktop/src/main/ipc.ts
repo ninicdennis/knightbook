@@ -1,6 +1,6 @@
 import { dialog, ipcMain } from 'electron'
 import {
-  listTickets,
+  listTicketRecords,
   openProject,
   projectExists,
   recordTicketReview,
@@ -15,7 +15,7 @@ import { guard } from './guard.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
 import { describeRememberedProjects } from './remembered-projects.js'
 import { allowSetupFor } from './setup-permit.js'
-import { toTicketDetail, toTicketView } from './ticket-view.js'
+import { buildLookup, toTicketDetail, toTicketView } from './ticket-view.js'
 import type { ProjectView } from '../shared/contract.js'
 
 /**
@@ -26,25 +26,27 @@ import type { ProjectView } from '../shared/contract.js'
  */
 
 async function buildView(project: Project): Promise<ProjectView> {
-  const tickets = await listTickets(project)
-  const byId = new Map(tickets.map((t) => [t.frontmatter.id, t.frontmatter]))
+  const listing = await listTicketRecords(project)
+  const lookup = buildLookup(listing)
   const next = await selectNextTicket(project)
 
   const views = []
-  for (const ticket of tickets) views.push(await toTicketView(project, ticket, byId))
+  for (const ticket of listing.tickets) views.push(await toTicketView(project, ticket, lookup))
 
   return {
     name: project.frontmatter.name,
     checkoutPath: project.root.path,
     tickets: views,
+    problems: listing.problems.map(({ file, reason }) => ({ file, reason })),
     nextTicketId: next.next?.frontmatter.id ?? null,
     nextExplanation: next.explanation,
   }
 }
 
 export function registerProjectHandlers(): void {
-  ipcMain.handle('app:rememberedProjects', async () =>
-    await describeRememberedProjects((await readAppState()).recentProjects),
+  ipcMain.handle(
+    'app:rememberedProjects',
+    async () => await describeRememberedProjects((await readAppState()).recentProjects),
   )
 
   ipcMain.handle('app:forgetProject', async (_event, path: unknown) => {
@@ -66,15 +68,17 @@ export function registerProjectHandlers(): void {
     return { path: root.path, initialized }
   })
 
-  ipcMain.handle('project:read', async (_event, rootPath: unknown) =>
-    await guard<ProjectView>(async () => {
-      if (typeof rootPath !== 'string') {
-        throw new Error('A project path is required.')
-      }
-      const project = await openProject(rootPath)
-      await rememberProject(project.root.path, project.frontmatter.name)
-      return await buildView(project)
-    }),
+  ipcMain.handle(
+    'project:read',
+    async (_event, rootPath: unknown) =>
+      await guard<ProjectView>(async () => {
+        if (typeof rootPath !== 'string') {
+          throw new Error('A project path is required.')
+        }
+        const project = await openProject(rootPath)
+        await rememberProject(project.root.path, project.frontmatter.name)
+        return await buildView(project)
+      }),
   )
 
   ipcMain.handle(
@@ -105,7 +109,11 @@ export function registerProjectHandlers(): void {
     'ticket:complete',
     async (_event, rootPath: unknown, id: unknown, revision: unknown) =>
       await guard<ProjectView>(async () => {
-        if (typeof rootPath !== 'string' || typeof id !== 'string' || typeof revision !== 'string') {
+        if (
+          typeof rootPath !== 'string' ||
+          typeof id !== 'string' ||
+          typeof revision !== 'string'
+        ) {
           throw new Error('A project, ticket, and revision are required.')
         }
 
@@ -139,13 +147,15 @@ export function registerProjectHandlers(): void {
       }),
   )
 
-  ipcMain.handle('ticket:read', async (_event, rootPath: unknown, id: unknown) =>
-    await guard(async () => {
-      if (typeof rootPath !== 'string' || typeof id !== 'string') {
-        throw new Error('A project and ticket are required.')
-      }
-      return await toTicketDetail(await openProject(rootPath), id)
-    }),
+  ipcMain.handle(
+    'ticket:read',
+    async (_event, rootPath: unknown, id: unknown) =>
+      await guard(async () => {
+        if (typeof rootPath !== 'string' || typeof id !== 'string') {
+          throw new Error('A project and ticket are required.')
+        }
+        return await toTicketDetail(await openProject(rootPath), id)
+      }),
   )
 
   ipcMain.handle('mcp:launchCommand', (_event, rootPath: unknown) =>

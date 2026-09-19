@@ -1,22 +1,8 @@
-import {
-  Alert,
-  AppShell,
-  Button,
-  Center,
-  Group,
-  Loader,
-  Stack,
-  Text,
-} from '@mantine/core'
+import { Alert, AppShell, Button, Center, Group, Loader, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
-import type {
-  MovableStatus,
-  ProjectView,
-  RememberedProject,
-  Result,
-} from '../shared/contract.js'
+import type { MovableStatus, ProjectView, RememberedProject, Result } from '../shared/contract.js'
 import { Board } from './components/Board.js'
 import { CompletionDialog } from './components/CompletionDialog.js'
 import { DocumentsView } from './components/DocumentsView.js'

@@ -5,8 +5,10 @@ import { allowSetupFor, assertAwaitingSetup } from './setup-permit.js'
 import type { FolderInspection, SetupOutcome } from '../shared/contract.js'
 
 export function registerSetupHandlers(): void {
-  ipcMain.handle('project:inspectFolder', async (_event, path: unknown) =>
-    await guard<FolderInspection>(async () => await inspectFolder(assertAwaitingSetup(path))),
+  ipcMain.handle(
+    'project:inspectFolder',
+    async (_event, path: unknown) =>
+      await guard<FolderInspection>(async () => await inspectFolder(assertAwaitingSetup(path))),
   )
 
   ipcMain.handle(

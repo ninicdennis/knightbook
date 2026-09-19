@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { resolveInRoot } from './paths.js'
 import type { Project } from './project.js'
 import { listIncludedDocuments } from './documents.js'
-import { listTickets } from './tickets.js'
+import { listTicketRecords } from './tickets.js'
 
 /**
  * Technical design section 9: simple text search, bounded, returning snippets by
@@ -40,7 +40,11 @@ export async function searchProject(project: Project, query: string): Promise<Se
   const hits: SearchHit[] = []
   const unreadable: string[] = []
 
-  for (const ticket of await listTickets(project)) {
+  const { tickets, problems } = await listTicketRecords(project)
+  // A ticket that cannot be read cannot be searched, and that is said, not skipped silently.
+  unreadable.push(...problems.map((problem) => problem.file))
+
+  for (const ticket of tickets) {
     const match = findMatch(ticket.body, needle)
     const inTitle = ticket.frontmatter.title.toLowerCase().includes(needle)
     if (!match && !inTitle) continue
@@ -66,8 +70,7 @@ export async function searchProject(project: Project, query: string): Promise<Se
       continue
     }
 
-    const match =
-      content.length > MAX_SCANNED_BYTES ? null : findMatch(content, needle)
+    const match = content.length > MAX_SCANNED_BYTES ? null : findMatch(content, needle)
     if (!match && !inTitle) continue
 
     hits.push({

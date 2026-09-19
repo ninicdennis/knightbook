@@ -41,7 +41,9 @@ describe('a folder with no project records', () => {
   it('explains what a project is and what setup touches, without calling it an error', async () => {
     await chooseBareFolder()
 
-    expect(screen.getByText(/shared workspace of markdown documents and a kanban board/i)).toBeTruthy()
+    expect(
+      screen.getByText(/shared workspace of markdown documents and a kanban board/i),
+    ).toBeTruthy()
     expect(screen.getByText(/adds one folder/i)).toBeTruthy()
     expect(screen.getByText(/changes no existing file/i)).toBeTruthy()
     expect(screen.getByText(FOLDER)).toBeTruthy()
@@ -58,14 +60,18 @@ describe('a folder with no project records', () => {
   it('offers the folder name as the project name, and the documents already there', async () => {
     await chooseBareFolder()
 
-    expect(((await screen.findByLabelText(/project name/i)) as HTMLInputElement).value).toBe('my-app')
+    expect(((await screen.findByLabelText(/project name/i)) as HTMLInputElement).value).toBe(
+      'my-app',
+    )
     expect(screen.getByRole('checkbox', { name: 'README.md' })).toBeTruthy()
     expect(screen.getByRole('checkbox', { name: /the docs folder/i })).toBeTruthy()
     expect(screen.getByText(/nothing is moved, copied or edited/i)).toBeTruthy()
   })
 
   it('offers no documents when there are none', async () => {
-    api.inspectFolder = vi.fn().mockResolvedValue({ ok: true, value: { name: 'bare', suggestions: [] } })
+    api.inspectFolder = vi
+      .fn()
+      .mockResolvedValue({ ok: true, value: { name: 'bare', suggestions: [] } })
     await chooseBareFolder()
     await screen.findByLabelText(/project name/i)
 
@@ -172,7 +178,9 @@ describe('connecting an AI tool afterwards', () => {
     await chooseBareFolder()
     const section = (await screen.findByText(/connecting an ai tool/i)).parentElement as HTMLElement
 
-    expect(await within(section).findByRole('button', { name: /copy mcp configuration/i })).toBeTruthy()
+    expect(
+      await within(section).findByRole('button', { name: /copy mcp configuration/i }),
+    ).toBeTruthy()
     expect(api.mcpLaunchCommand).toHaveBeenCalledWith(FOLDER)
   })
 })

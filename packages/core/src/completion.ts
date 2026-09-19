@@ -55,7 +55,7 @@ export async function recordUserCompletion(
     throw new ProjectError(
       'invalid_transition',
       'Completion requires an explicit user instruction. Reaching Verification, ' +
-        'or reporting that checks passed, is not the user\'s decision to record.',
+        "or reporting that checks passed, is not the user's decision to record.",
     )
   }
   if (input.instruction.trim().length === 0) {

@@ -28,7 +28,11 @@ Found by the user while trying the app.
 export function stubTicketDetail(project: ProjectView, id: string): Result<TicketDetailView> {
   const found = project.tickets.find((t) => t.id === id)
   if (!found) {
-    return { ok: false, code: 'not_found', message: 'That ticket no longer exists in this project.' }
+    return {
+      ok: false,
+      code: 'not_found',
+      message: 'That ticket no longer exists in this project.',
+    }
   }
 
   return {
@@ -47,8 +51,9 @@ export function stubTicketDetail(project: ProjectView, id: string): Result<Ticke
               title: prerequisite.title,
               status: prerequisite.status,
               satisfied: prerequisite.status === 'verification' || prerequisite.status === 'done',
+              unreadable: false,
             }
-          : { id: dependencyId, title: null, status: null, satisfied: false }
+          : { id: dependencyId, title: null, status: null, satisfied: false, unreadable: false }
       }),
     },
   }

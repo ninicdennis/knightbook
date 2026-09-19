@@ -26,8 +26,8 @@ export function CompletionDialog({ opened, ticket, onClose, onConfirm }: Props) 
         </Text>
         {ticket && ticket.status !== 'verification' && (
           <Alert color="orange" variant="light" icon={<IconAlertTriangle size={16} />}>
-            This ticket is in {ticket.status.replace('_', ' ')}, not Verification. The change will be
-            refused.
+            This ticket is in {ticket.status.replace('_', ' ')}, not Verification. The change will
+            be refused.
           </Alert>
         )}
         <Group justify="flex-end" gap="xs">

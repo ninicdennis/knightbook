@@ -13,7 +13,9 @@ import { stubTicketDetail } from './ticket-detail-stub.js'
  * a mock-up of them.
  */
 
-function ticket(partial: Partial<TicketView> & Pick<TicketView, 'id' | 'title' | 'status'>): TicketView {
+function ticket(
+  partial: Partial<TicketView> & Pick<TicketView, 'id' | 'title' | 'status'>,
+): TicketView {
   return {
     revision: `rev-${partial.id}`,
     dependsOn: [],
@@ -27,8 +29,25 @@ function ticket(partial: Partial<TicketView> & Pick<TicketView, 'id' | 'title' |
   }
 }
 
+/** Add ?problems to the preview URL to see the unreadable-records banner. */
+const UNREADABLE = new URLSearchParams(window.location.search).has('problems')
+  ? [
+      {
+        file: '.projectspace/tickets/3f2a9c1e-7b64-4d0a-9e51-0c8d2b7a44f1.md',
+        reason:
+          '.projectspace/tickets/3f2a9c1e-7b64-4d0a-9e51-0c8d2b7a44f1.md contains unresolved merge conflict markers. Resolve them before editing here.',
+      },
+      {
+        file: '.projectspace/tickets/b81d0e22-5c3f-4a17-8f60-92aa1d3c6e05.md',
+        reason:
+          'Ticket b81d0e22 is not valid: status must be one of backlog, in_progress, verification, done.',
+      },
+    ]
+  : []
+
 const PROJECT: ProjectView = {
   name: 'Projectspace',
+  problems: UNREADABLE,
   checkoutPath: String.raw`C:\Users\Denny\Projects\projectspace-demo`,
   nextTicketId: 'board',
   nextExplanation: '',
@@ -173,7 +192,11 @@ export const stubApi: ProjectspaceApi = {
           path: 'docs/architecture.md',
           title: 'architecture',
           includedVia: 'docs',
-          review: { state: 'reviewed', lastReviewedAt: '2026-09-18T09:00:00Z', changeSummary: null },
+          review: {
+            state: 'reviewed',
+            lastReviewedAt: '2026-09-18T09:00:00Z',
+            changeSummary: null,
+          },
         },
       ],
       problems: [{ path: 'docs/moved-away.md', reason: 'missing' }],

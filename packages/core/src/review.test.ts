@@ -57,7 +57,10 @@ describe('meaningful-change classification', () => {
   })
 
   it('treats a changed title as meaningful', () => {
-    const changed = SOURCE.replace('title: "Add readiness check"', 'title: "Remove readiness check"')
+    const changed = SOURCE.replace(
+      'title: "Add readiness check"',
+      'title: "Remove readiness check"',
+    )
     expect(contentFingerprint(changed)).not.toBe(contentFingerprint(SOURCE))
   })
 

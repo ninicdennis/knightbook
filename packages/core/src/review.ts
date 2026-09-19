@@ -79,11 +79,18 @@ export function contentFingerprint(source: string): string {
     // Collapse runs of whitespace, but keep block boundaries: a merged paragraph
     // is a real change, and losing that distinction would hide one.
     .split(/\n{2,}/)
-    .map((block) => block.replace(/[ \t]+/g, ' ').replace(/\s*\n\s*/g, '\n').trim())
+    .map((block) =>
+      block
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\s*\n\s*/g, '\n')
+        .trim(),
+    )
     .filter((block) => block.length > 0)
     .join('\n\n')
 
-  return revisionOf(`${JSON.stringify(substantive, Object.keys(substantive).sort())}\n${normalizedBody}`)
+  return revisionOf(
+    `${JSON.stringify(substantive, Object.keys(substantive).sort())}\n${normalizedBody}`,
+  )
 }
 
 /**
@@ -127,10 +134,7 @@ export async function recordReview(
 }
 
 /** Reads the most recent valid snapshot. Invalid ones are skipped, not deleted. */
-export async function lastReview(
-  project: Project,
-  recordId: string,
-): Promise<ReviewRecord | null> {
+export async function lastReview(project: Project, recordId: string): Promise<ReviewRecord | null> {
   let files: string[]
   try {
     files = await readdir(snapshotDir(project.root, recordId))
@@ -152,7 +156,8 @@ export async function lastReview(
         reviewedAt,
         reviewedRevision,
         contentFingerprint: typeof fingerprint === 'string' ? fingerprint : '',
-        note: typeof record.data.get('note') === 'string' ? (record.data.get('note') as string) : '',
+        note:
+          typeof record.data.get('note') === 'string' ? (record.data.get('note') as string) : '',
       })
     } catch {
       continue
@@ -198,10 +203,7 @@ export async function reviewStatus(
 }
 
 /** Retrieves the reviewed source for comparison. */
-export async function reviewedSource(
-  project: Project,
-  recordId: string,
-): Promise<string | null> {
+export async function reviewedSource(project: Project, recordId: string): Promise<string | null> {
   let files: string[]
   try {
     files = await readdir(snapshotDir(project.root, recordId))
@@ -209,7 +211,10 @@ export async function reviewedSource(
     return null
   }
 
-  const latest = files.filter((f) => f.endsWith('.md')).sort().at(-1)
+  const latest = files
+    .filter((f) => f.endsWith('.md'))
+    .sort()
+    .at(-1)
   if (!latest) return null
 
   const raw = await readFile(join(snapshotDir(project.root, recordId), latest), 'utf8')
