@@ -1,6 +1,6 @@
 import { dialog, ipcMain } from 'electron'
 import {
-  listTickets,
+  listTicketRecords,
   openProject,
   projectExists,
   recordTicketReview,
@@ -15,7 +15,7 @@ import { guard } from './guard.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
 import { describeRememberedProjects } from './remembered-projects.js'
 import { allowSetupFor } from './setup-permit.js'
-import { toTicketDetail, toTicketView } from './ticket-view.js'
+import { buildLookup, toTicketDetail, toTicketView } from './ticket-view.js'
 import type { ProjectView } from '../shared/contract.js'
 
 /**
@@ -26,17 +26,18 @@ import type { ProjectView } from '../shared/contract.js'
  */
 
 async function buildView(project: Project): Promise<ProjectView> {
-  const tickets = await listTickets(project)
-  const byId = new Map(tickets.map((t) => [t.frontmatter.id, t.frontmatter]))
+  const listing = await listTicketRecords(project)
+  const lookup = buildLookup(listing)
   const next = await selectNextTicket(project)
 
   const views = []
-  for (const ticket of tickets) views.push(await toTicketView(project, ticket, byId))
+  for (const ticket of listing.tickets) views.push(await toTicketView(project, ticket, lookup))
 
   return {
     name: project.frontmatter.name,
     checkoutPath: project.root.path,
     tickets: views,
+    problems: listing.problems.map(({ file, reason }) => ({ file, reason })),
     nextTicketId: next.next?.frontmatter.id ?? null,
     nextExplanation: next.explanation,
   }

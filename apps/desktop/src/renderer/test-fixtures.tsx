@@ -37,6 +37,7 @@ export function project(overrides: Partial<ProjectView> = {}): ProjectView {
     name: 'Demo',
     checkoutPath: CHECKOUT,
     tickets: [ticket()],
+    problems: [],
     nextTicketId: null,
     nextExplanation: '',
     ...overrides,

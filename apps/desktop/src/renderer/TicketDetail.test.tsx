@@ -119,9 +119,9 @@ describe('what the detail view says about a ticket', () => {
       ok: true,
       value: detail({
         dependencies: [
-          { id: 'd1', title: 'Safe writes', status: 'in_progress', satisfied: false },
-          { id: 'd2', title: 'Schema', status: 'verification', satisfied: true },
-          { id: 'd3', title: null, status: null, satisfied: false },
+          { id: 'd1', title: 'Safe writes', status: 'in_progress', satisfied: false, unreadable: false },
+          { id: 'd2', title: 'Schema', status: 'verification', satisfied: true, unreadable: false },
+          { id: 'd3', title: null, status: null, satisfied: false, unreadable: false },
         ],
       }),
     })

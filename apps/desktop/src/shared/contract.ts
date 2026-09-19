@@ -46,6 +46,8 @@ export interface DependencyView {
   status: TicketStatus | null
   /** Verification or Done satisfies a dependency (D-014). */
   satisfied: boolean
+  /** True when the file exists but could not be read, which is not the same as missing. */
+  unreadable: boolean
 }
 
 export interface TicketDetailView extends TicketView {
@@ -56,10 +58,18 @@ export interface TicketDetailView extends TicketView {
   dependencies: DependencyView[]
 }
 
+/** A record file the app could not use. It is listed, never repaired or rewritten. */
+export interface RecordProblemView {
+  /** Project-relative path. */
+  file: string
+  reason: string
+}
+
 export interface ProjectView {
   name: string
   checkoutPath: string
   tickets: TicketView[]
+  problems: RecordProblemView[]
   nextTicketId: string | null
   nextExplanation: string
 }

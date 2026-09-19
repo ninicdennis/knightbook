@@ -4,7 +4,7 @@ import {
   evaluateReadiness,
   initializeProject,
   isUnattributedCompletion,
-  listTickets,
+  listTicketRecords,
   openProject,
   projectExists,
   readTicket,
@@ -15,6 +15,7 @@ import {
   type Project,
   type Ticket,
   type TicketFrontmatter,
+  type TicketProblem,
 } from '@projectspace/core'
 import { z } from 'zod'
 import { guard, ok } from './result.js'
@@ -30,8 +31,26 @@ import type { McpServer } from '@modelcontextprotocol/server'
  * bypassing the completion rule in section 6.
  */
 
-function summarize(ticket: Ticket, all: ReadonlyMap<string, TicketFrontmatter>) {
-  const readiness = evaluateReadiness(ticket.frontmatter, all)
+/** Every ticket that loaded, plus the files that did not, indexed for readiness checks. */
+interface TicketIndex {
+  readonly tickets: Ticket[]
+  readonly problems: TicketProblem[]
+  readonly byId: ReadonlyMap<string, TicketFrontmatter>
+  readonly unreadable: ReadonlySet<string>
+}
+
+async function indexTickets(project: Project): Promise<TicketIndex> {
+  const { tickets, problems } = await listTicketRecords(project)
+  return {
+    tickets,
+    problems,
+    byId: new Map(tickets.map((t) => [t.frontmatter.id, t.frontmatter])),
+    unreadable: new Set(problems.map((problem) => problem.id)),
+  }
+}
+
+function summarize(ticket: Ticket, index: TicketIndex) {
+  const readiness = evaluateReadiness(ticket.frontmatter, index.byId, index.unreadable)
   return {
     id: ticket.frontmatter.id,
     title: ticket.frontmatter.title,
@@ -65,7 +84,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
           return ok({ initialized: false, checkout_path: root.path })
         }
         const project = await load()
-        const tickets = await listTickets(project)
+        const { tickets, problems } = await listTicketRecords(project)
         const byStatus = { backlog: 0, in_progress: 0, verification: 0, done: 0 }
         for (const t of tickets) byStatus[t.frontmatter.status] += 1
 
@@ -76,6 +95,8 @@ export function registerTools(server: McpServer, rootPath: string): void {
           checkout_path: project.root.path,
           documents_include: project.frontmatter.documents_include,
           ticket_counts: byStatus,
+          // Counts cover only tickets that loaded; unreadable files are listed, never dropped.
+          ticket_problems: problems,
         })
       }),
   )
@@ -105,8 +126,10 @@ export function registerTools(server: McpServer, rootPath: string): void {
     {
       title: 'List tickets',
       description:
-        'Tickets in backlog order with dependency readiness. A prerequisite in ' +
-        'Verification or Done satisfies a dependency; that does not mean it is accepted.',
+        'Tickets in backlog order with dependency readiness, plus any ticket files that ' +
+        'could not be read (problems). A prerequisite in Verification or Done satisfies a ' +
+        'dependency; that does not mean it is accepted. Report problems to the user; do ' +
+        'not try to repair those files unless asked.',
       inputSchema: z.object({
         status: z.enum(['backlog', 'in_progress', 'verification', 'done']).optional(),
       }),
@@ -114,10 +137,11 @@ export function registerTools(server: McpServer, rootPath: string): void {
     async ({ status }) =>
       await guard(async () => {
         const project = await load()
-        const tickets = await listTickets(project)
-        const byId = new Map(tickets.map((t) => [t.frontmatter.id, t.frontmatter]))
-        const filtered = status ? tickets.filter((t) => t.frontmatter.status === status) : tickets
-        return ok(filtered.map((t) => summarize(t, byId)))
+        const index = await indexTickets(project)
+        const filtered = status
+          ? index.tickets.filter((t) => t.frontmatter.status === status)
+          : index.tickets
+        return ok({ tickets: filtered.map((t) => summarize(t, index)), problems: index.problems })
       }),
   )
 
@@ -135,11 +159,14 @@ export function registerTools(server: McpServer, rootPath: string): void {
         const project = await load()
         const result = await selectNextTicket(project)
         if (!result.next) {
-          return ok({ next: null, explanation: result.explanation })
+          return ok({ next: null, explanation: result.explanation, problems: result.problems })
         }
-        const tickets = await listTickets(project)
-        const byId = new Map(tickets.map((t) => [t.frontmatter.id, t.frontmatter]))
-        return ok({ next: summarize(result.next, byId), body: result.next.body })
+        const index = await indexTickets(project)
+        return ok({
+          next: summarize(result.next, index),
+          body: result.next.body,
+          problems: result.problems,
+        })
       }),
   )
 
@@ -154,9 +181,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
       await guard(async () => {
         const project = await load()
         const ticket = await readTicket(project, id)
-        const tickets = await listTickets(project)
-        const byId = new Map(tickets.map((t) => [t.frontmatter.id, t.frontmatter]))
-        return ok({ ...summarize(ticket, byId), body: ticket.body })
+        return ok({ ...summarize(ticket, await indexTickets(project)), body: ticket.body })
       }),
   )
 

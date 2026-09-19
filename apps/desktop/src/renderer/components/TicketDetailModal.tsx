@@ -231,12 +231,23 @@ function Dependencies({ ticket, detail }: { ticket: TicketView; detail: TicketDe
             variant="light"
             color={dependency.status ? STATUS_COLOR[dependency.status] : 'red'}
           >
-            {dependency.status ? STATUS_LABEL[dependency.status] : 'Missing'}
+            {dependency.status
+              ? STATUS_LABEL[dependency.status]
+              : dependency.unreadable
+                ? 'Unreadable'
+                : 'Missing'}
           </Badge>
-          <Text size="sm">{dependency.title ?? `No ticket with id ${dependency.id}`}</Text>
+          <Text size="sm">
+            {dependency.title ??
+              (dependency.unreadable
+                ? `Ticket ${dependency.id} could not be read`
+                : `No ticket with id ${dependency.id}`)}
+          </Text>
           <Text size="xs" c="dimmed">
             {dependency.status === null
-              ? 'is missing from this project'
+              ? dependency.unreadable
+                ? 'its file could not be read, so this cannot be checked'
+                : 'is missing from this project'
               : dependency.satisfied
                 ? 'satisfies this dependency'
                 : 'is not ready yet'}

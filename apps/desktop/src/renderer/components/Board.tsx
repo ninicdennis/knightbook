@@ -3,6 +3,7 @@ import { DragDropProvider, useDraggable, useDroppable } from '@dnd-kit/react'
 import type { ReactNode } from 'react'
 import type { MovableStatus, ProjectView, TicketStatus } from '../../shared/contract.js'
 import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
+import { RecordProblems } from './RecordProblems.js'
 import { TicketCard } from './TicketCard.js'
 
 /**
@@ -39,45 +40,53 @@ export function Board({ project, busyTicketId, onMove, onComplete, onReview, onO
     else onMove(ticket.id, destination as MovableStatus)
   }
 
+  const hasProblems = project.problems.length > 0
+
   return (
-    <DragDropProvider onDragEnd={handleDragEnd}>
-      <Group align="stretch" gap="md" wrap="nowrap" style={{ height: '100%' }}>
-        {COLUMNS.map((status) => {
-          const tickets = project.tickets.filter((ticket) => ticket.status === status)
-          return (
-            <Column key={status} status={status} count={tickets.length}>
-              {tickets.length === 0 ? (
-                <EmptyColumn status={status} project={project} />
-              ) : (
-                tickets.map((ticket) => (
-                  <DraggableTicket key={ticket.id} id={ticket.id} disabled={busyTicketId !== null}>
-                    <TicketCard
-                      ticket={ticket}
-                      isNext={project.nextTicketId === ticket.id}
-                      busy={busyTicketId === ticket.id}
-                      onMove={(next) => onMove(ticket.id, next)}
-                      onComplete={() => onComplete(ticket.id)}
-                      onReview={() => onReview(ticket.id)}
-                      onOpen={() => onOpen(ticket.id)}
-                    />
-                  </DraggableTicket>
-                ))
-              )}
-            </Column>
-          )
-        })}
-      </Group>
-    </DragDropProvider>
+    <Stack gap="sm" style={{ height: '100%' }}>
+      <RecordProblems problems={project.problems} />
+      <DragDropProvider onDragEnd={handleDragEnd}>
+        <Group align="stretch" gap="md" wrap="nowrap" style={{ flex: 1, minHeight: 0 }}>
+          {COLUMNS.map((status) => {
+            const tickets = project.tickets.filter((ticket) => ticket.status === status)
+            return (
+              <Column key={status} status={status} count={tickets.length} shortened={hasProblems}>
+                {tickets.length === 0 ? (
+                  <EmptyColumn status={status} project={project} />
+                ) : (
+                  tickets.map((ticket) => (
+                    <DraggableTicket key={ticket.id} id={ticket.id} disabled={busyTicketId !== null}>
+                      <TicketCard
+                        ticket={ticket}
+                        isNext={project.nextTicketId === ticket.id}
+                        busy={busyTicketId === ticket.id}
+                        onMove={(next) => onMove(ticket.id, next)}
+                        onComplete={() => onComplete(ticket.id)}
+                        onReview={() => onReview(ticket.id)}
+                        onOpen={() => onOpen(ticket.id)}
+                      />
+                    </DraggableTicket>
+                  ))
+                )}
+              </Column>
+            )
+          })}
+        </Group>
+      </DragDropProvider>
+    </Stack>
   )
 }
 
 function Column({
   status,
   count,
+  shortened,
   children,
 }: {
   status: TicketStatus
   count: number
+  /** Leaves room for the record-problems banner above the board. */
+  shortened: boolean
   children: ReactNode
 }) {
   const { ref, isDropTarget } = useDroppable({ id: status })
@@ -107,7 +116,7 @@ function Column({
         </Badge>
       </Group>
 
-      <ScrollArea.Autosize mah="calc(100vh - 230px)" type="hover">
+      <ScrollArea.Autosize mah={shortened ? 'calc(100vh - 290px)' : 'calc(100vh - 230px)'} type="hover">
         <Stack gap="xs" pr={4}>
           {children}
         </Stack>

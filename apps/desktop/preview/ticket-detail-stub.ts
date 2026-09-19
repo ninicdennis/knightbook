@@ -47,8 +47,9 @@ export function stubTicketDetail(project: ProjectView, id: string): Result<Ticke
               title: prerequisite.title,
               status: prerequisite.status,
               satisfied: prerequisite.status === 'verification' || prerequisite.status === 'done',
+              unreadable: false,
             }
-          : { id: dependencyId, title: null, status: null, satisfied: false }
+          : { id: dependencyId, title: null, status: null, satisfied: false, unreadable: false }
       }),
     },
   }
