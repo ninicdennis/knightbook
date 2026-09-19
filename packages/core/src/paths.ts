@@ -1,5 +1,5 @@
 import { realpath } from 'node:fs/promises'
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { ProjectError } from './errors.js'
 
 /**
@@ -16,13 +16,27 @@ export interface ProjectRoot {
   readonly path: string
 }
 
+/**
+ * A root that does not exist yet is still a usable target for initialization, but
+ * it must be resolved like any other. Its nearest existing ancestor may sit behind
+ * a symlink (macOS keeps temporary folders under /var, a link to /private/var), and
+ * leaving that part unresolved makes every later real-path check disagree with the
+ * root and reject the project's own files as "outside" it.
+ */
 export async function resolveProjectRoot(candidate: string): Promise<ProjectRoot> {
   const absolute = resolve(candidate)
-  try {
-    return { path: await realpath(absolute) }
-  } catch {
-    // A root that does not exist yet is still a usable target for initialization.
-    return { path: absolute }
+  const missing: string[] = []
+
+  let current = absolute
+  for (;;) {
+    try {
+      return { path: join(await realpath(current), ...missing.reverse()) }
+    } catch {
+      const parent = dirname(current)
+      if (parent === current) return { path: absolute } // Nothing on the path resolves.
+      missing.push(basename(current))
+      current = parent
+    }
   }
 }
 
