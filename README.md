@@ -24,9 +24,28 @@ verified path.
 | Desktop board | Four columns, drag and menu moves, a ticket detail dialog, a project switcher, one-click setup for a folder with no project yet, completion and review with provenance, refresh (button, and whenever the window regains focus); a malformed ticket or merge conflict is listed instead of blocking the board |
 | Document viewer | Read-only rendering of included documents, in-app review, external-editor handoff |
 | AI workflow guidance | A portable skill file plus rules sent by the server on connect; not yet exercised in a real AI session |
+| Continuous integration | A GitHub Actions workflow checks and builds every pull request on Windows, Linux and macOS; written but not yet run on GitHub |
 | Human review tracking | Tracked and surfaced for both tickets and documents, in the app and through MCP |
 | Document editing | Not started — the formatted editor is blocked on the Milkdown finding; reading works now |
 | macOS and Linux | Not yet validated; only Windows has been built and run |
+
+## Continuous integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request to
+`main` and every push to `main`, on Windows, Linux and macOS. In order, it installs
+with the frozen lockfile, builds the MCP bundle, runs `pnpm check` (lint, formatting,
+typecheck, every test suite), packages the desktop app, and reruns the packaging tests
+against that real package with `REQUIRE_PACKAGED_APP=1`, so they fail rather than
+skip if the package is missing. To run the same steps locally:
+
+```bash
+pnpm install --frozen-lockfile && pnpm build:mcp && pnpm check && pnpm pack:dir
+REQUIRE_PACKAGED_APP=1 pnpm --filter @projectspace/experiment-packaging test
+```
+
+The workflow has read-only access, no secrets, and publishes nothing; actions are
+pinned to commit SHAs. It reports results but cannot stop a merge by itself. Making it
+required is a branch-protection setting in the repository's GitHub settings.
 
 Future delivery work: [releases after merge](docs/release-automation.md) compares
 GitHub release tooling and proposes an automated build-and-publish workflow.

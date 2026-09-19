@@ -1,0 +1,70 @@
+name: CI
+
+# Validates every pull request and every push to main. It has no secrets, no
+# publishing and read-only repository access. Releases are a separate, deferred
+# piece of work (docs/release-automation.md) and must stay separate from this.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A newer push to the same pull request makes the older run pointless. Runs on
+# main are never cancelled, so every merge gets a complete result.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check and build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      # Windows is the platform validated so far. Linux and macOS are run so
+      # their failures are visible; one platform failing must not hide the others.
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+      # External actions are pinned to reviewed commit SHAs; the comment names the
+      # release each one was resolved from.
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Reads the pinned pnpm version from the packageManager field.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The packaging tests stage this bundle, so it has to exist before the tests.
+      - name: Build the MCP server bundle
+        run: pnpm build:mcp
+
+      - name: Lint, format check, typecheck and test
+        run: pnpm check
+
+      - name: Build and package the desktop app
+        run: pnpm pack:dir
+
+      # The first run skipped the packaged-app tests because the app did not exist
+      # yet. Run them again now that it does, and fail if they are still skipped.
+      - name: Test the packaged app
+        run: pnpm --filter @projectspace/experiment-packaging test
+        env:
+          REQUIRE_PACKAGED_APP: '1'

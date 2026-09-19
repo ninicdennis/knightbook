@@ -27,7 +27,9 @@ inside the desktop app is a separate future decision.
 - The staging script copies the build host's Node executable into the app.
   Release builds must supply the runtime matching each target OS and CPU.
 - Desktop and workspace package versions currently start at `0.0.0`.
-  No GitHub Actions workflow is present at the time of this review.
+  No GitHub Actions workflow was present at the time of this review. A pull-request
+  validation workflow, `.github/workflows/ci.yml`, was added afterwards; there is still
+  no release workflow.
 
 ## Methods considered
 

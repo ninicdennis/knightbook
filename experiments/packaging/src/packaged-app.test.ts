@@ -14,27 +14,50 @@ import { REPO_ROOT, type StagedResources } from './stage.js'
  * Skipped when the packaged build is absent, so the suite still runs on a
  * machine that has not built the app. Produce it with
  * `pnpm --filter @projectspace/desktop pack:dir`.
+ *
+ * CI sets REQUIRE_PACKAGED_APP=1, which turns "absent" into a failure: a check
+ * that quietly skips is not a check.
  */
 
-const UNPACKED_DIR = join(REPO_ROOT, 'apps', 'desktop', 'release', 'win-unpacked')
+const RELEASE_DIR = join(REPO_ROOT, 'apps', 'desktop', 'release')
 const NODE_BINARY = process.platform === 'win32' ? 'node.exe' : 'node'
 
+/** Where electron-builder --dir leaves the resources folder on each platform. */
+const RESOURCE_DIR_CANDIDATES: Record<string, string[]> = {
+  win32: [join('win-unpacked', 'resources')],
+  linux: [join('linux-unpacked', 'resources')],
+  darwin: [
+    join('mac-arm64', 'Projectspace.app', 'Contents', 'Resources'),
+    join('mac', 'Projectspace.app', 'Contents', 'Resources'),
+  ],
+}
+
 async function packagedResources(): Promise<StagedResources | null> {
-  const mcpDir = join(UNPACKED_DIR, 'resources', 'mcp')
-  try {
-    await access(join(mcpDir, NODE_BINARY))
-    await access(join(mcpDir, 'server.mjs'))
-  } catch {
-    return null
+  for (const candidate of RESOURCE_DIR_CANDIDATES[process.platform] ?? []) {
+    const resourcesDir = join(RELEASE_DIR, candidate)
+    const mcpDir = join(resourcesDir, 'mcp')
+    try {
+      await access(join(mcpDir, NODE_BINARY))
+      await access(join(mcpDir, 'server.mjs'))
+    } catch {
+      continue
+    }
+    return {
+      resourcesDir,
+      nodePath: join(mcpDir, NODE_BINARY),
+      serverPath: join(mcpDir, 'server.mjs'),
+    }
   }
-  return {
-    resourcesDir: join(UNPACKED_DIR, 'resources'),
-    nodePath: join(mcpDir, NODE_BINARY),
-    serverPath: join(mcpDir, 'server.mjs'),
-  }
+  return null
 }
 
 const resources = await packagedResources()
+if (!resources && process.env['REQUIRE_PACKAGED_APP']) {
+  throw new Error(
+    'REQUIRE_PACKAGED_APP is set but no packaged app was found under apps/desktop/release. ' +
+      'Run pnpm pack:dir first.',
+  )
+}
 const describePackaged = resources ? describe : describe.skip
 
 let workspace: string
@@ -51,7 +74,7 @@ afterAll(async () => {
 
 describePackaged('the installed application', () => {
   it('keeps the MCP runtime outside the ASAR archive', async () => {
-    const asar = await stat(join(UNPACKED_DIR, 'resources', 'app.asar'))
+    const asar = await stat(join(resources!.resourcesDir, 'app.asar'))
     const runtime = await stat(resources!.nodePath)
     expect(asar.isFile()).toBe(true)
     expect(runtime.isFile()).toBe(true)
