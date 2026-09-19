@@ -1,7 +1,6 @@
 import {
   Alert,
   Badge,
-  Box,
   Button,
   Card,
   Center,
@@ -21,9 +20,11 @@ import {
   IconEyeOff,
   IconFileText,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { DocumentListView, DocumentReadView } from '../../shared/contract.js'
 import { renderMarkdown } from '../markdown.js'
+import { MarkdownBody } from './MarkdownBody.js'
+import { ReviewBadge } from './ReviewBadge.js'
 
 /**
  * Reading project documentation. Editing stays in the user's own editor until
@@ -33,9 +34,13 @@ import { renderMarkdown } from '../markdown.js'
 
 interface Props {
   rootPath: string
+  /** Asks the view to show one document. The nonce lets the same path be asked for twice. */
+  openTarget?: { path: string; nonce: number } | null
+  /** Changes whenever the project is refreshed, so the view re-reads from disk. */
+  refreshToken?: number
 }
 
-export function DocumentsView({ rootPath }: Props) {
+export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }: Props) {
   const [listing, setListing] = useState<DocumentListView | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [document, setDocument] = useState<DocumentReadView | null>(null)
@@ -57,7 +62,11 @@ export function DocumentsView({ rootPath }: Props) {
     return () => {
       cancelled = true
     }
-  }, [rootPath])
+  }, [rootPath, refreshToken])
+
+  useEffect(() => {
+    if (openTarget) setSelected(openTarget.path)
+  }, [openTarget])
 
   const open = useCallback(
     async (path: string) => {
@@ -75,7 +84,7 @@ export function DocumentsView({ rootPath }: Props) {
 
   useEffect(() => {
     if (selected) void open(selected)
-  }, [selected, open])
+  }, [selected, open, refreshToken])
 
   const review = useCallback(async () => {
     if (!document) return
@@ -203,34 +212,7 @@ function DocumentReader({
   onOpenExternally: () => void
   onFollowLink: (path: string) => void
 }) {
-  const container = useRef<HTMLDivElement>(null)
   const rendered = renderMarkdown(document.content, document.path)
-
-  /**
-   * Links are inert in the markup and only act through this handler, so a
-   * crafted href cannot navigate the app or reach the filesystem on its own.
-   */
-  useEffect(() => {
-    const node = container.current
-    if (!node) return
-
-    const handler = (event: MouseEvent) => {
-      const anchor = (event.target as HTMLElement | null)?.closest('a')
-      if (!anchor) return
-      event.preventDefault()
-
-      const documentPath = anchor.getAttribute('data-document')
-      if (documentPath) {
-        onFollowLink(documentPath)
-        return
-      }
-      const external = anchor.getAttribute('data-external')
-      if (external) void window.projectspace.openExternalLink(external)
-    }
-
-    node.addEventListener('click', handler)
-    return () => node.removeEventListener('click', handler)
-  }, [onFollowLink])
 
   return (
     <Stack gap="sm" style={{ height: '100%' }}>
@@ -273,36 +255,9 @@ function DocumentReader({
       )}
 
       <ScrollArea.Autosize mah="calc(100vh - 260px)" type="auto">
-        <Box
-          ref={container}
-          className="markdown-body"
-          dangerouslySetInnerHTML={{ __html: rendered.html }}
-        />
+        <MarkdownBody html={rendered.html} onFollowLink={onFollowLink} />
       </ScrollArea.Autosize>
     </Stack>
   )
 }
 
-function ReviewBadge({ review }: { review: DocumentReadView['review'] }) {
-  if (review.state === 'reviewed') {
-    return (
-      <Badge size="xs" variant="light" color="teal" leftSection={<IconEye size={11} />}>
-        Reviewed by you
-      </Badge>
-    )
-  }
-  if (review.state === 'changed_since_review') {
-    return (
-      <Tooltip multiline w={300} withArrow label={review.changeSummary ?? ''}>
-        <Badge size="xs" variant="light" color="yellow" leftSection={<IconEye size={11} />}>
-          Changed since review
-        </Badge>
-      </Tooltip>
-    )
-  }
-  return (
-    <Badge size="xs" variant="outline" color="gray" leftSection={<IconEyeOff size={11} />}>
-      Unreviewed
-    </Badge>
-  )
-}

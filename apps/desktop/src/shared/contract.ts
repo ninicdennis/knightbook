@@ -39,6 +39,23 @@ export interface TicketView {
   review: ReviewView
 }
 
+export interface DependencyView {
+  id: string
+  /** Null when the referenced ticket does not exist in this project. */
+  title: string | null
+  status: TicketStatus | null
+  /** Verification or Done satisfies a dependency (D-014). */
+  satisfied: boolean
+}
+
+export interface TicketDetailView extends TicketView {
+  body: string
+  createdAt: string
+  updatedAt: string
+  relatedDocuments: string[]
+  dependencies: DependencyView[]
+}
+
 export interface ProjectView {
   name: string
   checkoutPath: string
@@ -74,10 +91,8 @@ export interface ProjectspaceApi extends DocumentsApi {
   completeTicket(rootPath: string, id: string, revision: string): Promise<Result<ProjectView>>
   /** Records the user's own review. There is no agent equivalent (D-003). */
   recordTicketReview(rootPath: string, id: string, note: string): Promise<Result<ProjectView>>
-  readTicket(
-    rootPath: string,
-    id: string,
-  ): Promise<Result<{ id: string; title: string; body: string }>>
+  /** Everything written on one ticket, for the detail view. */
+  readTicket(rootPath: string, id: string): Promise<Result<TicketDetailView>>
   mcpLaunchCommand(rootPath: string): Promise<McpLaunchCommand | null>
 }
 

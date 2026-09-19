@@ -9,7 +9,7 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import { IconCheck, IconCopy, IconFolderOpen, IconPlugConnected } from '@tabler/icons-react'
+import { IconCheck, IconFolderOpen, IconPlugConnected, IconRefresh } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import type { McpLaunchCommand } from '../../shared/contract.js'
 
@@ -29,10 +29,20 @@ interface Props {
   checkoutPath: string
   view: View
   onViewChange: (view: View) => void
+  refreshing: boolean
+  onRefresh: () => void
   onOpenAnother: () => void
 }
 
-export function ProjectHeader({ name, checkoutPath, view, onViewChange, onOpenAnother }: Props) {
+export function ProjectHeader({
+  name,
+  checkoutPath,
+  view,
+  onViewChange,
+  refreshing,
+  onRefresh,
+  onOpenAnother,
+}: Props) {
   const [launch, setLaunch] = useState<McpLaunchCommand | null>(null)
 
   useEffect(() => {
@@ -68,6 +78,23 @@ export function ProjectHeader({ name, checkoutPath, view, onViewChange, onOpenAn
             { value: 'documents', label: 'Documents' },
           ]}
         />
+
+        <Tooltip
+          multiline
+          w={280}
+          withArrow
+          label="Reload from the project files. This also happens when you return to this window."
+        >
+          <ActionIcon
+            variant="default"
+            size="lg"
+            loading={refreshing}
+            onClick={onRefresh}
+            aria-label="Refresh from disk"
+          >
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
 
         {configJson && (
           <CopyButton value={configJson} timeout={2000}>

@@ -1,23 +1,20 @@
 import { dialog, ipcMain } from 'electron'
 import {
-  describeReason,
-  evaluateReadiness,
   listTickets,
   openProject,
   projectExists,
-  readTicket,
+  recordTicketReview,
   recordUserCompletion,
   resolveProjectRoot,
   selectNextTicket,
-  recordTicketReview,
-  ticketReviewStatus,
   updateTicket,
   type Project,
 } from '@projectspace/core'
 import { readAppState, rememberProject } from './app-state.js'
 import { guard } from './guard.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
-import type { ProjectView, Result, TicketView } from '../shared/contract.js'
+import { toTicketDetail, toTicketView } from './ticket-view.js'
+import type { ProjectView } from '../shared/contract.js'
 
 /**
  * The narrow operation surface the renderer is allowed to call. Each handler
@@ -31,36 +28,8 @@ async function buildView(project: Project): Promise<ProjectView> {
   const byId = new Map(tickets.map((t) => [t.frontmatter.id, t.frontmatter]))
   const next = await selectNextTicket(project)
 
-  const views: TicketView[] = []
-  for (const ticket of tickets) {
-    const readiness = evaluateReadiness(ticket.frontmatter, byId)
-    const review = await ticketReviewStatus(project, ticket.frontmatter.id)
-    views.push({
-      id: ticket.frontmatter.id,
-      title: ticket.frontmatter.title,
-      status: ticket.frontmatter.status,
-      revision: ticket.revision,
-      dependsOn: ticket.frontmatter.depends_on,
-      dependencyReady: readiness.ready,
-      dependencyNotes: readiness.reasons.map(describeReason),
-      blocker: ticket.frontmatter.blocker ?? null,
-      completion: ticket.frontmatter.completion
-        ? {
-            decisionSource: ticket.frontmatter.completion.decision_source,
-            recordedBy: ticket.frontmatter.completion.recorded_by,
-            recordedAt: ticket.frontmatter.completion.recorded_at,
-            instruction: ticket.frontmatter.completion.instruction,
-          }
-        : null,
-      completionUnattributed:
-        ticket.frontmatter.status === 'done' && ticket.frontmatter.completion === undefined,
-      review: {
-        state: review.state,
-        lastReviewedAt: review.lastReview?.reviewedAt ?? null,
-        changeSummary: review.changeSummary,
-      },
-    })
-  }
+  const views = []
+  for (const ticket of tickets) views.push(await toTicketView(project, ticket, byId))
 
   return {
     name: project.frontmatter.name,
@@ -163,8 +132,7 @@ export function registerProjectHandlers(): void {
       if (typeof rootPath !== 'string' || typeof id !== 'string') {
         throw new Error('A project and ticket are required.')
       }
-      const ticket = await readTicket(await openProject(rootPath), id)
-      return { id, title: ticket.frontmatter.title, body: ticket.body }
+      return await toTicketDetail(await openProject(rootPath), id)
     }),
   )
 

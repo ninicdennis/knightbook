@@ -1,5 +1,6 @@
 import type { ProjectView, ProjectspaceApi, TicketView } from '../src/shared/contract.js'
 import { SAMPLE_DOCUMENT } from './sample-document.js'
+import { stubTicketDetail } from './ticket-detail-stub.js'
 
 /**
  * A stand-in host for the design preview. It serves the same shapes the real
@@ -93,14 +94,35 @@ const PROJECT: ProjectView = {
   ],
 }
 
+/** Lets a browser session see which host operations actually fired. */
+function record(name: string, ...args: unknown[]): void {
+  const log = ((window as unknown as { __calls?: unknown[] }).__calls ??= [])
+  log.push([name, ...args])
+}
+
 export const stubApi: ProjectspaceApi = {
   recentProjects: async () => [PROJECT.checkoutPath],
   chooseProject: async () => ({ path: PROJECT.checkoutPath, initialized: true }),
-  readProject: async () => ({ ok: true, value: PROJECT }),
-  setTicketStatus: async () => ({ ok: true, value: PROJECT }),
-  completeTicket: async () => ({ ok: true, value: PROJECT }),
-  recordTicketReview: async () => ({ ok: true, value: PROJECT }),
-  readTicket: async (_root, id) => ({ ok: true, value: { id, title: '', body: '' } }),
+  readProject: async () => {
+    record('readProject')
+    return { ok: true, value: PROJECT }
+  },
+  setTicketStatus: async (_root, id, status) => {
+    record('setTicketStatus', id, status)
+    return { ok: true, value: PROJECT }
+  },
+  completeTicket: async (_root, id) => {
+    record('completeTicket', id)
+    return { ok: true, value: PROJECT }
+  },
+  recordTicketReview: async (_root, id) => {
+    record('recordTicketReview', id)
+    return { ok: true, value: PROJECT }
+  },
+  readTicket: async (_root, id) => {
+    record('readTicket', id)
+    return stubTicketDetail(PROJECT, id)
+  },
   mcpLaunchCommand: async (root) => ({
     command: String.raw`C:\Program Files\Projectspace\resources\mcp\node.exe`,
     args: [String.raw`C:\Program Files\Projectspace\resources\mcp\server.mjs`, '--root', root],

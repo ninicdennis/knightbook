@@ -20,8 +20,8 @@ verified path.
 | Editor preservation experiment | Complete — [findings](docs/experiments/editor-preservation-findings.md) |
 | Packaging smoke test | Complete on Windows — [findings](docs/experiments/packaging-findings.md) |
 | Shared core library | Safe writes, records, dependencies, completion, documents, search, review |
-| MCP surface | All twelve section 9 operations, packaged and validated |
-| Desktop board | Four columns, drag and menu moves, completion and review with provenance |
+| MCP surface | Fourteen tools: the ten section 9 operations plus ticket_next, ticket_read, documents_list and review_status; packaged and validated |
+| Desktop board | Four columns, drag and menu moves, a ticket detail dialog, completion and review with provenance, refresh (button, and whenever the window regains focus) |
 | Document viewer | Read-only rendering of included documents, in-app review, external-editor handoff |
 | Human review tracking | Tracked and surfaced for both tickets and documents, in the app and through MCP |
 | Document editing | Not started — the formatted editor is blocked on the Milkdown finding; reading works now |

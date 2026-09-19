@@ -1,0 +1,24 @@
+---
+schema_version: 1
+id: e471fae0-0b7d-48cb-baf5-3a60ceacc425
+title: "Flag dependents when a prerequisite fails verification (D-017)"
+status: backlog
+depends_on: []
+created_at: 2026-09-19T20:05:15.168Z
+updated_at: 2026-09-19T20:05:15.168Z
+related_documents: ["docs/project-workspace-spec.md","docs/project-workspace-technical-design.md"]
+---
+
+# Failed-prerequisite flag
+
+## Intended outcome
+When a prerequisite fails verification, tickets that depend on it are flagged with an explanation. Nothing is reset automatically.
+
+## Acceptance criteria
+- The failure is persisted on the prerequisite (design section 5) with the reason.
+- Dependents show a derived affected-work flag in the app and through MCP.
+- ticket_next stops suggesting affected work until the user resolves the issue.
+- Downstream statuses are never changed automatically.
+
+## Notes
+Not implemented. Only a ticket's own blocker exists today.

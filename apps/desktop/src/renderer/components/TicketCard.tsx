@@ -4,6 +4,7 @@ import {
   IconDotsVertical,
   IconEye,
   IconEyeOff,
+  IconInfoCircle,
   IconLock,
   IconUserCheck,
   IconRobot,
@@ -26,9 +27,10 @@ interface Props {
   onMove: (status: MovableStatus) => void
   onComplete: () => void
   onReview: () => void
+  onOpen: () => void
 }
 
-export function TicketCard({ ticket, isNext, busy, onMove, onComplete, onReview }: Props) {
+export function TicketCard({ ticket, isNext, busy, onMove, onComplete, onReview, onOpen }: Props) {
   const blockedInBacklog = ticket.status === 'backlog' && !ticket.dependencyReady
 
   return (
@@ -37,9 +39,16 @@ export function TicketCard({ ticket, isNext, busy, onMove, onComplete, onReview 
       padding="sm"
       radius="md"
       opacity={busy ? 0.55 : 1}
+      onClick={(event) => {
+        // React bubbles clicks from the portalled menu up to this card, and the
+        // menu button sits inside it. Only a click on the card itself opens it.
+        const target = event.target as HTMLElement
+        if (!event.currentTarget.contains(target) || target.closest('button')) return
+        if (!busy) onOpen()
+      }}
       style={{
         borderColor: isNext ? 'var(--mantine-color-accent-filled)' : undefined,
-        cursor: busy ? 'progress' : 'grab',
+        cursor: busy ? 'progress' : 'pointer',
       }}
     >
       <Stack gap={8}>
@@ -49,11 +58,15 @@ export function TicketCard({ ticket, isNext, busy, onMove, onComplete, onReview 
           </Text>
           <Menu position="bottom-end" withinPortal>
             <Menu.Target>
-              <UnstyledButton aria-label={`Move ${ticket.title}`} disabled={busy}>
+              <UnstyledButton aria-label={`Actions for ${ticket.title}`} disabled={busy}>
                 <IconDotsVertical size={16} opacity={0.6} />
               </UnstyledButton>
             </Menu.Target>
             <Menu.Dropdown>
+              <Menu.Item leftSection={<IconInfoCircle size={14} />} onClick={onOpen}>
+                View details
+              </Menu.Item>
+              <Menu.Divider />
               <Menu.Label>Move to</Menu.Label>
               {MOVABLE.filter((status) => status !== ticket.status).map((status) => (
                 <Menu.Item key={status} onClick={() => onMove(status)}>

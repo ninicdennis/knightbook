@@ -5,7 +5,6 @@ import {
   Center,
   Group,
   Loader,
-  Modal,
   Stack,
   Text,
 } from '@mantine/core'
@@ -14,9 +13,12 @@ import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
 import type { MovableStatus, ProjectView, Result } from '../shared/contract.js'
 import { Board } from './components/Board.js'
+import { CompletionDialog } from './components/CompletionDialog.js'
 import { DocumentsView } from './components/DocumentsView.js'
 import { ProjectHeader } from './components/ProjectHeader.js'
+import { TicketDetailModal } from './components/TicketDetailModal.js'
 import { Welcome } from './components/Welcome.js'
+import { useRefreshOnFocus } from './hooks/useRefreshOnFocus.js'
 
 /**
  * Every state the board can be in is explicit: nothing open, loading, a folder
@@ -39,6 +41,10 @@ export function App() {
   const [pendingCompletion, setPendingCompletion] = useState<string | null>(null)
   const [confirmOpen, confirm] = useDisclosure(false)
   const [view, setView] = useState<'board' | 'documents'>('board')
+  const [detailId, setDetailId] = useState<string | null>(null)
+  const [documentTarget, setDocumentTarget] = useState<{ path: string; nonce: number } | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshToken, setRefreshToken] = useState(0)
 
   const load = useCallback(async (path: string) => {
     setScreen({ kind: 'loading', path })
@@ -156,6 +162,52 @@ export function App() {
       ? screen.project.tickets.find((t) => t.id === pendingCompletion)
       : undefined
 
+  /**
+   * Re-reads the project without the loading screen, so the user keeps their
+   * place. A failure keeps the last version that loaded and says so, rather than
+   * swapping the board for an error page.
+   */
+  const refresh = useCallback(async () => {
+    if (screen.kind !== 'open' || busyTicketId !== null) return
+    const path = screen.path
+    setRefreshing(true)
+
+    const result = await window.projectspace.readProject(path)
+    if (result.ok) {
+      // The user may have switched projects while this was reading.
+      setScreen((current) =>
+        current.kind === 'open' && current.path === path
+          ? { kind: 'open', path, project: result.value }
+          : current,
+      )
+      setRefreshToken((n) => n + 1)
+    } else {
+      setActionError(
+        `Could not refresh: ${result.message} What is shown is the last version that loaded.`,
+      )
+    }
+    setRefreshing(false)
+  }, [screen, busyTicketId])
+
+  useRefreshOnFocus(refresh, screen.kind === 'open')
+
+  const detailTicket =
+    screen.kind === 'open' && detailId
+      ? screen.project.tickets.find((t) => t.id === detailId)
+      : undefined
+
+  // A ticket can vanish between refreshes; close its dialog rather than leave it
+  // ready to reappear on its own.
+  useEffect(() => {
+    if (detailId && !detailTicket) setDetailId(null)
+  }, [detailId, detailTicket])
+
+  const openDocument = useCallback((path: string) => {
+    setDetailId(null)
+    setView('documents')
+    setDocumentTarget({ path, nonce: Date.now() })
+  }, [])
+
   return (
     <AppShell {...(screen.kind === 'open' ? { header: { height: 72 } } : {})} padding="md">
       {screen.kind === 'open' && (
@@ -165,6 +217,8 @@ export function App() {
             checkoutPath={screen.project.checkoutPath}
             view={view}
             onViewChange={setView}
+            refreshing={refreshing}
+            onRefresh={() => void refresh()}
             onOpenAnother={() => void choose()}
           />
         </AppShell.Header>
@@ -236,11 +290,7 @@ export function App() {
           </Center>
         )}
 
-        {screen.kind === 'open' && view === 'documents' && (
-          <DocumentsView rootPath={screen.path} />
-        )}
-
-        {screen.kind === 'open' && view === 'board' && (
+        {screen.kind === 'open' && (
           <Stack gap="sm" style={{ height: '100%' }}>
             {actionError && (
               <Alert
@@ -253,40 +303,53 @@ export function App() {
                 {actionError}
               </Alert>
             )}
-            <Board
-              project={screen.project}
-              busyTicketId={busyTicketId}
-              onMove={move}
-              onComplete={askToComplete}
-              onReview={review}
-            />
+            {view === 'documents' ? (
+              <DocumentsView
+                rootPath={screen.path}
+                openTarget={documentTarget}
+                refreshToken={refreshToken}
+              />
+            ) : (
+              <Board
+                project={screen.project}
+                busyTicketId={busyTicketId}
+                onMove={move}
+                onComplete={askToComplete}
+                onReview={review}
+                onOpen={setDetailId}
+              />
+            )}
           </Stack>
         )}
       </AppShell.Main>
 
-      <Modal opened={confirmOpen} onClose={confirm.close} title="Accept this as done?" centered>
-        <Stack gap="md">
-          <Text size="sm">{pendingTicket?.title}</Text>
-          <Text size="sm" c="dimmed">
-            This records that you accepted the work. It is saved as your own decision, separately
-            from anything an AI tool reported.
-          </Text>
-          {pendingTicket && pendingTicket.status !== 'verification' && (
-            <Alert color="orange" variant="light" icon={<IconAlertTriangle size={16} />}>
-              This ticket is in {pendingTicket.status.replace('_', ' ')}, not Verification. The
-              change will be refused.
-            </Alert>
-          )}
-          <Group justify="flex-end" gap="xs">
-            <Button variant="default" onClick={confirm.close}>
-              Cancel
-            </Button>
-            <Button color="teal" onClick={completeConfirmed}>
-              Accept as done
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+      {screen.kind === 'open' && detailTicket && (
+        <TicketDetailModal
+          rootPath={screen.path}
+          ticket={detailTicket}
+          isNext={screen.project.nextTicketId === detailTicket.id}
+          onClose={() => setDetailId(null)}
+          // Moving or completing hands off to the board's own flow, which shows
+          // the result, so the dialog gets out of the way first.
+          onMove={(status) => {
+            setDetailId(null)
+            move(detailTicket.id, status)
+          }}
+          onComplete={() => {
+            setDetailId(null)
+            askToComplete(detailTicket.id)
+          }}
+          onReview={() => review(detailTicket.id)}
+          onOpenDocument={openDocument}
+        />
+      )}
+
+      <CompletionDialog
+        opened={confirmOpen}
+        ticket={pendingTicket}
+        onClose={confirm.close}
+        onConfirm={completeConfirmed}
+      />
     </AppShell>
   )
 }
