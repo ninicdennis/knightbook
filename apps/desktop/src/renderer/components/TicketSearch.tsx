@@ -13,6 +13,7 @@ import { IconAlertTriangle, IconSearch } from '@tabler/icons-react'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import type { SearchHighlight, TicketSearchView } from '../../shared/contract.js'
 import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
+import { TicketTypeBadge } from './TicketTypeBadge.js'
 
 /**
  * Finding a ticket by what is written in it, including the parts a card never
@@ -271,6 +272,7 @@ function Hit({
         <Badge size="xs" variant="light" color={STATUS_COLOR[hit.status]} style={{ flexShrink: 0 }}>
           {STATUS_LABEL[hit.status]}
         </Badge>
+        <TicketTypeBadge type={hit.type} size="xs" />
         <Text size="sm" fw={600} lineClamp={1}>
           <Marked text={hit.title} highlights={hit.titleHighlights} />
         </Text>

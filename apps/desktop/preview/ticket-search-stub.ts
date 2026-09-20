@@ -58,6 +58,7 @@ export function stubTicketSearch(
       id: ticket.id,
       title: ticket.title,
       status: ticket.status,
+      type: ticket.type,
       titleHighlights,
       excerpt,
       excerptHighlights: excerpt ? occurrences(excerpt, needle) : [],

@@ -18,6 +18,20 @@ export const ticketStatusSchema = z.enum(TICKET_STATUSES)
  */
 export const mutableStatusSchema = z.enum(['backlog', 'in_progress', 'verification'])
 
+/**
+ * What kind of work a ticket is, independent of where it sits on the board. The
+ * vocabulary is borrowed lightly from GitHub's default issue types, and Feature
+ * and Bug read like Conventional Commits' `feat` and `fix`. It stops there: a
+ * breaking change can belong to any of the three, so a type never implies a
+ * version increment, and nothing derives one from it.
+ *
+ * The stable word is what the file stores. Any emoji belongs to presentation.
+ */
+export const TICKET_TYPES = ['feature', 'bug', 'task'] as const
+export type TicketType = (typeof TICKET_TYPES)[number]
+
+export const ticketTypeSchema = z.enum(TICKET_TYPES)
+
 export const uuidSchema = z.uuid()
 
 export const ticketFrontmatterSchema = z.object({
@@ -25,6 +39,12 @@ export const ticketFrontmatterSchema = z.object({
   id: uuidSchema,
   title: z.string().min(1),
   status: ticketStatusSchema,
+  /**
+   * Optional, and left absent rather than defaulted: a ticket written before
+   * types existed has no type, and guessing one for it would be inventing a
+   * classification nobody made.
+   */
+  type: ticketTypeSchema.optional(),
   depends_on: z.array(uuidSchema).default([]),
   created_at: z.iso.datetime(),
   updated_at: z.iso.datetime(),

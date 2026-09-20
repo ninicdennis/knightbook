@@ -15,6 +15,8 @@ const api: ProjectspaceApi = {
   readProject: (rootPath) => ipcRenderer.invoke('project:read', rootPath),
   setTicketStatus: (rootPath, id, status, revision) =>
     ipcRenderer.invoke('ticket:setStatus', rootPath, id, status, revision),
+  setTicketType: (rootPath, id, type, revision) =>
+    ipcRenderer.invoke('ticket:setType', rootPath, id, type, revision),
   completeTicket: (rootPath, id, revision) =>
     ipcRenderer.invoke('ticket:complete', rootPath, id, revision),
   recordVerificationIssue: (rootPath, id, revision, reason) =>

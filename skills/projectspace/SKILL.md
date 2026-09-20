@@ -63,6 +63,11 @@ bypass it. Follow it because the person is relying on the board being honest.
   ticket rests on unaccepted work.
 - `blocker` is free text saying why a ticket cannot move. Keep it accurate. Set it
   when you are stuck, and clear it (`null`) when you are not.
+- `type` is `feature`, `bug`, `task`, or `null`. It says what kind of work a ticket
+  is and nothing about its state: it does not mean ready, reviewed, accepted, or
+  released. Most existing tickets are untyped, and that is not a gap to fill.
+  The words are borrowed from Conventional Commits only loosely — a breaking change
+  can be any of the three, so never derive a version bump or a release from a type.
 - A Done ticket with `completion_unattributed: true` has no recorded decision (its
   file was edited by hand). Do not describe it as accepted by the user.
 - `project_get` reports `backlog_order_problems`: entries listed twice, or ids with no
@@ -126,10 +131,19 @@ Constraints, decisions already made, links to the relevant documents.
 - One ticket, one verifiable outcome. If it has two, split it.
 - Put prerequisites in `depends_on` (ticket ids) and the documents that explain it in
   `related_documents` (project-relative paths).
+- Set `type` when the user has said what kind of work it is, or when it is plainly
+  one of the three: `feature` for a new or expanded capability, `bug` for existing
+  behaviour that is wrong, `task` for maintenance, investigation or documentation.
+  Leave it out when it is not obvious — untyped is a valid state, and guessing puts
+  a classification nobody made onto their board. Never bulk-classify old tickets.
 - New tickets always start in Backlog. `ticket_reorder_backlog` sets the manual
   order that `ticket_next` follows. It is the user's ordering, not yours: ask what
   order they want rather than reprioritizing their board on your own reading of it.
   Ids you leave out keep their relative place behind the ones you list.
+- `ticket_update` changes `type` like any other field: leaving it out keeps what the
+  ticket has, and `null` clears it back to untyped. Changing it counts as a content
+  change, so it can make a recorded review stale — say so rather than letting a
+  reclassification quietly look like new work.
 
 ## Documents
 

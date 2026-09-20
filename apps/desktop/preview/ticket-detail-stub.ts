@@ -23,6 +23,32 @@ See [the specification](docs/architecture.md) for the reasoning. This
 
 ## Notes
 Found by the user while trying the app.
+
+The rest of this body exists so the preview shows a ticket long enough to scroll.
+Real tickets written through MCP run to this length, and the actions below have to
+stay reachable without reading to the end of one.
+
+- A criterion that is long enough to wrap onto a second line in the dialog, because
+  acceptance criteria written by an agent usually are.
+- Another one, so the list has weight.
+- A third, mentioning \`.projectspace/tickets/3f2a9c1e-7b64-4d0a-9e51-0c8d2b7a44f1.md\`
+  to show how an unbroken path behaves inside the reading measure.
+
+## Research
+Two passes so a title match always outranks a body-only one, while inside each group
+the board's own order decides. That makes the result order deterministic without
+inventing a relevance score. The same reasoning applies to dependencies: a
+prerequisite in Verification satisfies a dependency without having been accepted.
+
+| Field | Meaning |
+| --- | --- |
+| status | Where the ticket sits on the board |
+| review | Whether a person has read the content |
+| completion | Who decided it was done, and when |
+
+## Verification
+Run the checks, compare both colour schemes at a wide and a narrow window, and try
+increased text size. Record what was actually run, and say plainly what was not.
 `
 
 export function stubTicketDetail(project: ProjectView, id: string): Result<TicketDetailView> {
@@ -42,7 +68,12 @@ export function stubTicketDetail(project: ProjectView, id: string): Result<Ticke
       body: BODY,
       createdAt: '2026-09-19T15:00:00Z',
       updatedAt: '2026-09-19T16:30:00Z',
-      relatedDocuments: ['docs/architecture.md', 'README.md'],
+      relatedDocuments: [
+        'docs/architecture.md',
+        'README.md',
+        // Long enough to prove a path wraps rather than widening the dialog.
+        'docs/decisions/0017-a-prerequisite-that-failed-verification-keeps-the-failure-on-its-own-record.md',
+      ],
       dependencies: found.dependsOn.map((dependencyId) => {
         const prerequisite = project.tickets.find((t) => t.id === dependencyId)
         return prerequisite

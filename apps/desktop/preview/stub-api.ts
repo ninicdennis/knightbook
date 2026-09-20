@@ -20,6 +20,7 @@ function ticket(
 ): TicketView {
   return {
     revision: `rev-${partial.id}`,
+    type: null,
     dependsOn: [],
     dependencyReady: true,
     dependencyNotes: [],
@@ -98,6 +99,7 @@ const PROJECT: ProjectView = {
   tickets: [
     ticket({
       id: 'board',
+      type: 'feature',
       title: 'Build the Kanban board',
       status: 'backlog',
     }),
@@ -114,13 +116,18 @@ const PROJECT: ProjectView = {
     }),
     ticket({
       id: 'editor',
+      type: 'task',
       title: 'Evaluate the formatted editor',
       status: 'in_progress',
       blocker: 'Milkdown 7.22.1 drops inline HTML; waiting on the upstream release.',
     }),
     ticket({
       id: 'writes',
-      title: 'Implement the safe write path',
+      type: 'feature',
+      // Long on purpose: the dialog header has to wrap this without pushing Close
+      // off the side, and the card has to keep its title on one column.
+      title:
+        'Implement the safe write path, including the temporary file, the rename, and the revision check that refuses a stale write',
       status: 'verification',
       review: {
         state: 'changed_since_review',
@@ -133,6 +140,7 @@ const PROJECT: ProjectView = {
     /** D-017: a prerequisite the user did not accept, and the work resting on it. */
     ticket({
       id: 'importer',
+      type: 'bug',
       title: 'Import dated records',
       status: 'verification',
       verificationIssue: {
@@ -186,6 +194,7 @@ const PROJECT: ProjectView = {
     }),
     ticket({
       id: 'stray',
+      type: 'bug',
       title: 'Edited outside the app',
       status: 'done',
       completionUnattributed: true,
@@ -258,6 +267,10 @@ export const stubApi: ProjectspaceApi = {
   },
   setTicketStatus: async (_root, id, status) => {
     record('setTicketStatus', id, status)
+    return { ok: true, value: PROJECT }
+  },
+  setTicketType: async (_root, id, type) => {
+    record('setTicketType', id, type)
     return { ok: true, value: PROJECT }
   },
   completeTicket: async (_root, id) => {
