@@ -2,7 +2,13 @@ import { Alert, AppShell, Button, Center, Group, Loader, Stack, Text } from '@ma
 import { useDisclosure } from '@mantine/hooks'
 import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
-import type { MovableStatus, ProjectView, RememberedProject, Result } from '../shared/contract.js'
+import type {
+  MovableStatus,
+  ProjectView,
+  RememberedProject,
+  Result,
+  TicketType,
+} from '../shared/contract.js'
 import { Board } from './components/Board.js'
 import { CompletionDialog } from './components/CompletionDialog.js'
 import { DocumentsView } from './components/DocumentsView.js'
@@ -122,6 +128,24 @@ export function App() {
 
       void apply(ticketId, () =>
         window.projectspace.setTicketStatus(screen.path, ticketId, status, ticket.revision),
+      )
+    },
+    [screen, apply],
+  )
+
+  /**
+   * The work type is metadata about the ticket, not a decision about it, so it
+   * applies straight away like a move does. The dialog stays open: the user is
+   * usually still reading the ticket they just classified.
+   */
+  const setType = useCallback(
+    (ticketId: string, type: TicketType | null) => {
+      if (screen.kind !== 'open') return
+      const ticket = screen.project.tickets.find((t) => t.id === ticketId)
+      if (!ticket) return
+
+      void apply(ticketId, () =>
+        window.projectspace.setTicketType(screen.path, ticketId, type, ticket.revision),
       )
     },
     [screen, apply],
@@ -471,6 +495,7 @@ export function App() {
             setDetailId(null)
             move(detailTicket.id, status)
           }}
+          onSetType={(type) => setType(detailTicket.id, type)}
           onComplete={() => {
             setDetailId(null)
             askToComplete(detailTicket.id)

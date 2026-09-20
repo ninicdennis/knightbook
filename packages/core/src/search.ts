@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { resolveInRoot } from './paths.js'
 import type { Project } from './project.js'
 import { listIncludedDocuments } from './documents.js'
+import type { TicketType } from './schema.js'
 import { listTicketRecords } from './tickets.js'
 
 /**
@@ -24,6 +25,8 @@ export interface SearchHit {
   readonly snippet: string
   /** 1-indexed line the match was found on, or null for a title-only match. */
   readonly line: number | null
+  /** A ticket's work type, when it has one. Documents have none. */
+  readonly type?: TicketType
 }
 
 export interface SearchResult {
@@ -55,6 +58,7 @@ export async function searchProject(project: Project, query: string): Promise<Se
       title: ticket.frontmatter.title,
       snippet: match?.snippet ?? ticket.frontmatter.title,
       line: match?.line ?? null,
+      ...(ticket.frontmatter.type ? { type: ticket.frontmatter.type } : {}),
     })
   }
 

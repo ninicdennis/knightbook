@@ -1,31 +1,24 @@
-import {
-  Alert,
-  Badge,
-  Button,
-  Divider,
-  Group,
-  Loader,
-  Menu,
-  Modal,
-  ScrollArea,
-  Stack,
-  Text,
-} from '@mantine/core'
-import {
-  IconAlertTriangle,
-  IconArrowsExchange,
-  IconEye,
-  IconFileText,
-  IconRotateClockwise,
-  IconThumbDown,
-  IconUserCheck,
-} from '@tabler/icons-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { MovableStatus, TicketDetailView, TicketView } from '../../shared/contract.js'
+import { Alert, Badge, Box, Group, Loader, Modal, Stack, Text } from '@mantine/core'
+import { IconAlertTriangle } from '@tabler/icons-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type {
+  MovableStatus,
+  TicketDetailView,
+  TicketType,
+  TicketView,
+} from '../../shared/contract.js'
 import { renderMarkdown } from '../markdown.js'
 import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
 import { MarkdownBody } from './MarkdownBody.js'
 import { ReviewBadge } from './ReviewBadge.js'
+import { TicketDetailActions } from './TicketDetailActions.js'
+import { TicketTypeBadge } from './TicketTypeBadge.js'
+import {
+  AuditDetails,
+  CompletionRecord,
+  Dependencies,
+  RelatedDocuments,
+} from './TicketDetailSections.js'
 import { VerificationIssueNotice } from './VerificationIssueNotice.js'
 
 /**
@@ -33,13 +26,18 @@ import { VerificationIssueNotice } from './VerificationIssueNotice.js'
  * person read what an AI wrote, and until this existed the only way was to open
  * the Markdown file by hand.
  *
+ * The dialog is three fixed parts: a header that names the ticket, one region
+ * that scrolls, and an action bar. Only the middle part scrolls, so a ticket
+ * with a long body cannot bury its own controls — reading to the end used to be
+ * the only way to reach them. The dialog's height comes from the modal's own
+ * bound on the window, not from a subtracted header height, so nothing here has
+ * to be corrected when the header wraps or the text size changes.
+ *
  * The board's copy of the ticket renders straight away, so the header and the
  * actions never wait; the body and the resolved dependencies arrive from a fresh
  * read. The body goes through the same sanitizer as the document viewer, because
  * a ticket is written by an AI and is exactly as untrusted as a document.
  */
-
-const MOVABLE: MovableStatus[] = ['backlog', 'in_progress', 'verification']
 
 interface Props {
   rootPath: string
@@ -47,6 +45,7 @@ interface Props {
   isNext: boolean
   onClose: () => void
   onMove: (status: MovableStatus) => void
+  onSetType: (type: TicketType | null) => void
   onComplete: () => void
   /** D-017: the user says this did not pass verification, and why. */
   onReportIssue: () => void
@@ -61,6 +60,7 @@ export function TicketDetailModal({
   isNext,
   onClose,
   onMove,
+  onSetType,
   onComplete,
   onReportIssue,
   onResolveIssue,
@@ -69,6 +69,8 @@ export function TicketDetailModal({
 }: Props) {
   const [detail, setDetail] = useState<TicketDetailView | null>(null)
   const [error, setError] = useState<string | null>(null)
+  /** Whatever had focus when the dialog opened, as a fallback for closing. */
+  const returnTo = useRef<HTMLElement | null>(null)
 
   // Re-read whenever the board says this ticket changed, including a review
   // recorded from this very dialog.
@@ -90,271 +92,168 @@ export function TicketDetailModal({
     }
   }, [rootPath, ticket.id, version])
 
+  /*
+   * Closing hands focus back to the card this ticket was opened from, whichever
+   * way it was opened: clicking a card leaves focus on the document body, and a
+   * result opened from search belongs to a dialog that has already closed, so
+   * the modal's own focus return has nothing useful to give back. The card's own
+   * control is a real target in both cases. Done here rather than left to
+   * Mantine so the behaviour is the same however the dialog closes.
+   */
+  useEffect(() => {
+    const opener = document.activeElement
+    returnTo.current = opener instanceof HTMLElement ? opener : null
+
+    return () => {
+      const card = document.querySelector<HTMLElement>(`[data-ticket-handle="${ticket.id}"]`)
+      const target = card ?? returnTo.current
+      if (target?.isConnected) target.focus()
+    }
+  }, [ticket.id])
+
   const rendered = useMemo(
     () => (detail ? renderMarkdown(detail.body, 'ticket.md') : null),
     [detail],
   )
 
   return (
-    <Modal
-      opened
-      onClose={onClose}
-      title={ticket.title}
-      size="xl"
-      centered
-      scrollAreaComponent={ScrollArea.Autosize}
-    >
-      <Stack gap="md">
-        <Group gap="xs">
-          <Badge variant="light" color={STATUS_COLOR[ticket.status]}>
-            {STATUS_LABEL[ticket.status]}
-          </Badge>
-          {isNext && (
-            <Badge variant="light" color="accent">
-              Next up
-            </Badge>
-          )}
-          <ReviewBadge review={ticket.review} />
-        </Group>
+    /* `lg` padding rather than the default: the reading text, the badges and the
+       action bar were all sitting too close to the dialog's edges. */
+    <Modal.Root opened onClose={onClose} size="xl" centered padding="lg" returnFocus={false}>
+      <Modal.Overlay />
+      {/*
+       * A column, so the body below can be the only part that scrolls. The zero
+       * minimum keeps the dialog at its own width: without it a single long
+       * path or identifier inside would widen the whole dialog rather than wrap.
+       */}
+      <Modal.Content
+        style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}
+      >
+        <Modal.Header
+          style={{
+            alignItems: 'flex-start',
+            borderBottom: '1px solid var(--ps-hairline)',
+          }}
+        >
+          <Stack gap={8} style={{ flex: 1, minWidth: 0 }}>
+            <Modal.Title
+              style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 600, lineHeight: 1.3 }}
+            >
+              {ticket.title}
+            </Modal.Title>
+            {/* Secondary to the title, and never allowed to push Close aside. */}
+            <Group gap="xs" wrap="wrap">
+              <Badge size="sm" variant="light" color={STATUS_COLOR[ticket.status]}>
+                {STATUS_LABEL[ticket.status]}
+              </Badge>
+              <TicketTypeBadge type={ticket.type} />
+              {isNext && (
+                <Badge size="sm" variant="light" color="accent">
+                  Next up
+                </Badge>
+              )}
+              <ReviewBadge review={ticket.review} />
+            </Group>
+          </Stack>
+          <Modal.CloseButton aria-label="Close" style={{ flexShrink: 0 }} />
+        </Modal.Header>
 
-        {ticket.blocker && (
-          <Alert
-            icon={<IconAlertTriangle size={16} />}
-            color="orange"
-            variant="light"
-            title="Blocked"
-          >
-            {ticket.blocker}
-          </Alert>
-        )}
-
-        <VerificationIssueNotice ticket={ticket} />
-
-        {ticket.completionUnattributed && (
-          <Alert
-            icon={<IconAlertTriangle size={16} />}
-            color="orange"
-            variant="light"
-            title="Unattributed"
-          >
-            This was set to Done outside the app, with no recorded decision. Nothing here shows who
-            accepted it.
-          </Alert>
-        )}
-
-        {ticket.completion && <CompletionRecord completion={ticket.completion} />}
-
-        {error && (
-          <Alert
-            icon={<IconAlertTriangle size={16} />}
-            color="orange"
-            variant="light"
-            title="Could not read this ticket"
-          >
-            {error} Nothing was changed.
-          </Alert>
-        )}
-
-        {!detail && !error && (
-          <Group gap="xs">
-            <Loader size="sm" />
-            <Text size="sm" c="dimmed">
-              Reading the ticket…
-            </Text>
-          </Group>
-        )}
-
-        {detail && rendered && (
-          <>
-            <Dependencies ticket={ticket} detail={detail} />
-
-            <Divider />
-            <MarkdownBody compact html={rendered.html} onFollowLink={onOpenDocument} />
-
-            {detail.relatedDocuments.length > 0 && (
-              <Section title="Related documents">
-                <Group gap={4}>
-                  {detail.relatedDocuments.map((path) => (
-                    <Button
-                      key={path}
-                      variant="subtle"
-                      size="compact-sm"
-                      leftSection={<IconFileText size={14} />}
-                      onClick={() => onOpenDocument(path)}
-                    >
-                      {path}
-                    </Button>
-                  ))}
-                </Group>
-              </Section>
-            )}
-
-            <Text size="xs" c="dimmed">
-              Created {formatWhen(detail.createdAt)} · Updated {formatWhen(detail.updatedAt)} ·
-              Revision {detail.revision.slice(0, 8)}
-              {ticket.review.lastReviewedAt &&
-                ` · Last reviewed ${formatWhen(ticket.review.lastReviewedAt)}`}
-            </Text>
-          </>
-        )}
-
-        <Divider />
-        <Group justify="space-between">
-          <Menu position="top-start" withinPortal>
-            <Menu.Target>
-              <Button variant="default" size="xs" leftSection={<IconArrowsExchange size={14} />}>
-                Move to
-              </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {MOVABLE.filter((status) => status !== ticket.status).map((status) => (
-                <Menu.Item key={status} onClick={() => onMove(status)}>
-                  {STATUS_LABEL[status]}
-                </Menu.Item>
-              ))}
-            </Menu.Dropdown>
-          </Menu>
-
-          <Group gap="xs">
-            {ticket.review.state !== 'reviewed' && (
-              <Button
-                variant="default"
-                size="xs"
-                leftSection={<IconEye size={14} />}
-                onClick={onReview}
-              >
-                {ticket.review.state === 'changed_since_review'
-                  ? 'Mark reviewed again'
-                  : 'Mark content reviewed'}
-              </Button>
-            )}
-            {ticket.verificationIssue && (
-              <Button
-                variant="default"
-                size="xs"
-                leftSection={<IconRotateClockwise size={14} />}
-                onClick={onResolveIssue}
-              >
-                Resolve the issue
-              </Button>
-            )}
-            {ticket.status === 'verification' && !ticket.verificationIssue && (
-              <Button
-                variant="default"
+        {/*
+         * Mantine drops the body's top padding when a header sits above it, which
+         * left the first line of the ticket against the header rule. It is put
+         * back here so the reading area has room on all four sides.
+         */}
+        <Modal.Body
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            paddingTop: 'var(--mantine-spacing-lg)',
+          }}
+        >
+          <Stack gap="lg">
+            {ticket.blocker && (
+              <Alert
+                icon={<IconAlertTriangle size={16} />}
                 color="orange"
-                size="xs"
-                leftSection={<IconThumbDown size={14} />}
-                onClick={onReportIssue}
+                variant="light"
+                title="Blocked"
               >
-                Did not pass…
-              </Button>
+                {ticket.blocker}
+              </Alert>
             )}
-            {ticket.status === 'verification' && (
-              <Button
-                color="teal"
-                size="xs"
-                leftSection={<IconUserCheck size={14} />}
-                onClick={onComplete}
+
+            <VerificationIssueNotice ticket={ticket} />
+
+            {ticket.completionUnattributed && (
+              <Alert
+                icon={<IconAlertTriangle size={16} />}
+                color="orange"
+                variant="light"
+                title="Unattributed"
               >
-                Accept as done
-              </Button>
+                This was set to Done outside the app, with no recorded decision. Nothing here shows
+                who accepted it.
+              </Alert>
             )}
-          </Group>
-        </Group>
-      </Stack>
-    </Modal>
+
+            {ticket.completion && <CompletionRecord completion={ticket.completion} />}
+
+            {error && (
+              <Alert
+                icon={<IconAlertTriangle size={16} />}
+                color="orange"
+                variant="light"
+                title="Could not read this ticket"
+              >
+                {error} Nothing was changed.
+              </Alert>
+            )}
+
+            {!detail && !error && (
+              <Group gap="xs">
+                <Loader size="sm" />
+                <Text size="sm" c="dimmed">
+                  Reading the ticket…
+                </Text>
+              </Group>
+            )}
+
+            {detail && rendered && (
+              <>
+                <Dependencies ticket={ticket} detail={detail} />
+                {/*
+                 * The reading region. It is deliberately one element holding only
+                 * the ticket's own prose, so a formatted editor and its toolbar
+                 * can take this space later without touching the header, the
+                 * action bar, or how the dialog scrolls.
+                 */}
+                <MarkdownBody compact html={rendered.html} onFollowLink={onOpenDocument} />
+
+                <RelatedDocuments paths={detail.relatedDocuments} onOpen={onOpenDocument} />
+                <AuditDetails detail={detail} lastReviewedAt={ticket.review.lastReviewedAt} />
+              </>
+            )}
+          </Stack>
+        </Modal.Body>
+
+        <Box
+          style={{
+            borderTop: '1px solid var(--ps-hairline)',
+            padding: 'var(--mantine-spacing-md) var(--mantine-spacing-lg)',
+          }}
+        >
+          <TicketDetailActions
+            ticket={ticket}
+            onMove={onMove}
+            onSetType={onSetType}
+            onComplete={onComplete}
+            onReportIssue={onReportIssue}
+            onResolveIssue={onResolveIssue}
+            onReview={onReview}
+          />
+        </Box>
+      </Modal.Content>
+    </Modal.Root>
   )
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Stack gap={6}>
-      <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>
-        {title}
-      </Text>
-      {children}
-    </Stack>
-  )
-}
-
-function Dependencies({ ticket, detail }: { ticket: TicketView; detail: TicketDetailView }) {
-  if (detail.dependencies.length === 0) return null
-
-  const cannotStart = ticket.status === 'backlog' && !ticket.dependencyReady
-  // D-017 takes precedence over D-014: a prerequisite that reached Verification
-  // and then failed it must not still read as satisfying anything.
-  const failed = new Set(ticket.affectedBy.map((entry) => entry.ticketId))
-
-  return (
-    <Section title="Depends on">
-      {detail.dependencies.map((dependency) => (
-        <Group key={dependency.id} gap="xs" wrap="nowrap" align="baseline">
-          <Badge
-            size="xs"
-            variant="light"
-            color={dependency.status ? STATUS_COLOR[dependency.status] : 'red'}
-          >
-            {dependency.status
-              ? STATUS_LABEL[dependency.status]
-              : dependency.unreadable
-                ? 'Unreadable'
-                : 'Missing'}
-          </Badge>
-          <Text size="sm">
-            {dependency.title ??
-              (dependency.unreadable
-                ? `Ticket ${dependency.id} could not be read`
-                : `No ticket with id ${dependency.id}`)}
-          </Text>
-          <Text size="xs" {...(failed.has(dependency.id) ? { c: 'orange' } : { c: 'dimmed' })}>
-            {dependency.status === null
-              ? dependency.unreadable
-                ? 'its file could not be read, so this cannot be checked'
-                : 'is missing from this project'
-              : failed.has(dependency.id)
-                ? 'failed verification, so it does not unlock this'
-                : dependency.satisfied
-                  ? 'satisfies this dependency'
-                  : 'is not ready yet'}
-          </Text>
-        </Group>
-      ))}
-      <Text size="xs" c="dimmed">
-        A prerequisite in Verification or Done lets this ticket start. That does not mean it has
-        been accepted.
-      </Text>
-      {cannotStart && ticket.dependencyNotes.length > 0 && (
-        <Text size="xs" c="orange">
-          {ticket.dependencyNotes.join('; ')}
-        </Text>
-      )}
-    </Section>
-  )
-}
-
-function CompletionRecord({ completion }: { completion: NonNullable<TicketView['completion']> }) {
-  const byAgent = completion.recordedBy === 'agent'
-
-  return (
-    <Section title="Completion record">
-      <Text size="sm">
-        {byAgent ? 'Recorded by an AI tool on your instruction' : 'Accepted by you in the app'} ·{' '}
-        {formatWhen(completion.recordedAt)}
-      </Text>
-      <Text size="sm" c="dimmed">
-        &ldquo;{completion.instruction}&rdquo;
-      </Text>
-      {byAgent && (
-        <Text size="xs" c="dimmed">
-          You told the AI this was complete and it recorded your decision; it did not decide this
-          itself.
-        </Text>
-      )}
-    </Section>
-  )
-}
-
-function formatWhen(iso: string): string {
-  const date = new Date(iso)
-  return Number.isNaN(date.getTime()) ? iso : date.toLocaleString()
 }

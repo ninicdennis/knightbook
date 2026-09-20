@@ -16,6 +16,7 @@ import {
   ticketFrontmatterSchema,
   type TicketFrontmatter,
   type TicketStatus,
+  type TicketType,
 } from './schema.js'
 import { readRecord, writeRecord } from './write.js'
 
@@ -36,6 +37,8 @@ export interface CreateTicketInput {
   readonly body?: string
   readonly dependsOn?: string[]
   readonly relatedDocuments?: string[]
+  /** Optional. Omitting it leaves the ticket untyped rather than guessing one. */
+  readonly type?: TicketType
 }
 
 export async function createTicket(project: Project, input: CreateTicketInput): Promise<Ticket> {
@@ -45,6 +48,7 @@ export async function createTicket(project: Project, input: CreateTicketInput): 
     id: randomUUID(),
     title: input.title,
     status: 'backlog',
+    ...(input.type !== undefined ? { type: input.type } : {}),
     depends_on: input.dependsOn ?? [],
     created_at: now,
     updated_at: now,
@@ -181,6 +185,8 @@ export interface UpdateTicketInput {
   readonly body?: string
   readonly dependsOn?: string[]
   readonly blocker?: string | null
+  /** Omitted keeps whatever the ticket has; `null` clears it back to untyped. */
+  readonly type?: TicketType | null
 }
 
 /**
@@ -209,6 +215,10 @@ export async function updateTicket(
   if (input.title !== undefined) record.data.set('title', input.title)
   if (input.status !== undefined) record.data.set('status', input.status)
   if (input.dependsOn !== undefined) record.data.set('depends_on', input.dependsOn)
+  if (input.type !== undefined) {
+    if (input.type === null) record.data.delete('type')
+    else record.data.set('type', input.type)
+  }
   if (input.blocker !== undefined) {
     if (input.blocker === null) record.data.delete('blocker')
     else record.data.set('blocker', input.blocker)
@@ -216,6 +226,14 @@ export async function updateTicket(
   record.data.set('updated_at', new Date().toISOString())
 
   const next = serializeRecord(record, input.body ?? record.body)
+  /*
+   * Refuse a value that would make the record unreadable, before it reaches the
+   * file. Without this an out-of-range field is written and only rejected when
+   * the ticket is next read, which leaves a valid ticket looking corrupt on
+   * disk because of one bad argument.
+   */
+  parseTicket(next, id)
+
   const { revision } = await writeRecord(project.root, path, next, {
     expectedRevision: input.expectedRevision,
   })
@@ -249,6 +267,7 @@ function renderTicket(frontmatter: TicketFrontmatter, body: string): string {
     `id: ${frontmatter.id}`,
     `title: ${JSON.stringify(frontmatter.title)}`,
     `status: ${frontmatter.status}`,
+    ...(frontmatter.type ? [`type: ${frontmatter.type}`] : []),
     `depends_on: ${JSON.stringify(frontmatter.depends_on)}`,
     `created_at: ${frontmatter.created_at}`,
     `updated_at: ${frontmatter.updated_at}`,

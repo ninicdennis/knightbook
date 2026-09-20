@@ -8,6 +8,12 @@ export type TicketStatus = 'backlog' | 'in_progress' | 'verification' | 'done'
 /** The statuses a user may move a card into directly. Done is not one of them. */
 export type MovableStatus = Exclude<TicketStatus, 'done'>
 
+/**
+ * What kind of work a ticket is, independent of where it sits on the board.
+ * Null means untyped, which is a real state and not a fourth kind of work.
+ */
+export type TicketType = 'feature' | 'bug' | 'task'
+
 export interface CompletionView {
   decisionSource: 'direct_user_action' | 'reported_user_instruction'
   recordedBy: 'user' | 'agent'
@@ -49,6 +55,7 @@ export interface TicketView {
   id: string
   title: string
   status: TicketStatus
+  type: TicketType | null
   revision: string
   dependsOn: string[]
   dependencyReady: boolean
@@ -97,6 +104,7 @@ export interface TicketSearchHitView {
   id: string
   title: string
   status: TicketStatus
+  type: TicketType | null
   /** Empty when only the body matched. */
   titleHighlights: SearchHighlight[]
   /** Context around the first body match, or null when only the title matched. */
@@ -230,6 +238,13 @@ export interface ProjectspaceApi extends DocumentsApi {
     rootPath: string,
     id: string,
     status: MovableStatus,
+    revision: string,
+  ): Promise<Result<ProjectView>>
+  /** Sets or clears the ticket's work type. Null clears it back to untyped. */
+  setTicketType(
+    rootPath: string,
+    id: string,
+    type: TicketType | null,
     revision: string,
   ): Promise<Result<ProjectView>>
   completeTicket(rootPath: string, id: string, revision: string): Promise<Result<ProjectView>>

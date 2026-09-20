@@ -1,22 +1,18 @@
-import { Badge, Card, Group, Menu, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
+import { Card, Group, Menu, Stack, Text, UnstyledButton } from '@mantine/core'
 import {
-  IconAlertTriangle,
   IconArrowBarToUp,
   IconArrowDown,
   IconArrowUp,
   IconDotsVertical,
   IconEye,
-  IconEyeOff,
   IconInfoCircle,
-  IconLock,
   IconThumbDown,
   IconUserCheck,
-  IconRobot,
   IconRotateClockwise,
 } from '@tabler/icons-react'
-import type { ReactNode } from 'react'
 import type { MovableStatus, TicketView } from '../../shared/contract.js'
 import { STATUS_LABEL } from '../theme.js'
+import { TicketCardBadges } from './TicketCardBadges.js'
 
 /**
  * A card carries the things the specification says must never be implied: why a
@@ -24,8 +20,9 @@ import { STATUS_LABEL } from '../theme.js'
  * decision, and who recorded the decision that does exist.
  *
  * The title is what a person scans, so it is read first and given room. Every
- * status badge sits in one footer row underneath instead of stacking between the
- * title and the next card, which kept moving the titles out of line.
+ * badge sits in one row underneath instead of stacking between the title and the
+ * next card, which kept moving the titles out of line; that row is its own
+ * component, because there are now nine things it can say.
  */
 
 const MOVABLE: MovableStatus[] = ['backlog', 'in_progress', 'verification']
@@ -62,20 +59,7 @@ export function TicketCard({
   onReview,
   onOpen,
 }: Props) {
-  const blockedInBacklog = ticket.status === 'backlog' && !ticket.dependencyReady
   const isDone = ticket.status === 'done'
-  const affected = ticket.affectedBy.length > 0
-
-  // An empty footer row would still take space and pull the titles out of line.
-  const hasFooter =
-    isNext ||
-    ticket.review.state !== 'reviewed' ||
-    blockedInBacklog ||
-    ticket.blocker !== null ||
-    ticket.verificationIssue !== null ||
-    affected ||
-    ticket.completionUnattributed ||
-    ticket.completion !== null
 
   return (
     <Card
@@ -123,6 +107,8 @@ export function TicketCard({
             <Menu.Target>
               <UnstyledButton
                 aria-label={`Actions for ${ticket.title}`}
+                /* Where the detail dialog hands focus back to when it closes. */
+                data-ticket-handle={ticket.id}
                 disabled={busy}
                 style={{ flexShrink: 0, lineHeight: 1 }}
               >
@@ -216,183 +202,8 @@ export function TicketCard({
           </Menu>
         </Group>
 
-        {hasFooter && (
-          <StatusFooter>
-            {isNext && (
-              <Badge size="sm" variant="filled" color="accent">
-                Next up
-              </Badge>
-            )}
-
-            {/*
-            Review is informational and never blocks work (D-004), so it reads as a
-            quiet note rather than a warning. What it must not do is let unreviewed
-            content look reviewed, so "unreviewed" is shown rather than left blank.
-          */}
-            {ticket.review.state === 'unreviewed' && (
-              <QuietBadge
-                icon={<IconEyeOff size={11} />}
-                label="Unreviewed"
-                tooltip="No one has confirmed this content yet. Work can still proceed; this only tracks whether a person has read it."
-              />
-            )}
-
-            {ticket.review.state === 'changed_since_review' && (
-              <Tooltip
-                multiline
-                w={300}
-                withArrow
-                label={ticket.review.changeSummary ?? 'The content changed after it was reviewed.'}
-              >
-                <Badge size="sm" variant="light" color="yellow" leftSection={<IconEye size={11} />}>
-                  Changed since review
-                </Badge>
-              </Tooltip>
-            )}
-
-            {blockedInBacklog && (
-              <QuietBadge
-                icon={<IconLock size={11} />}
-                label={`Waiting on ${ticket.dependsOn.length}`}
-                tooltip={ticket.dependencyNotes.join('; ') || 'Not ready to start.'}
-              />
-            )}
-
-            {ticket.blocker && (
-              <Tooltip multiline w={300} withArrow label={ticket.blocker}>
-                <Badge
-                  size="sm"
-                  variant="light"
-                  color="orange"
-                  leftSection={<IconAlertTriangle size={11} />}
-                >
-                  Blocked
-                </Badge>
-              </Tooltip>
-            )}
-
-            {/*
-            D-017. Two different facts, never merged into one badge: this ticket
-            failed verification, or this ticket's work rests on one that did.
-          */}
-            {ticket.verificationIssue && (
-              <Tooltip
-                multiline
-                w={320}
-                withArrow
-                label={`${ticket.verificationIssue.reason} — recorded ${
-                  ticket.verificationIssue.recordedBy === 'agent'
-                    ? 'by the AI from what you told it'
-                    : 'by you in the app'
-                }. Nothing was moved or reset.`}
-              >
-                <Badge
-                  size="sm"
-                  variant="light"
-                  color="orange"
-                  leftSection={<IconThumbDown size={11} />}
-                >
-                  Failed verification
-                </Badge>
-              </Tooltip>
-            )}
-
-            {affected && (
-              <Tooltip
-                multiline
-                w={320}
-                withArrow
-                label={ticket.affectedBy
-                  .map(
-                    (failed) =>
-                      `${failed.title}${failed.direct ? '' : ' (further up the chain)'}: ${failed.issue}`,
-                  )
-                  .join('\n')}
-              >
-                <Badge
-                  size="sm"
-                  variant="light"
-                  color="orange"
-                  leftSection={<IconAlertTriangle size={11} />}
-                >
-                  {ticket.affectedBy.length === 1
-                    ? 'Affected by a failure'
-                    : `Affected by ${ticket.affectedBy.length} failures`}
-                </Badge>
-              </Tooltip>
-            )}
-
-            {ticket.completionUnattributed && (
-              <Tooltip
-                multiline
-                w={280}
-                withArrow
-                label="This was set to Done outside the app, with no recorded decision. Nothing here shows who accepted it."
-              >
-                <Badge
-                  size="sm"
-                  variant="light"
-                  color="orange"
-                  leftSection={<IconAlertTriangle size={11} />}
-                >
-                  Unattributed
-                </Badge>
-              </Tooltip>
-            )}
-
-            {ticket.completion && (
-              <Tooltip
-                multiline
-                w={300}
-                withArrow
-                label={
-                  ticket.completion.recordedBy === 'agent'
-                    ? `You told the AI this was complete and it recorded your decision; it did not decide this itself. Recorded as: "${ticket.completion.instruction}"`
-                    : ticket.completion.instruction
-                }
-              >
-                <Badge
-                  size="sm"
-                  variant="light"
-                  color="teal"
-                  leftSection={
-                    ticket.completion.recordedBy === 'agent' ? (
-                      <IconRobot size={11} />
-                    ) : (
-                      <IconUserCheck size={11} />
-                    )
-                  }
-                >
-                  {ticket.completion.recordedBy === 'agent' ? 'Recorded by AI' : 'Accepted by you'}
-                </Badge>
-              </Tooltip>
-            )}
-          </StatusFooter>
-        )}
+        <TicketCardBadges ticket={ticket} isNext={isNext} />
       </Stack>
     </Card>
-  )
-}
-
-/** One row for every badge on the card, wrapping rather than pushing the title. */
-function StatusFooter({ children }: { children: ReactNode }) {
-  return (
-    <Group gap={6} wrap="wrap" style={{ rowGap: 4 }}>
-      {children}
-    </Group>
-  )
-}
-
-/**
- * Secondary metadata: present and readable, but not competing with the title or
- * with the states that mean something is wrong.
- */
-function QuietBadge({ icon, label, tooltip }: { icon: ReactNode; label: string; tooltip: string }) {
-  return (
-    <Tooltip multiline w={280} withArrow label={tooltip}>
-      <Badge size="sm" variant="default" leftSection={icon}>
-        {label}
-      </Badge>
-    </Tooltip>
   )
 }

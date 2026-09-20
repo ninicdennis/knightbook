@@ -1,5 +1,5 @@
 import type { Project } from './project.js'
-import type { TicketStatus } from './schema.js'
+import type { TicketStatus, TicketType } from './schema.js'
 import { listTicketRecords, type TicketProblem } from './tickets.js'
 
 /**
@@ -28,6 +28,8 @@ export interface TicketSearchHit {
   readonly id: string
   readonly title: string
   readonly status: TicketStatus
+  /** Null for a ticket written before types existed, or one left untyped. */
+  readonly type: TicketType | null
   /** Empty when only the body matched. */
   readonly titleHighlights: Highlight[]
   /** Context around the first body match, or null when only the title matched. */
@@ -111,6 +113,7 @@ export async function searchTickets(
       id: ticket.frontmatter.id,
       title,
       status: ticket.frontmatter.status,
+      type: ticket.frontmatter.type ?? null,
       titleHighlights,
       excerpt,
       excerptHighlights: excerpt === null ? [] : occurrences(excerpt, needle),

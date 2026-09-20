@@ -46,6 +46,7 @@ export async function toTicketView(
     id: frontmatter.id,
     title: frontmatter.title,
     status: frontmatter.status,
+    type: frontmatter.type ?? null,
     revision: ticket.revision,
     dependsOn: frontmatter.depends_on,
     dependencyReady: readiness.ready,

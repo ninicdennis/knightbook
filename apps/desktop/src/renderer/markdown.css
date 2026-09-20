@@ -8,6 +8,12 @@
   font-size: var(--mantine-font-size-sm);
   line-height: 1.65;
   max-width: 78ch;
+  /*
+   * A file path, a UUID, or a URL has no spaces to break at. Without this it
+   * would set the width of whatever contains it and push the reading text off
+   * the side of the window instead of wrapping.
+   */
+  overflow-wrap: anywhere;
 }
 
 .markdown-body h1,

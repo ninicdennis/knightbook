@@ -65,10 +65,13 @@ export {
 export {
   mutableStatusSchema,
   ticketStatusSchema,
+  ticketTypeSchema,
   TICKET_STATUSES,
+  TICKET_TYPES,
   type ProjectFrontmatter,
   type TicketFrontmatter,
   type TicketStatus,
+  type TicketType,
 } from './schema.js'
 export {
   includeDocuments,

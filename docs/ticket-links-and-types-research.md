@@ -1,6 +1,8 @@
 # Research: ticket navigation and work types
 
-2026-09-20. Recommendations for future Backlog work; no application changes or user acceptance claimed.
+2026-09-20. Recommendations for future Backlog work; no application changes or user acceptance
+claimed at the time of writing. The ticket-type half has since been implemented — see the
+decision recorded at the end of this document.
 
 ## Internal links
 
@@ -35,3 +37,24 @@ Sources: [GitHub issue types](https://docs.github.com/en/issues/tracking-your-wo
 ## Relationship to existing work
 
 These are separate functional tickets from the UI/UX pass in [the design direction](ui-ux-design-direction.md). Coordinate edits to MarkdownBody, TicketDetailModal, DocumentsView, and TicketCard when implementation begins. Neither feature needs the future formatted Markdown editor. Preserve ordinary Markdown so external editors and other agents can use the same records.
+
+## Decision: implemented as proposed (2026-09-20)
+
+The one optional `type` field above was built as described, under ticket
+`9507568c-7ec9-445b-adac-b016ede99794`, which is in Verification: implemented, not
+accepted. `feature | bug | task` is stored as a plain word
+in ticket frontmatter, is absent rather than defaulted, and the emoji is chosen in the
+UI rather than written to the record, so a ticket file stays ordinary Markdown that
+another tool or an external editor can read.
+
+Two points were settled while implementing it and are binding for later work. Type is
+advisory vocabulary only: Feature resembles Conventional Commits `feat` and Bug
+resembles `fix`, but SemVer describes the compatibility of a released public API, not
+the category of a planning ticket, so a breaking change can belong to any of the three
+and nothing derives a version increment from a type. And changing a type counts as a
+meaningful content change, the same as `depends_on` or `related_documents`, so it can
+make a recorded review stale; that is intended, because reclassifying work is something
+a reviewer should be told about.
+
+The internal-links recommendations in the first half of this document are still
+unimplemented, and are ticket `db7cff48-77cf-46c4-9173-62ee9d1b3490`.

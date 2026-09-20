@@ -16,6 +16,7 @@ import {
   resolveProjectRoot,
   resolveVerificationIssue,
   selectNextTicket,
+  ticketTypeSchema,
   updateTicket,
   type Project,
   type Ticket,
@@ -60,6 +61,8 @@ function summarize(ticket: Ticket, index: TicketIndex) {
     id: ticket.frontmatter.id,
     title: ticket.frontmatter.title,
     status: ticket.frontmatter.status,
+    /** Optional work type. Null means untyped, which is not a kind of work. */
+    type: ticket.frontmatter.type ?? null,
     revision: ticket.revision,
     depends_on: ticket.frontmatter.depends_on,
     dependency_ready: readiness.ready,
@@ -222,6 +225,13 @@ export function registerTools(server: McpServer, rootPath: string): void {
         body: z.string().optional(),
         depends_on: z.array(z.uuid()).optional(),
         related_documents: z.array(z.string()).optional(),
+        type: ticketTypeSchema
+          .optional()
+          .describe(
+            'What kind of work this is: feature (new capability), bug (incorrect ' +
+              'behaviour), or task (maintenance, research, documentation). Leave it ' +
+              'out when the user has not said; untyped is a valid state.',
+          ),
       }),
     },
     async (input) =>
@@ -234,6 +244,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
           ...(input.related_documents !== undefined
             ? { relatedDocuments: input.related_documents }
             : {}),
+          ...(input.type !== undefined ? { type: input.type } : {}),
         })
         return ok({ id: ticket.frontmatter.id, revision: ticket.revision })
       }),
@@ -255,6 +266,10 @@ export function registerTools(server: McpServer, rootPath: string): void {
         body: z.string().optional(),
         depends_on: z.array(z.uuid()).optional(),
         blocker: z.string().nullable().optional(),
+        type: ticketTypeSchema
+          .nullable()
+          .optional()
+          .describe('Omit to keep the current type. Send null to clear it back to untyped.'),
       }),
     },
     async (input) =>
@@ -267,10 +282,12 @@ export function registerTools(server: McpServer, rootPath: string): void {
           ...(input.body !== undefined ? { body: input.body } : {}),
           ...(input.depends_on !== undefined ? { dependsOn: input.depends_on } : {}),
           ...(input.blocker !== undefined ? { blocker: input.blocker } : {}),
+          ...(input.type !== undefined ? { type: input.type } : {}),
         })
         return ok({
           id: ticket.frontmatter.id,
           status: ticket.frontmatter.status,
+          type: ticket.frontmatter.type ?? null,
           revision: ticket.revision,
         })
       }),

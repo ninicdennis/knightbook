@@ -12,8 +12,10 @@ import {
   resolveVerificationIssue,
   searchTickets,
   selectNextTicket,
+  ticketTypeSchema,
   updateTicket,
   type Project,
+  type TicketType,
 } from '@projectspace/core'
 import { forgetProject, readAppState, rememberProject } from './app-state.js'
 import { guard } from './guard.js'
@@ -104,6 +106,33 @@ export function registerProjectHandlers(): void {
 
         const project = await openProject(rootPath)
         await updateTicket(project, id, { expectedRevision: revision, status })
+        return await buildView(project)
+      }),
+  )
+
+  /**
+   * The work type is ordinary metadata: it says what kind of work this is, not
+   * whether it is done, reviewed or ready. Clearing it is sending null, which is
+   * a real answer rather than a missing one.
+   */
+  ipcMain.handle(
+    'ticket:setType',
+    async (_event, rootPath: unknown, id: unknown, type: unknown, revision: unknown) =>
+      await guard<ProjectView>(async () => {
+        if (
+          typeof rootPath !== 'string' ||
+          typeof id !== 'string' ||
+          typeof revision !== 'string' ||
+          !(type === null || ticketTypeSchema.safeParse(type).success)
+        ) {
+          throw new Error('A project, ticket, revision, and a valid type or null are required.')
+        }
+
+        const project = await openProject(rootPath)
+        await updateTicket(project, id, {
+          expectedRevision: revision,
+          type: type as TicketType | null,
+        })
         return await buildView(project)
       }),
   )
@@ -229,6 +258,7 @@ export function registerProjectHandlers(): void {
             id: hit.id,
             title: hit.title,
             status: hit.status,
+            type: hit.type,
             titleHighlights: [...hit.titleHighlights],
             excerpt: hit.excerpt,
             excerptHighlights: [...hit.excerptHighlights],
