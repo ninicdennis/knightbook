@@ -22,6 +22,8 @@ const api: ProjectspaceApi = {
   readTicket: (rootPath, id) => ipcRenderer.invoke('ticket:read', rootPath, id),
   mcpLaunchCommand: (rootPath) => ipcRenderer.invoke('mcp:launchCommand', rootPath),
   mcpStatus: (rootPath) => ipcRenderer.invoke('mcp:status', rootPath),
+  readSettings: () => ipcRenderer.invoke('app:readSettings'),
+  saveSettings: (patch) => ipcRenderer.invoke('app:saveSettings', patch),
 
   listDocuments: (rootPath) => ipcRenderer.invoke('documents:list', rootPath),
   readDocument: (rootPath, path) => ipcRenderer.invoke('document:read', rootPath, path),

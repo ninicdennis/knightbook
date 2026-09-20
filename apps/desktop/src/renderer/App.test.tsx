@@ -125,6 +125,20 @@ describe('the board distinguishes states that must not look alike', () => {
 
     expect(await screen.findByText(/no backlog ticket is eligible to start/i)).toBeTruthy()
   })
+
+  it('uses an empty column to say how work reaches it', async () => {
+    api.readProject = vi.fn().mockResolvedValue({
+      ok: true,
+      value: project({ tickets: [ticket({ status: 'backlog' })] }),
+    })
+    renderApp()
+
+    await screen.findByText('A ticket')
+    expect(screen.getByText(/choose a backlog ticket to begin/i)).toBeTruthy()
+    // Verification is where an AI leaves work, which is not obvious from the name.
+    expect(screen.getByText(/finished work waits here until you accept it/i)).toBeTruthy()
+    expect(screen.getByText(/only you can move work here/i)).toBeTruthy()
+  })
 })
 
 describe('moving work', () => {

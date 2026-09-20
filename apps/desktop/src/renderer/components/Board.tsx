@@ -1,8 +1,10 @@
-import { Badge, Box, Card, Group, ScrollArea, Stack, Text } from '@mantine/core'
-import { DragDropProvider, useDraggable, useDroppable } from '@dnd-kit/react'
-import type { ReactNode } from 'react'
-import type { MovableStatus, ProjectView, TicketStatus } from '../../shared/contract.js'
-import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
+import { Box, Button, Group, Stack, Text } from '@mantine/core'
+import { DragDropProvider, useDraggable } from '@dnd-kit/react'
+import { IconChevronDown, IconChevronUp } from '@tabler/icons-react'
+import { useState, type ReactNode } from 'react'
+import type { MovableStatus, ProjectView, TicketStatus, TicketView } from '../../shared/contract.js'
+import { orderDone } from '../done-order.js'
+import { BoardColumn, EmptyColumn } from './BoardColumn.js'
 import { RecordProblems } from './RecordProblems.js'
 import { TicketCard } from './TicketCard.js'
 
@@ -12,7 +14,8 @@ import { TicketCard } from './TicketCard.js'
  *
  * Done is a column you can drop into, but it is not an ordinary status change:
  * it records the user's completion decision, so it routes through a different
- * callback that asks first.
+ * callback that asks first. It is also the only column shown collapsed, because
+ * it is the only one that grows without bound.
  */
 
 const COLUMNS: TicketStatus[] = ['backlog', 'in_progress', 'verification', 'done']
@@ -27,6 +30,8 @@ interface BoardProps {
 }
 
 export function Board({ project, busyTicketId, onMove, onComplete, onReview, onOpen }: BoardProps) {
+  const [doneExpanded, setDoneExpanded] = useState(false)
+
   const handleDragEnd = (event: { operation: { source: unknown; target: unknown } }) => {
     const source = event.operation.source as { id?: string } | null
     const target = event.operation.target as { id?: string } | null
@@ -40,7 +45,19 @@ export function Board({ project, busyTicketId, onMove, onComplete, onReview, onO
     else onMove(ticket.id, destination as MovableStatus)
   }
 
-  const hasProblems = project.problems.length > 0
+  const card = (ticket: TicketView) => (
+    <DraggableTicket key={ticket.id} id={ticket.id} disabled={busyTicketId !== null}>
+      <TicketCard
+        ticket={ticket}
+        isNext={project.nextTicketId === ticket.id}
+        busy={busyTicketId === ticket.id}
+        onMove={(next) => onMove(ticket.id, next)}
+        onComplete={() => onComplete(ticket.id)}
+        onReview={() => onReview(ticket.id)}
+        onOpen={() => onOpen(ticket.id)}
+      />
+    </DraggableTicket>
+  )
 
   return (
     <Stack gap="sm" style={{ height: '100%' }}>
@@ -49,30 +66,33 @@ export function Board({ project, busyTicketId, onMove, onComplete, onReview, onO
         <Group align="stretch" gap="md" wrap="nowrap" style={{ flex: 1, minHeight: 0 }}>
           {COLUMNS.map((status) => {
             const tickets = project.tickets.filter((ticket) => ticket.status === status)
+            const listing = status === 'done' ? orderDone(tickets, doneExpanded) : null
+
             return (
-              <Column key={status} status={status} count={tickets.length} shortened={hasProblems}>
+              <BoardColumn
+                key={status}
+                status={status}
+                // The total always shows, whether or not every card is on screen.
+                count={tickets.length}
+                quiet={status === 'done'}
+              >
                 {tickets.length === 0 ? (
                   <EmptyColumn status={status} project={project} />
+                ) : listing ? (
+                  <>
+                    {listing.visible.map(card)}
+                    <DoneToggle
+                      total={tickets.length}
+                      hiddenCount={listing.hiddenCount}
+                      hiddenUnattributed={listing.hiddenUnattributed}
+                      expanded={doneExpanded}
+                      onToggle={() => setDoneExpanded((open) => !open)}
+                    />
+                  </>
                 ) : (
-                  tickets.map((ticket) => (
-                    <DraggableTicket
-                      key={ticket.id}
-                      id={ticket.id}
-                      disabled={busyTicketId !== null}
-                    >
-                      <TicketCard
-                        ticket={ticket}
-                        isNext={project.nextTicketId === ticket.id}
-                        busy={busyTicketId === ticket.id}
-                        onMove={(next) => onMove(ticket.id, next)}
-                        onComplete={() => onComplete(ticket.id)}
-                        onReview={() => onReview(ticket.id)}
-                        onOpen={() => onOpen(ticket.id)}
-                      />
-                    </DraggableTicket>
-                  ))
+                  tickets.map(card)
                 )}
-              </Column>
+              </BoardColumn>
             )
           })}
         </Group>
@@ -81,54 +101,45 @@ export function Board({ project, busyTicketId, onMove, onComplete, onReview, onO
   )
 }
 
-function Column({
-  status,
-  count,
-  shortened,
-  children,
+/**
+ * Reveals the rest of Done. Cards hidden with no recorded completion decision are
+ * counted here: that state must never be quietly absent from the board (D-005).
+ */
+function DoneToggle({
+  total,
+  hiddenCount,
+  hiddenUnattributed,
+  expanded,
+  onToggle,
 }: {
-  status: TicketStatus
-  count: number
-  /** Leaves room for the record-problems banner above the board. */
-  shortened: boolean
-  children: ReactNode
+  total: number
+  hiddenCount: number
+  hiddenUnattributed: number
+  expanded: boolean
+  onToggle: () => void
 }) {
-  const { ref, isDropTarget } = useDroppable({ id: status })
+  if (!expanded && hiddenCount === 0) return null
 
   return (
-    <Card
-      ref={ref}
-      withBorder
-      padding="sm"
-      radius="md"
-      style={{
-        flex: 1,
-        minWidth: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: isDropTarget ? 'var(--mantine-color-default-hover)' : undefined,
-        outline: isDropTarget ? '2px solid var(--mantine-color-accent-filled)' : 'none',
-        outlineOffset: -2,
-      }}
-    >
-      <Group justify="space-between" mb="xs" wrap="nowrap">
-        <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>
-          {STATUS_LABEL[status]}
-        </Text>
-        <Badge size="sm" variant="light" color={STATUS_COLOR[status]}>
-          {count}
-        </Badge>
-      </Group>
-
-      <ScrollArea.Autosize
-        mah={shortened ? 'calc(100vh - 290px)' : 'calc(100vh - 230px)'}
-        type="hover"
+    <Stack gap={2} mt={2}>
+      <Button
+        variant="subtle"
+        color="gray"
+        size="compact-xs"
+        justify="flex-start"
+        leftSection={expanded ? <IconChevronUp size={13} /> : <IconChevronDown size={13} />}
+        onClick={onToggle}
       >
-        <Stack gap="xs" pr={4}>
-          {children}
-        </Stack>
-      </ScrollArea.Autosize>
-    </Card>
+        {expanded ? 'Show fewer' : `Show all ${total}`}
+      </Button>
+      {!expanded && hiddenUnattributed > 0 && (
+        <Text size="xs" c="dimmed" pl={6}>
+          {hiddenUnattributed === 1
+            ? '1 hidden card has no recorded decision.'
+            : `${hiddenUnattributed} hidden cards have no recorded decision.`}
+        </Text>
+      )}
+    </Stack>
   )
 }
 
@@ -147,33 +158,5 @@ function DraggableTicket({
     <Box ref={ref} style={{ opacity: isDragging ? 0.4 : 1 }}>
       {children}
     </Box>
-  )
-}
-
-/**
- * An empty column says why it is empty. The Backlog case is the one that matters:
- * "nothing eligible" and "nothing left" are different situations and must not
- * look the same.
- */
-function EmptyColumn({ status, project }: { status: TicketStatus; project: ProjectView }) {
-  if (status === 'backlog' && project.nextExplanation) {
-    return (
-      <Text size="xs" c="dimmed" style={{ whiteSpace: 'pre-wrap' }}>
-        {project.nextExplanation}
-      </Text>
-    )
-  }
-
-  const message: Record<TicketStatus, string> = {
-    backlog: 'Nothing waiting to start.',
-    in_progress: 'Nothing being worked on.',
-    verification: 'Nothing waiting for your check.',
-    done: 'Nothing accepted yet.',
-  }
-
-  return (
-    <Text size="xs" c="dimmed">
-      {message[status]}
-    </Text>
   )
 }

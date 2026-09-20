@@ -136,6 +136,18 @@ export interface McpStatusView {
   stale: McpSessionView[]
 }
 
+/** How the window picks its appearance. `auto` follows the operating system. */
+export type ColorSchemeChoice = 'light' | 'dark' | 'auto'
+
+/**
+ * Preferences for this installation. Technical design section 3 calls these
+ * disposable app state, so they live beside the remembered project list rather
+ * than in any project's files: a clone opened on another machine keeps its own.
+ */
+export interface AppSettings {
+  colorScheme: ColorSchemeChoice
+}
+
 export interface ProjectspaceApi extends DocumentsApi {
   /** Projects this machine has opened, most recent first, each checked for availability. */
   rememberedProjects(): Promise<RememberedProject[]>
@@ -161,6 +173,10 @@ export interface ProjectspaceApi extends DocumentsApi {
   mcpLaunchCommand(rootPath: string): Promise<McpLaunchCommand | null>
   /** Observes MCP status for one checkout. Reads only; it never writes to the project. */
   mcpStatus(rootPath: string): Promise<McpStatusView>
+  /** This installation's preferences. Missing or unreadable state reads as the defaults. */
+  readSettings(): Promise<AppSettings>
+  /** Merges the given fields into the stored settings and returns the stored result. */
+  saveSettings(patch: Partial<AppSettings>): Promise<Result<AppSettings>>
 }
 
 export interface DocumentSummary {

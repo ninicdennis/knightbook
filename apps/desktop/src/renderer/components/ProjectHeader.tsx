@@ -1,6 +1,7 @@
 import { ActionIcon, Group, SegmentedControl, Stack, Text, Title, Tooltip } from '@mantine/core'
 import { IconRefresh } from '@tabler/icons-react'
 import { ProjectSwitcher } from './ProjectSwitcher.js'
+import { SettingsDrawer } from './SettingsDrawer.js'
 
 /**
  * The header names the project and the checkout it came from. Technical design
@@ -48,7 +49,9 @@ export function ProjectHeader({
         />
         <Stack gap={2} style={{ minWidth: 0 }}>
           <Title order={3}>{name}</Title>
-          <Text size="xs" c="dimmed" style={{ wordBreak: 'break-all' }}>
+          {/* Identifying, not interesting: it has to be readable without competing
+              with the project name above it or the board below. */}
+          <Text size="xs" c="dimmed" style={{ wordBreak: 'break-all', opacity: 0.75 }}>
             {checkoutPath}
           </Text>
         </Stack>
@@ -81,6 +84,8 @@ export function ProjectHeader({
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
+
+        <SettingsDrawer />
       </Group>
     </Group>
   )
