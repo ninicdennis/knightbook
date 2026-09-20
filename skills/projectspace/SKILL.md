@@ -65,6 +65,8 @@ bypass it. Follow it because the person is relying on the board being honest.
   when you are stuck, and clear it (`null`) when you are not.
 - A Done ticket with `completion_unattributed: true` has no recorded decision (its
   file was edited by hand). Do not describe it as accepted by the user.
+- `project_get` reports `backlog_order_problems`: entries listed twice, or ids with no
+  ticket. They are reported and never removed. Mention them; do not tidy them away.
 - `verification_issue` is a ticket the user did not accept, with their reason.
   `affected_by` lists the prerequisites, direct or further up the chain, whose
   failure this ticket's work rests on. A ticket with entries there is affected work:
@@ -124,8 +126,10 @@ Constraints, decisions already made, links to the relevant documents.
 - One ticket, one verifiable outcome. If it has two, split it.
 - Put prerequisites in `depends_on` (ticket ids) and the documents that explain it in
   `related_documents` (project-relative paths).
-- New tickets always start in Backlog. You cannot reorder the backlog through MCP
-  yet. Tell the user if order matters and let them arrange it in the app.
+- New tickets always start in Backlog. `ticket_reorder_backlog` sets the manual
+  order that `ticket_next` follows. It is the user's ordering, not yours: ask what
+  order they want rather than reprioritizing their board on your own reading of it.
+  Ids you leave out keep their relative place behind the ones you list.
 
 ## Documents
 
@@ -140,6 +144,11 @@ Constraints, decisions already made, links to the relevant documents.
   decision in a ticket note only.
 - `documents_include` registers existing files or folders in place. It does not move,
   copy, or rewrite them, and it adds no frontmatter to them.
+- `documents_remove` drops one manifest entry. It un-includes a document; it never
+  deletes the file. Pass the entry as `documents_list` shows it in `includedVia`,
+  which for a document inside an included folder is the folder, not the file — so
+  removing it takes every document in that folder out of the workspace. Say so before
+  you do it.
 
 ## Conflicts
 
@@ -166,10 +175,9 @@ When the user points you at a project that already has code and documentation:
 
 ## What you cannot do through MCP today
 
-Record a review, set Done with `ticket_update`, reorder the backlog, delete a ticket,
-remove a document from the workspace, or create a new document. If the user asks for
-one of these, say it is not available to you and, where the app offers it, point them
-to it.
+Record a review, set Done with `ticket_update`, delete a ticket, or create a new
+document. If the user asks for one of these, say it is not available to you and,
+where the app offers it, point them to it.
 
 The desktop app re-reads the files when it regains focus and has a Refresh button, so
 changes you make appear there without the user reopening it. Tell them to refresh if

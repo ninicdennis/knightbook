@@ -153,7 +153,16 @@ export async function listTickets(project: Project): Promise<Ticket[]> {
  * the manifest still has a deterministic place.
  */
 export function sortByBacklogOrder(tickets: Ticket[], order: readonly string[]): Ticket[] {
-  const rank = new Map(order.map((id, index) => [id, index]))
+  /*
+   * A manifest can list the same ticket twice: an external edit or a Git merge
+   * can produce it, and that duplicate is reported rather than deleted. Its
+   * first position is the one that counts, so a stale entry further down the
+   * list cannot outrank the position someone just asked for.
+   */
+  const rank = new Map<string, number>()
+  order.forEach((id, index) => {
+    if (!rank.has(id)) rank.set(id, index)
+  })
   return [...tickets].sort((a, b) => {
     const ra = rank.get(a.frontmatter.id) ?? Number.POSITIVE_INFINITY
     const rb = rank.get(b.frontmatter.id) ?? Number.POSITIVE_INFINITY

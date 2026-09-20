@@ -1,6 +1,9 @@
 import { Badge, Card, Group, Menu, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import {
   IconAlertTriangle,
+  IconArrowBarToUp,
+  IconArrowDown,
+  IconArrowUp,
   IconDotsVertical,
   IconEye,
   IconEyeOff,
@@ -32,6 +35,11 @@ interface Props {
   isNext: boolean
   busy: boolean
   onMove: (status: MovableStatus) => void
+  /** Manual backlog order. Null when this card is not in a reorderable place. */
+  onReorder: ((to: 'top' | 'up' | 'down') => void) | null
+  /** Which ends of the backlog this card is already at, so no dead menu items. */
+  atTop: boolean
+  atBottom: boolean
   onComplete: () => void
   /** D-017: the user says this did not pass verification, and why. */
   onReportIssue: () => void
@@ -45,6 +53,9 @@ export function TicketCard({
   isNext,
   busy,
   onMove,
+  onReorder,
+  atTop,
+  atBottom,
   onComplete,
   onReportIssue,
   onResolveIssue,
@@ -122,6 +133,36 @@ export function TicketCard({
               <Menu.Item leftSection={<IconInfoCircle size={14} />} onClick={onOpen}>
                 View details
               </Menu.Item>
+              {onReorder && !(atTop && atBottom) && (
+                <>
+                  <Menu.Divider />
+                  <Menu.Label>Order</Menu.Label>
+                  {!atTop && (
+                    <>
+                      <Menu.Item
+                        leftSection={<IconArrowBarToUp size={14} />}
+                        onClick={() => onReorder('top')}
+                      >
+                        Move to top
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={<IconArrowUp size={14} />}
+                        onClick={() => onReorder('up')}
+                      >
+                        Move up
+                      </Menu.Item>
+                    </>
+                  )}
+                  {!atBottom && (
+                    <Menu.Item
+                      leftSection={<IconArrowDown size={14} />}
+                      onClick={() => onReorder('down')}
+                    >
+                      Move down
+                    </Menu.Item>
+                  )}
+                </>
+              )}
               <Menu.Divider />
               <Menu.Label>Move to</Menu.Label>
               {MOVABLE.filter((status) => status !== ticket.status).map((status) => (

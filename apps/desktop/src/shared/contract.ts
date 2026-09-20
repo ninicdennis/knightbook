@@ -87,6 +87,39 @@ export interface TicketDetailView extends TicketView {
   dependencies: DependencyView[]
 }
 
+/** Where a match sits in a string, so the view can mark it up without building markup. */
+export interface SearchHighlight {
+  start: number
+  length: number
+}
+
+export interface TicketSearchHitView {
+  id: string
+  title: string
+  status: TicketStatus
+  /** Empty when only the body matched. */
+  titleHighlights: SearchHighlight[]
+  /** Context around the first body match, or null when only the title matched. */
+  excerpt: string | null
+  /** Offsets within `excerpt`, not within the ticket body. */
+  excerptHighlights: SearchHighlight[]
+}
+
+export interface TicketSearchView {
+  /**
+   * The checkout and query this answers. Both are echoed back so a reply that
+   * arrives after the user typed on, or switched project, can be discarded
+   * rather than shown against the wrong question.
+   */
+  checkoutPath: string
+  query: string
+  hits: TicketSearchHitView[]
+  /** Every matching ticket, including any beyond the returned hits. */
+  totalMatches: number
+  /** Ticket files that could not be read, so they could not be searched. */
+  unsearchable: RecordProblemView[]
+}
+
 /** A record file the app could not use. It is listed, never repaired or rewritten. */
 export interface RecordProblemView {
   /** Project-relative path. */
@@ -101,6 +134,11 @@ export interface ProjectView {
   problems: RecordProblemView[]
   nextTicketId: string | null
   nextExplanation: string
+  /**
+   * Manual-order entries that do not make sense: a ticket listed twice, or an
+   * id with no ticket. Reported and never removed, so the user decides.
+   */
+  backlogOrderProblems: { duplicates: string[]; unknown: string[] }
 }
 
 export type Result<T> =
@@ -215,6 +253,13 @@ export interface ProjectspaceApi extends DocumentsApi {
   recordTicketReview(rootPath: string, id: string, note: string): Promise<Result<ProjectView>>
   /** Everything written on one ticket, for the detail view. */
   readTicket(rootPath: string, id: string): Promise<Result<TicketDetailView>>
+  /** Bounded text search over ticket titles and bodies in one checkout. */
+  searchTickets(rootPath: string, query: string): Promise<Result<TicketSearchView>>
+  /**
+   * Sets the manual backlog order, which is what "next up" follows. This edits
+   * only the order in the project manifest and changes no ticket.
+   */
+  reorderBacklog(rootPath: string, ticketIds: string[]): Promise<Result<ProjectView>>
   mcpLaunchCommand(rootPath: string): Promise<McpLaunchCommand | null>
   /** Observes MCP status for one checkout. Reads only; it never writes to the project. */
   mcpStatus(rootPath: string): Promise<McpStatusView>

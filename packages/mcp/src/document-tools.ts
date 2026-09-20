@@ -5,6 +5,7 @@ import {
   openProject,
   readDocument,
   readTicket,
+  removeFromWorkspace,
   reservedPaths,
   reviewStatus,
   reviewedSource,
@@ -44,6 +45,24 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
     async ({ paths }) =>
       await guard(async () => {
         const project = await includeDocuments(await load(), paths)
+        return ok({ documents_include: project.frontmatter.documents_include })
+      }),
+  )
+
+  server.registerTool(
+    'documents_remove',
+    {
+      title: 'Remove a document from the workspace',
+      description:
+        'Drop one entry from the project manifest. The file itself is left exactly ' +
+        'where it is on disk: this un-includes a document, it does not delete one. ' +
+        'Pass the entry as it appears in documents_include, which for a document ' +
+        'inside an included folder is the folder, not the file.',
+      inputSchema: z.object({ path: z.string().min(1) }),
+    },
+    async ({ path }) =>
+      await guard(async () => {
+        const project = await removeFromWorkspace(await load(), path)
         return ok({ documents_include: project.frontmatter.documents_include })
       }),
   )
