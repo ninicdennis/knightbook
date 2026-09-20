@@ -81,7 +81,10 @@ async function assertReservedDirIsOurs(root: ProjectRoot): Promise<void> {
   } catch {
     return // Absent, which is the normal case.
   }
-  const unexpected = entries.filter((e) => !['tickets', 'documents', 'reviews'].includes(e))
+  // `runtime` holds our own coordination state (MCP session heartbeats), so it
+  // is ours in the same way the record folders are, not a sign of a stranger.
+  const ours = ['tickets', 'documents', 'reviews', 'runtime', '.write-lock']
+  const unexpected = entries.filter((e) => !ours.includes(e))
   if (unexpected.length > 0) {
     throw new ProjectError(
       'already_exists',

@@ -1,6 +1,5 @@
 import { ActionIcon, Group, SegmentedControl, Stack, Text, Title, Tooltip } from '@mantine/core'
 import { IconRefresh } from '@tabler/icons-react'
-import { CopyMcpConfig } from './CopyMcpConfig.js'
 import { ProjectSwitcher } from './ProjectSwitcher.js'
 
 /**
@@ -8,8 +7,8 @@ import { ProjectSwitcher } from './ProjectSwitcher.js'
  * section 4 asks for checkout identity to be visible, because two clones share a
  * project id and only the path distinguishes them.
  *
- * It also surfaces the MCP launch command, which is the one piece of setup the
- * user has to move into their AI client by hand.
+ * MCP status and the connection actions live in the footer instead, so there is
+ * one place to look for "can my AI tool reach this project" rather than two.
  */
 
 export type View = 'board' | 'documents'
@@ -82,8 +81,6 @@ export function ProjectHeader({
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
-
-        <CopyMcpConfig rootPath={checkoutPath} />
       </Group>
     </Group>
   )

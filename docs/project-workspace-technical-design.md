@@ -20,6 +20,50 @@ The shared logic is a library loaded into two processes, not a new network servi
 
 The MCP host launches the server through stdio and keeps the process alive for its connection. Each operation reads current project state; closing the desktop window does not affect that connection. This is the standard client-launched subprocess model described in the [official MCP stdio specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/basic/transports/stdio.mdx). Logs go to stderr. Do not implement protocol framing by hand; use an official SDK version verified against the chosen clients.
 
+### Observing MCP status from the window (2026-09-19)
+
+The window cannot see the server. The client owns the process and both ends of
+the stdio pipe, so there is no handle, port, or channel the window could inspect.
+The only thing the two processes reliably share is the project folder, so the
+server records its own liveness there and the window reads it: a small JSON file
+per session under `.projectspace/runtime/sessions/`, refreshed on a timer and
+removed on a clean exit. It is coordination state like the write lock, excluded
+from Git, and never project content.
+
+Three separate facts come out of this, and the UI keeps them apart because they
+can disagree and a user debugging a client needs to know which one failed:
+
+| Fact | Evidence | What it does not prove |
+| --- | --- | --- |
+| Bundled runtime present | The window checks its own installed resources | That anything is running |
+| Server process running | A session record with a current heartbeat | That a client ever connected |
+| Client connection open | The server marked the record when the opening handshake ran | That the connection is still useful this second |
+
+A heartbeat that has stopped makes a record *stale*, never *stopped*: it proves
+the recording stopped, not that the client did. An unreadable folder reports
+Unknown. Records abandoned by a killed process are cleared by the next server to
+start, because reading status must never write to the user's project.
+
+**Start and Stop are not offered, by design.** A server the window launched would
+have no client on the other end of its pipes, so it could not serve anyone;
+stopping the client's own process would sever a connection from outside the
+client's knowledge and leave it believing the tool is still there. Both would be
+theatre. The footer says the client owns the lifecycle and gives connection
+guidance instead. Making the buttons real would need a different transport and a
+long-lived service, which decision D-008 and section 1 deliberately rule out;
+that is a bigger change than an indicator warrants.
+
+A server bound to a folder that is not a project yet records nothing, because
+creating the heartbeat directory would leave `.projectspace/` non-empty and make
+`project_initialize` refuse the folder as somebody else's. The check runs on each
+heartbeat rather than once at startup, so a project created through MCP becomes
+observable within one heartbeat instead of needing the client to reconnect.
+
+The cost of this approach is that only *our* server is observable. A client
+running some other build against the same folder is invisible and reads as no
+connection, which is why the wording is "no running server was observed" rather
+than a claim about the world.
+
 ## 2. Accepted stack and supporting packages
 
 The user accepted **Electron + TypeScript + React**, with a separately launched Node-based MCP host sharing the project logic. Milkdown remains the selected editor candidate, subject to the Markdown-preservation check. Desktop framework selection is settled; packaging is routine implementation and release-validation work.

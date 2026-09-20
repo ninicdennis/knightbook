@@ -12,7 +12,7 @@ import { join } from 'node:path'
  * and a saved config would break.
  */
 
-const NODE_BINARY = process.platform === 'win32' ? 'node.exe' : 'node'
+export const NODE_BINARY = process.platform === 'win32' ? 'node.exe' : 'node'
 
 export function mcpResourcesDir(): string {
   return app.isPackaged
