@@ -23,6 +23,13 @@ export {
   type Project,
 } from './project.js'
 export {
+  backlogOrderReport,
+  inspectBacklogOrder,
+  reorderBacklog,
+  type BacklogOrderReport,
+  type ReorderResult,
+} from './backlog-order.js'
+export {
   createTicket,
   listTicketRecords,
   listTickets,
@@ -75,6 +82,13 @@ export {
   type IncludedDocument,
 } from './documents.js'
 export { searchProject, type SearchHit, type SearchResult } from './search.js'
+export {
+  searchTickets,
+  TICKET_SEARCH_LIMIT,
+  type Highlight,
+  type TicketSearchHit,
+  type TicketSearchResult,
+} from './ticket-search.js'
 export {
   assertHumanReviewer,
   contentFingerprint,

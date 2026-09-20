@@ -10,6 +10,8 @@ import { McpStatusFooter } from './components/McpStatusFooter.js'
 import { ProjectHeader } from './components/ProjectHeader.js'
 import { SetupFolder } from './components/SetupFolder.js'
 import { TicketDetailModal } from './components/TicketDetailModal.js'
+import { TicketSearch } from './components/TicketSearch.js'
+import { isSearchShortcut, isTypingTarget } from './shortcuts.js'
 import { VerificationIssueDialog } from './components/VerificationIssueDialog.js'
 import { Welcome } from './components/Welcome.js'
 import { useRefreshOnFocus } from './hooks/useRefreshOnFocus.js'
@@ -36,6 +38,7 @@ export function App() {
   const [confirmOpen, confirm] = useDisclosure(false)
   const [pendingIssue, setPendingIssue] = useState<string | null>(null)
   const [issueOpen, issueDialog] = useDisclosure(false)
+  const [searchOpen, search] = useDisclosure(false)
   const [view, setView] = useState<'board' | 'documents'>('board')
   const [detailId, setDetailId] = useState<string | null>(null)
   const [documentTarget, setDocumentTarget] = useState<{ path: string; nonce: number } | null>(null)
@@ -120,6 +123,32 @@ export function App() {
       void apply(ticketId, () =>
         window.projectspace.setTicketStatus(screen.path, ticketId, status, ticket.revision),
       )
+    },
+    [screen, apply],
+  )
+
+  /**
+   * Manual backlog order. The whole backlog is sent in its new order rather than
+   * a single move, so the host writes one list and the window never has to guess
+   * what the manifest already held.
+   */
+  const reorder = useCallback(
+    (ticketId: string, to: 'top' | 'up' | 'down') => {
+      if (screen.kind !== 'open') return
+
+      const ids = screen.project.tickets
+        .filter((candidate) => candidate.status === 'backlog')
+        .map((candidate) => candidate.id)
+      const from = ids.indexOf(ticketId)
+      if (from === -1) return
+
+      const target = to === 'top' ? 0 : to === 'up' ? from - 1 : from + 1
+      if (target < 0 || target >= ids.length) return
+
+      const next = [...ids]
+      next.splice(from, 1)
+      next.splice(target, 0, ticketId)
+      void apply(ticketId, () => window.projectspace.reorderBacklog(screen.path, next))
     },
     [screen, apply],
   )
@@ -248,6 +277,28 @@ export function App() {
 
   useRefreshOnFocus(refresh, screen.kind === 'open')
 
+  /**
+   * Ctrl/Cmd+K opens search from anywhere in the window. It is deliberately
+   * passive about two cases: while the user is typing, because opening a dialog
+   * over an unsaved reason or note would lose it and because a formatted editor
+   * owns that chord for links; and while another dialog is open, so the chord
+   * cannot bury the thing the user is already answering.
+   */
+  useEffect(() => {
+    if (screen.kind !== 'open') return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!isSearchShortcut(event)) return
+      if (isTypingTarget(event.target) || detailId !== null || confirmOpen || issueOpen) return
+
+      event.preventDefault()
+      search.open()
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [screen.kind, detailId, confirmOpen, issueOpen, search])
+
   const detailTicket =
     screen.kind === 'open' && detailId
       ? screen.project.tickets.find((t) => t.id === detailId)
@@ -297,6 +348,7 @@ export function App() {
             }
             onSwitchProject={switchProject}
             onOpenFolder={() => void choose()}
+            onOpenSearch={search.open}
           />
         </AppShell.Header>
       )}
@@ -390,6 +442,7 @@ export function App() {
                 busyTicketId={busyTicketId}
                 onMove={move}
                 onComplete={askToComplete}
+                onReorder={reorder}
                 onReportIssue={askAboutIssue}
                 onResolveIssue={resolveIssue}
                 onReview={review}
@@ -445,6 +498,18 @@ export function App() {
         onClose={issueDialog.close}
         onConfirm={issueConfirmed}
       />
+
+      {screen.kind === 'open' && (
+        <TicketSearch
+          opened={searchOpen}
+          rootPath={screen.path}
+          refreshToken={refreshToken}
+          onClose={search.close}
+          // Opening a result shows the ticket wherever the user was, because
+          // the detail view is not part of either the board or the documents.
+          onOpenTicket={setDetailId}
+        />
+      )}
     </AppShell>
   )
 }

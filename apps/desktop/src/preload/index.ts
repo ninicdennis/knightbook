@@ -24,6 +24,9 @@ const api: ProjectspaceApi = {
   recordTicketReview: (rootPath, id, note) =>
     ipcRenderer.invoke('ticket:review', rootPath, id, note),
   readTicket: (rootPath, id) => ipcRenderer.invoke('ticket:read', rootPath, id),
+  searchTickets: (rootPath, query) => ipcRenderer.invoke('ticket:search', rootPath, query),
+  reorderBacklog: (rootPath, ticketIds) =>
+    ipcRenderer.invoke('ticket:reorderBacklog', rootPath, ticketIds),
   mcpLaunchCommand: (rootPath) => ipcRenderer.invoke('mcp:launchCommand', rootPath),
   mcpStatus: (rootPath) => ipcRenderer.invoke('mcp:status', rootPath),
   readSettings: () => ipcRenderer.invoke('app:readSettings'),

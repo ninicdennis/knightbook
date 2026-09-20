@@ -5,6 +5,7 @@ import { useState, type ReactNode } from 'react'
 import type { MovableStatus, ProjectView, TicketStatus, TicketView } from '../../shared/contract.js'
 import { orderDone } from '../done-order.js'
 import { BoardColumn, EmptyColumn } from './BoardColumn.js'
+import { BacklogOrderProblems } from './BacklogOrderProblems.js'
 import { RecordProblems } from './RecordProblems.js'
 import { TicketCard } from './TicketCard.js'
 
@@ -25,6 +26,8 @@ interface BoardProps {
   busyTicketId: string | null
   onMove: (ticketId: string, status: MovableStatus) => void
   onComplete: (ticketId: string) => void
+  /** Manual backlog order, which is what "next up" follows. */
+  onReorder: (ticketId: string, to: 'top' | 'up' | 'down') => void
   /** D-017: the user says this did not pass verification, and why. */
   onReportIssue: (ticketId: string) => void
   onResolveIssue: (ticketId: string) => void
@@ -37,6 +40,7 @@ export function Board({
   busyTicketId,
   onMove,
   onComplete,
+  onReorder,
   onReportIssue,
   onResolveIssue,
   onReview,
@@ -57,12 +61,24 @@ export function Board({
     else onMove(ticket.id, destination as MovableStatus)
   }
 
+  /**
+   * Manual order is a backlog concept: it is the queue "next up" reads. Cards in
+   * the other columns are ordered by what has happened to them, not by a list
+   * anyone arranges, so they carry no reorder actions.
+   */
+  const backlogIds = project.tickets
+    .filter((candidate) => candidate.status === 'backlog')
+    .map((candidate) => candidate.id)
+
   const card = (ticket: TicketView) => (
     <DraggableTicket key={ticket.id} id={ticket.id} disabled={busyTicketId !== null}>
       <TicketCard
         ticket={ticket}
         isNext={project.nextTicketId === ticket.id}
         busy={busyTicketId === ticket.id}
+        onReorder={ticket.status === 'backlog' ? (to) => onReorder(ticket.id, to) : null}
+        atTop={backlogIds[0] === ticket.id}
+        atBottom={backlogIds[backlogIds.length - 1] === ticket.id}
         onMove={(next) => onMove(ticket.id, next)}
         onComplete={() => onComplete(ticket.id)}
         onReportIssue={() => onReportIssue(ticket.id)}
@@ -76,6 +92,7 @@ export function Board({
   return (
     <Stack gap="sm" style={{ height: '100%' }}>
       <RecordProblems problems={project.problems} />
+      <BacklogOrderProblems problems={project.backlogOrderProblems} />
       <DragDropProvider onDragEnd={handleDragEnd}>
         <Group align="stretch" gap="md" wrap="nowrap" style={{ flex: 1, minHeight: 0 }}>
           {COLUMNS.map((status) => {

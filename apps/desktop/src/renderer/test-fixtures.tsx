@@ -43,6 +43,7 @@ export function project(overrides: Partial<ProjectView> = {}): ProjectView {
     problems: [],
     nextTicketId: null,
     nextExplanation: '',
+    backlogOrderProblems: { duplicates: [], unknown: [] },
     ...overrides,
   }
 }
@@ -98,6 +99,11 @@ export function makeApi(): ProjectspaceApi {
     resolveVerificationIssue: vi.fn(),
     recordTicketReview: vi.fn(),
     readTicket: vi.fn().mockResolvedValue({ ok: true, value: detail() }),
+    reorderBacklog: vi.fn(),
+    searchTickets: vi.fn().mockResolvedValue({
+      ok: true,
+      value: { checkoutPath: CHECKOUT, query: '', hits: [], totalMatches: 0, unsearchable: [] },
+    }),
     mcpLaunchCommand: vi
       .fn()
       .mockResolvedValue({ command: 'node.exe', args: ['server.mjs', '--root', 'demo'] }),

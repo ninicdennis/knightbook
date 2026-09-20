@@ -7,6 +7,7 @@ import type {
 } from '../src/shared/contract.js'
 import { SAMPLE_DOCUMENT } from './sample-document.js'
 import { stubTicketDetail } from './ticket-detail-stub.js'
+import { stubTicketSearch } from './ticket-search-stub.js'
 
 /**
  * A stand-in host for the design preview. It serves the same shapes the real
@@ -93,6 +94,7 @@ const PROJECT: ProjectView = {
   checkoutPath: String.raw`C:\Users\Denny\Projects\projectspace-demo`,
   nextTicketId: 'board',
   nextExplanation: '',
+  backlogOrderProblems: { duplicates: [], unknown: [] },
   tickets: [
     ticket({
       id: 'board',
@@ -277,6 +279,14 @@ export const stubApi: ProjectspaceApi = {
   readTicket: async (_root, id) => {
     record('readTicket', id)
     return stubTicketDetail(PROJECT, id)
+  },
+  reorderBacklog: async (_root, ticketIds) => {
+    record('reorderBacklog', ticketIds)
+    return { ok: true, value: PROJECT }
+  },
+  searchTickets: async (root, query) => {
+    record('searchTickets', query)
+    return { ok: true, value: stubTicketSearch(PROJECT, root, query) }
   },
   // Add ?light to the preview URL to start in the light scheme.
   readSettings: async () => ({

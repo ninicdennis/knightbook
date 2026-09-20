@@ -1,4 +1,5 @@
 import {
+  backlogOrderReport,
   createTicket,
   describeReason,
   evaluateReadiness,
@@ -11,6 +12,7 @@ import {
   readTicket,
   recordUserCompletion,
   recordVerificationIssue,
+  reorderBacklog,
   resolveProjectRoot,
   resolveVerificationIssue,
   selectNextTicket,
@@ -104,6 +106,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
         const byStatus = { backlog: 0, in_progress: 0, verification: 0, done: 0 }
         for (const t of tickets) byStatus[t.frontmatter.status] += 1
 
+        const order = await backlogOrderReport(project)
         return ok({
           initialized: true,
           id: project.frontmatter.id,
@@ -113,6 +116,14 @@ export function registerTools(server: McpServer, rootPath: string): void {
           ticket_counts: byStatus,
           // Counts cover only tickets that loaded; unreadable files are listed, never dropped.
           ticket_problems: problems,
+          /**
+           * Section 5: duplicate or unknown order entries are reported, never
+           * deleted. An empty list here means the manifest's order is sound.
+           */
+          backlog_order_problems: {
+            duplicates: order.duplicates,
+            unknown: order.unknown,
+          },
         })
       }),
   )
@@ -298,6 +309,37 @@ export function registerTools(server: McpServer, rootPath: string): void {
           id: ticket.frontmatter.id,
           status: ticket.frontmatter.status,
           completion: ticket.frontmatter.completion,
+        })
+      }),
+  )
+
+  server.registerTool(
+    'ticket_reorder_backlog',
+    {
+      title: 'Reorder the backlog',
+      description:
+        'Set the manual backlog order, which is what ticket_next follows. The ids ' +
+        'given are placed in that order at the front; entries already in the ' +
+        'manifest that you do not mention keep their relative order behind them, ' +
+        'so nothing is dropped. This edits only the order in the project manifest ' +
+        'and changes no ticket. Ask the user what order they want; do not reprioritize ' +
+        'their board on your own reading of it.',
+      inputSchema: z.object({
+        ticket_ids: z
+          .array(z.uuid())
+          .min(1)
+          .describe('Tickets in the order they should appear, first to last.'),
+      }),
+    },
+    async ({ ticket_ids }) =>
+      await guard(async () => {
+        const project = await load()
+        const { order, report } = await reorderBacklog(project, ticket_ids)
+        return ok({
+          backlog_order: order,
+          // Reported, never removed: a duplicate or an id with no ticket is left
+          // in place for the user to resolve deliberately.
+          backlog_order_problems: { duplicates: report.duplicates, unknown: report.unknown },
         })
       }),
   )
