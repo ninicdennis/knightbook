@@ -2,6 +2,7 @@ import {
   createTicket,
   describeReason,
   evaluateReadiness,
+  failedPrerequisites,
   initializeProject,
   isUnattributedCompletion,
   listTicketRecords,
@@ -9,7 +10,9 @@ import {
   projectExists,
   readTicket,
   recordUserCompletion,
+  recordVerificationIssue,
   resolveProjectRoot,
+  resolveVerificationIssue,
   selectNextTicket,
   updateTicket,
   type Project,
@@ -59,6 +62,19 @@ function summarize(ticket: Ticket, index: TicketIndex) {
     depends_on: ticket.frontmatter.depends_on,
     dependency_ready: readiness.ready,
     dependency_notes: readiness.reasons.map(describeReason),
+    /** D-017: this ticket's own failed verification, kept on its own record. */
+    verification_issue: ticket.frontmatter.verification_issue ?? null,
+    /**
+     * D-017: prerequisites that failed verification, derived on every read. A
+     * non-empty list means this ticket is affected work; its status has not been
+     * changed, and deciding what to rework is the user's call.
+     */
+    affected_by: failedPrerequisites(ticket.frontmatter, index.byId).map((failed) => ({
+      ticket_id: failed.ticketId,
+      title: failed.title,
+      issue: failed.issue,
+      direct: failed.direct,
+    })),
     /** Section 6: a Done status with no provenance is shown, not silently trusted. */
     completion: ticket.frontmatter.completion ?? null,
     completion_unattributed: isUnattributedCompletion(ticket),
@@ -283,6 +299,69 @@ export function registerTools(server: McpServer, rootPath: string): void {
           status: ticket.frontmatter.status,
           completion: ticket.frontmatter.completion,
         })
+      }),
+  )
+
+  server.registerTool(
+    'ticket_record_verification_issue',
+    {
+      title: 'Record a failed verification',
+      description:
+        'Record that the user said a ticket in Verification was not accepted, and why. ' +
+        'Tickets depending on it are then flagged as affected work and stop being ' +
+        'suggested, but no status anywhere is changed: what to rework is the user to ' +
+        'decide. A failing test or your own review is not the user saying it failed.',
+      inputSchema: z.object({
+        id: z.uuid(),
+        expected_revision: z.string(),
+        user_reported_failure: z.boolean(),
+        reason: z
+          .string()
+          .min(1)
+          .max(500)
+          .describe('Why the user did not accept the work, in enough detail to act on.'),
+      }),
+    },
+    async (input) =>
+      await guard(async () => {
+        const project = await load()
+        const ticket = await recordVerificationIssue(project, input.id, {
+          expectedRevision: input.expected_revision,
+          recordedBy: 'agent',
+          userReportedFailure: input.user_reported_failure,
+          reason: input.reason,
+        })
+        return ok({
+          id: ticket.frontmatter.id,
+          status: ticket.frontmatter.status,
+          verification_issue: ticket.frontmatter.verification_issue,
+        })
+      }),
+  )
+
+  server.registerTool(
+    'ticket_resolve_verification_issue',
+    {
+      title: 'Resolve a failed verification',
+      description:
+        'Clear a verification issue once the user says it is settled, which un-flags ' +
+        'every dependent at once. Only the user can decide it is resolved; fixing the ' +
+        'code and re-running checks is not the same thing.',
+      inputSchema: z.object({
+        id: z.uuid(),
+        expected_revision: z.string(),
+        user_resolved_issue: z.boolean(),
+      }),
+    },
+    async (input) =>
+      await guard(async () => {
+        const project = await load()
+        const ticket = await resolveVerificationIssue(project, input.id, {
+          expectedRevision: input.expected_revision,
+          recordedBy: 'agent',
+          userResolvedIssue: input.user_resolved_issue,
+        })
+        return ok({ id: ticket.frontmatter.id, status: ticket.frontmatter.status })
       }),
   )
 }

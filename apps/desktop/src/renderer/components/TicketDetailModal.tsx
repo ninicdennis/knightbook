@@ -16,6 +16,8 @@ import {
   IconArrowsExchange,
   IconEye,
   IconFileText,
+  IconRotateClockwise,
+  IconThumbDown,
   IconUserCheck,
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
@@ -24,6 +26,7 @@ import { renderMarkdown } from '../markdown.js'
 import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
 import { MarkdownBody } from './MarkdownBody.js'
 import { ReviewBadge } from './ReviewBadge.js'
+import { VerificationIssueNotice } from './VerificationIssueNotice.js'
 
 /**
  * Everything written on one ticket. The specification asks the app to let a
@@ -45,6 +48,9 @@ interface Props {
   onClose: () => void
   onMove: (status: MovableStatus) => void
   onComplete: () => void
+  /** D-017: the user says this did not pass verification, and why. */
+  onReportIssue: () => void
+  onResolveIssue: () => void
   onReview: () => void
   onOpenDocument: (path: string) => void
 }
@@ -56,6 +62,8 @@ export function TicketDetailModal({
   onClose,
   onMove,
   onComplete,
+  onReportIssue,
+  onResolveIssue,
   onReview,
   onOpenDocument,
 }: Props) {
@@ -119,6 +127,8 @@ export function TicketDetailModal({
             {ticket.blocker}
           </Alert>
         )}
+
+        <VerificationIssueNotice ticket={ticket} />
 
         {ticket.completionUnattributed && (
           <Alert
@@ -218,6 +228,27 @@ export function TicketDetailModal({
                   : 'Mark content reviewed'}
               </Button>
             )}
+            {ticket.verificationIssue && (
+              <Button
+                variant="default"
+                size="xs"
+                leftSection={<IconRotateClockwise size={14} />}
+                onClick={onResolveIssue}
+              >
+                Resolve the issue
+              </Button>
+            )}
+            {ticket.status === 'verification' && !ticket.verificationIssue && (
+              <Button
+                variant="default"
+                color="orange"
+                size="xs"
+                leftSection={<IconThumbDown size={14} />}
+                onClick={onReportIssue}
+              >
+                Did not pass…
+              </Button>
+            )}
             {ticket.status === 'verification' && (
               <Button
                 color="teal"
@@ -250,6 +281,9 @@ function Dependencies({ ticket, detail }: { ticket: TicketView; detail: TicketDe
   if (detail.dependencies.length === 0) return null
 
   const cannotStart = ticket.status === 'backlog' && !ticket.dependencyReady
+  // D-017 takes precedence over D-014: a prerequisite that reached Verification
+  // and then failed it must not still read as satisfying anything.
+  const failed = new Set(ticket.affectedBy.map((entry) => entry.ticketId))
 
   return (
     <Section title="Depends on">
@@ -272,14 +306,16 @@ function Dependencies({ ticket, detail }: { ticket: TicketView; detail: TicketDe
                 ? `Ticket ${dependency.id} could not be read`
                 : `No ticket with id ${dependency.id}`)}
           </Text>
-          <Text size="xs" c="dimmed">
+          <Text size="xs" {...(failed.has(dependency.id) ? { c: 'orange' } : { c: 'dimmed' })}>
             {dependency.status === null
               ? dependency.unreadable
                 ? 'its file could not be read, so this cannot be checked'
                 : 'is missing from this project'
-              : dependency.satisfied
-                ? 'satisfies this dependency'
-                : 'is not ready yet'}
+              : failed.has(dependency.id)
+                ? 'failed verification, so it does not unlock this'
+                : dependency.satisfied
+                  ? 'satisfies this dependency'
+                  : 'is not ready yet'}
           </Text>
         </Group>
       ))}

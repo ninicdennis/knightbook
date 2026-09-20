@@ -6,8 +6,10 @@ import {
   IconEyeOff,
   IconInfoCircle,
   IconLock,
+  IconThumbDown,
   IconUserCheck,
   IconRobot,
+  IconRotateClockwise,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import type { MovableStatus, TicketView } from '../../shared/contract.js'
@@ -31,13 +33,27 @@ interface Props {
   busy: boolean
   onMove: (status: MovableStatus) => void
   onComplete: () => void
+  /** D-017: the user says this did not pass verification, and why. */
+  onReportIssue: () => void
+  onResolveIssue: () => void
   onReview: () => void
   onOpen: () => void
 }
 
-export function TicketCard({ ticket, isNext, busy, onMove, onComplete, onReview, onOpen }: Props) {
+export function TicketCard({
+  ticket,
+  isNext,
+  busy,
+  onMove,
+  onComplete,
+  onReportIssue,
+  onResolveIssue,
+  onReview,
+  onOpen,
+}: Props) {
   const blockedInBacklog = ticket.status === 'backlog' && !ticket.dependencyReady
   const isDone = ticket.status === 'done'
+  const affected = ticket.affectedBy.length > 0
 
   // An empty footer row would still take space and pull the titles out of line.
   const hasFooter =
@@ -45,6 +61,8 @@ export function TicketCard({ ticket, isNext, busy, onMove, onComplete, onReview,
     ticket.review.state !== 'reviewed' ||
     blockedInBacklog ||
     ticket.blocker !== null ||
+    ticket.verificationIssue !== null ||
+    affected ||
     ticket.completionUnattributed ||
     ticket.completion !== null
 
@@ -72,7 +90,7 @@ export function TicketCard({ ticket, isNext, busy, onMove, onComplete, onReview,
         border: `1px solid ${
           isNext
             ? 'var(--mantine-color-accent-filled)'
-            : ticket.blocker
+            : ticket.blocker || ticket.verificationIssue
               ? 'var(--mantine-color-orange-filled)'
               : 'var(--ps-hairline)'
         }`,
@@ -131,6 +149,26 @@ export function TicketCard({ ticket, isNext, busy, onMove, onComplete, onReview,
                   >
                     Accept as done
                   </Menu.Item>
+                  {!ticket.verificationIssue && (
+                    <Menu.Item
+                      leftSection={<IconThumbDown size={14} />}
+                      onClick={onReportIssue}
+                      color="orange"
+                    >
+                      Did not pass verification…
+                    </Menu.Item>
+                  )}
+                </>
+              )}
+              {ticket.verificationIssue && (
+                <>
+                  <Menu.Divider />
+                  <Menu.Item
+                    leftSection={<IconRotateClockwise size={14} />}
+                    onClick={onResolveIssue}
+                  >
+                    Resolve the verification issue
+                  </Menu.Item>
                 </>
               )}
             </Menu.Dropdown>
@@ -188,6 +226,57 @@ export function TicketCard({ ticket, isNext, busy, onMove, onComplete, onReview,
                   leftSection={<IconAlertTriangle size={11} />}
                 >
                   Blocked
+                </Badge>
+              </Tooltip>
+            )}
+
+            {/*
+            D-017. Two different facts, never merged into one badge: this ticket
+            failed verification, or this ticket's work rests on one that did.
+          */}
+            {ticket.verificationIssue && (
+              <Tooltip
+                multiline
+                w={320}
+                withArrow
+                label={`${ticket.verificationIssue.reason} — recorded ${
+                  ticket.verificationIssue.recordedBy === 'agent'
+                    ? 'by the AI from what you told it'
+                    : 'by you in the app'
+                }. Nothing was moved or reset.`}
+              >
+                <Badge
+                  size="sm"
+                  variant="light"
+                  color="orange"
+                  leftSection={<IconThumbDown size={11} />}
+                >
+                  Failed verification
+                </Badge>
+              </Tooltip>
+            )}
+
+            {affected && (
+              <Tooltip
+                multiline
+                w={320}
+                withArrow
+                label={ticket.affectedBy
+                  .map(
+                    (failed) =>
+                      `${failed.title}${failed.direct ? '' : ' (further up the chain)'}: ${failed.issue}`,
+                  )
+                  .join('\n')}
+              >
+                <Badge
+                  size="sm"
+                  variant="light"
+                  color="orange"
+                  leftSection={<IconAlertTriangle size={11} />}
+                >
+                  {ticket.affectedBy.length === 1
+                    ? 'Affected by a failure'
+                    : `Affected by ${ticket.affectedBy.length} failures`}
                 </Badge>
               </Tooltip>
             )}

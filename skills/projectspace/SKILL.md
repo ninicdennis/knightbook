@@ -65,6 +65,11 @@ bypass it. Follow it because the person is relying on the board being honest.
   when you are stuck, and clear it (`null`) when you are not.
 - A Done ticket with `completion_unattributed: true` has no recorded decision (its
   file was edited by hand). Do not describe it as accepted by the user.
+- `verification_issue` is a ticket the user did not accept, with their reason.
+  `affected_by` lists the prerequisites, direct or further up the chain, whose
+  failure this ticket's work rests on. A ticket with entries there is affected work:
+  `ticket_next` skips it, and no status anywhere was changed. Say what failed and let
+  the user decide what to rework; do not start rebuilding on your own reading of it.
 
 ## Working a ticket
 
@@ -75,7 +80,11 @@ bypass it. Follow it because the person is relying on the board being honest.
 4. **Hand off in Verification.** `ticket_update` with `status: "verification"` and add
    a handoff note to the body (below). Then tell the user, in chat, what to look at.
 5. Stop there. Wait for the user. If they accept it, record it (rule 1). If they
-   send it back, move it to In progress and carry on.
+   send it back, move it to In progress and carry on. When they say it failed
+   verification and other tickets depend on it, record that with
+   `ticket_record_verification_issue` so the dependent work is flagged; pass their
+   reason, not your own diagnosis. Only they can settle it, through
+   `ticket_resolve_verification_issue`. Neither call moves any ticket.
 
 Note that `ticket_update` **replaces the whole body**. Read the ticket first, keep
 what is there, and append your note. Do not overwrite the author's text.

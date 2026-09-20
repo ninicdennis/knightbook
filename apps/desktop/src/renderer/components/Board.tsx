@@ -25,11 +25,23 @@ interface BoardProps {
   busyTicketId: string | null
   onMove: (ticketId: string, status: MovableStatus) => void
   onComplete: (ticketId: string) => void
+  /** D-017: the user says this did not pass verification, and why. */
+  onReportIssue: (ticketId: string) => void
+  onResolveIssue: (ticketId: string) => void
   onReview: (ticketId: string) => void
   onOpen: (ticketId: string) => void
 }
 
-export function Board({ project, busyTicketId, onMove, onComplete, onReview, onOpen }: BoardProps) {
+export function Board({
+  project,
+  busyTicketId,
+  onMove,
+  onComplete,
+  onReportIssue,
+  onResolveIssue,
+  onReview,
+  onOpen,
+}: BoardProps) {
   const [doneExpanded, setDoneExpanded] = useState(false)
 
   const handleDragEnd = (event: { operation: { source: unknown; target: unknown } }) => {
@@ -53,6 +65,8 @@ export function Board({ project, busyTicketId, onMove, onComplete, onReview, onO
         busy={busyTicketId === ticket.id}
         onMove={(next) => onMove(ticket.id, next)}
         onComplete={() => onComplete(ticket.id)}
+        onReportIssue={() => onReportIssue(ticket.id)}
+        onResolveIssue={() => onResolveIssue(ticket.id)}
         onReview={() => onReview(ticket.id)}
         onOpen={() => onOpen(ticket.id)}
       />

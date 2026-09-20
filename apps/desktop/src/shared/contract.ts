@@ -15,6 +15,27 @@ export interface CompletionView {
   instruction: string
 }
 
+/**
+ * D-017: a verification that the user did not accept, kept on the ticket that
+ * failed. Its provenance is recorded the same way completion's is, so an
+ * AI-reported failure never presents itself as a direct user action.
+ */
+export interface VerificationIssueView {
+  reason: string
+  decisionSource: 'direct_user_action' | 'reported_user_instruction'
+  recordedBy: 'user' | 'agent'
+  recordedAt: string
+}
+
+/** A prerequisite whose failed verification this ticket's work rests on. */
+export interface AffectedByView {
+  ticketId: string
+  title: string
+  issue: string
+  /** False when the failure is further up the chain than this ticket's own prerequisites. */
+  direct: boolean
+}
+
 export type ReviewState = 'unreviewed' | 'reviewed' | 'changed_since_review'
 
 export interface ReviewView {
@@ -33,6 +54,14 @@ export interface TicketView {
   dependencyReady: boolean
   dependencyNotes: string[]
   blocker: string | null
+  /** This ticket's own failed verification, or null. */
+  verificationIssue: VerificationIssueView | null
+  /**
+   * Prerequisites that failed verification, derived on every read. A non-empty
+   * list means this is affected work: its status was left alone, and what to
+   * rework is the user's decision.
+   */
+  affectedBy: AffectedByView[]
   completion: CompletionView | null
   /** Done with no recorded decision: changed outside the app, shown as-is. */
   completionUnattributed: boolean
@@ -166,6 +195,22 @@ export interface ProjectspaceApi extends DocumentsApi {
     revision: string,
   ): Promise<Result<ProjectView>>
   completeTicket(rootPath: string, id: string, revision: string): Promise<Result<ProjectView>>
+  /**
+   * Records that the user did not accept a ticket in Verification (D-017). It
+   * flags dependent work and changes no status, here or downstream.
+   */
+  recordVerificationIssue(
+    rootPath: string,
+    id: string,
+    revision: string,
+    reason: string,
+  ): Promise<Result<ProjectView>>
+  /** Clears that issue once the user settles it, un-flagging every dependent. */
+  resolveVerificationIssue(
+    rootPath: string,
+    id: string,
+    revision: string,
+  ): Promise<Result<ProjectView>>
   /** Records the user's own review. There is no agent equivalent (D-003). */
   recordTicketReview(rootPath: string, id: string, note: string): Promise<Result<ProjectView>>
   /** Everything written on one ticket, for the detail view. */
@@ -207,6 +252,18 @@ export interface DocumentReadView {
 
 export interface DocumentsApi {
   listDocuments(rootPath: string): Promise<Result<DocumentListView>>
+  /**
+   * Opens a picker for Markdown files inside the project and includes them
+   * where they are (D-011). Nothing is copied or moved. Cancelling returns the
+   * list unchanged.
+   *
+   * Files and folders are separate actions because Windows and Linux cannot show
+   * one dialog that selects both.
+   */
+  includeDocumentFiles(rootPath: string): Promise<Result<DocumentListView>>
+  includeDocumentFolder(rootPath: string): Promise<Result<DocumentListView>>
+  /** Drops one manifest entry. The file or folder itself is left on disk. */
+  removeDocumentEntry(rootPath: string, entry: string): Promise<Result<DocumentListView>>
   readDocument(rootPath: string, path: string): Promise<Result<DocumentReadView>>
   /** Records the user's own review of a document. No agent equivalent (D-003). */
   reviewDocument(rootPath: string, path: string): Promise<Result<DocumentReadView>>

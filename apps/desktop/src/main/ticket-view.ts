@@ -1,6 +1,7 @@
 import {
   describeReason,
   evaluateReadiness,
+  failedPrerequisites,
   listTicketRecords,
   ProjectError,
   ticketReviewStatus,
@@ -50,6 +51,20 @@ export async function toTicketView(
     dependencyReady: readiness.ready,
     dependencyNotes: readiness.reasons.map(describeReason),
     blocker: frontmatter.blocker ?? null,
+    verificationIssue: frontmatter.verification_issue
+      ? {
+          reason: frontmatter.verification_issue.reason,
+          decisionSource: frontmatter.verification_issue.decision_source,
+          recordedBy: frontmatter.verification_issue.recorded_by,
+          recordedAt: frontmatter.verification_issue.recorded_at,
+        }
+      : null,
+    affectedBy: failedPrerequisites(frontmatter, lookup.byId).map((failed) => ({
+      ticketId: failed.ticketId,
+      title: failed.title,
+      issue: failed.issue,
+      direct: failed.direct,
+    })),
     completion: frontmatter.completion
       ? {
           decisionSource: frontmatter.completion.decision_source,

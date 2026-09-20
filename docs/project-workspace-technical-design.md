@@ -136,7 +136,9 @@ repository/
     project.md                      identity, included paths, board order
     tickets/<stable-id>.md           one canonical file per ticket
     documents/<stable-id>.md         metadata pointing to an existing document
-    reviews/<record-id>/<id>.md      historical human-reviewed snapshots
+    reviews/tickets/<ticket-id>/<reviewed-at>.md
+    reviews/documents/<document path>/<reviewed-at>.md
+                                     historical human-reviewed snapshots
 ```
 
 Folder names are proposals. Project creation adds the reserved folder only when absent and never overwrites an existing unrelated directory. Initialize into a temporary staging directory, validate it, and publish it as a unit where supported; recover or report interrupted initialization explicitly.
@@ -145,6 +147,7 @@ Folder names are proposals. Project creation adds the reserved folder only when 
 - Each ticket has a stable generated UUID independent of filename, title, and path. UI may abbreviate it when unambiguous. Avoid shared sequential ID counters across Git branches.
 - Existing-document metadata holds its stable ID and project-relative path. It does not copy the live document body or modify the document's existing frontmatter just to register it. Manifest inclusion is authoritative for what appears in the workspace; listings can resolve included source files without metadata records.
 - Review snapshots are historical evidence of what the user reviewed, not another editable source of current content. Create one on explicit human content review, not on every save. Preserve the source and enough metadata to identify the record, review time, and revision.
+- Review history is split by kind and named the way the records themselves are, so one record's history is findable by reading the repository: a ticket's snapshots sit under `reviews/tickets/<ticket id>/`, and a document's under `reviews/documents/` followed by that document's own project-relative path as real nested folders. Nothing in the path is percent-encoded. A ticket id must be a single plain folder name and a document path must stay inside `reviews/documents/`; a record id that cannot satisfy that is refused rather than written somewhere else. Because reviews of documents are keyed by path, renaming or moving a document still loses its review history — stable document ids remain a separate decision.
 - Store local checkout paths, window position, and recent-project preferences outside the repository as disposable app state. These are not project content and need not be Markdown. Runtime locks and temporary saves are likewise non-authoritative.
 
 `documents_include` updates only the manifest. Create per-document metadata later when an operation needs a stable document reference or review record, under the shared write lock. Find an existing mapping by canonical in-project path before creating one; repeated registration is idempotent. Persist metadata before emitting its stable ID or writing a ticket link to it. An interruption can leave unused metadata, but must not make included source files disappear. Report invalid/missing source paths without deleting metadata or touching the sources. Do not make manifest inclusion depend on successful creation of a second file.
@@ -172,6 +175,25 @@ Use four status values: `backlog`, `in_progress`, `verification`, `done`. Keep c
 The next-ticket query returns the first Backlog ticket in that order whose prerequisites satisfy readiness and which has no explicit blocker or invalid record. It does not reserve or start it. On the user's request, the external agent reads its linked context and changes it to In progress. Revalidate eligibility at that mutation. One active AI session per project is the initial usage assumption; there is no automatic execution queue.
 
 If a prerequisite fails verification, persist an issue on that prerequisite and derive an affected-work flag for dependent tickets. Existing downstream statuses stay intact. Proposed default: do not suggest new affected work until the prerequisite is corrected or the user explicitly resolves the issue. This failure flag takes precedence over a still-Verification status. Direct overrides and reopening Done tickets need explicit transition rules during implementation design.
+
+### Failed-prerequisite transitions as built (2026-09-20)
+
+The issue lives in an optional `verification_issue` on the prerequisite's own
+frontmatter: the user's `reason`, plus the same provenance triple `completion`
+carries, so an AI-reported failure is stored as `reported_user_instruction` and
+never as a direct user action. Recording it is valid only from Verification, and
+it leaves the ticket in Verification: failing is a flag on the work, not a move
+backwards through the board. Reopening a Done ticket stays out of scope and keeps
+its own open decision.
+
+The affected-work flag is derived on every read rather than written onto
+dependents, which is what keeps the promise that no downstream record changes.
+The walk is transitive and cycle-safe: a ticket is affected when any prerequisite
+it rests on has an unresolved issue, even when the prerequisite between them sits
+in Verification. Resolving the issue is a separate user decision and clears every
+dependent at once. Both operations exist as MCP tools and as direct actions in the
+app; the agent-facing ones require the same explicit assertion completion does,
+and neither can be set or cleared through a general `ticket_update`.
 
 ## 6. Human completion through the existing AI tool
 
@@ -208,6 +230,10 @@ All desktop-host and MCP mutations call the same write path:
 Return the new revision and a concise description of the applied change. Reads return revision tokens. A stale write returns the latest revision and a conflict result so the caller can re-read; it must not silently retry by overwriting newer content.
 
 External editors and Git do not honor these locks. Rechecking files reduces races but does not create a universal filesystem transaction. Watchers trigger refreshes; they are not proof that a buffer is current. A dirty editor shows a conflict and preserves the unsaved buffer. Prototype rapid external saves, rename/replace behavior, and a crash during save before claiming no-loss behavior.
+
+An earlier layout stored every snapshot in one flat folder named after a percent-encoded record id (`reviews/ticket%3A…`, `reviews/document%3Adocs%2F…`). Projects carrying that history keep it: both layouts are read, the latest review is the newest across the two, and the app never moves, renames, or rewrites an old folder. New snapshots only ever go to the layout above, and opening a project still writes nothing.
+
+This project's own history was moved into the new layout by hand on 2026-09-20 — 33 record folders, 39 snapshots, every file byte-identical and recorded in Git as a pure rename. That was a one-time tidy-up of this repository, not something the app does. The dual-read stays: other checkouts, older branches, and anyone else's project may still hold the old layout, and reading it costs nothing.
 
 Favor single-record operations. For a review snapshot, write the self-contained snapshot first; derive the latest review from valid snapshots rather than requiring an atomic pointer update elsewhere. For other future multi-file actions, define recovery before exposing them. Do not build a general transaction engine in advance.
 

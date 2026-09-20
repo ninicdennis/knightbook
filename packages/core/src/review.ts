@@ -1,15 +1,10 @@
-import { mkdir, readdir, readFile } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { ProjectError } from './errors.js'
 import { parseRecord } from './frontmatter.js'
-import {
-  RESERVED_DIR,
-  reservedPaths,
-  resolveInRoot,
-  toProjectRelative,
-  type ProjectRoot,
-} from './paths.js'
+import { reservedPaths, resolveInRoot, toProjectRelative } from './paths.js'
 import type { Project } from './project.js'
+import { readSnapshots, snapshotWriteDir } from './review-storage.js'
 import { revisionOf, type Revision } from './revision.js'
 import { writeRecord } from './write.js'
 
@@ -49,12 +44,6 @@ export interface ReviewStatus {
    * establish, which is never the same as knowing whether the meaning changed.
    */
   readonly changeSummary: string | null
-}
-
-const SNAPSHOT_DIR = 'reviews'
-
-function snapshotDir(root: ProjectRoot, recordId: string): string {
-  return join(root.path, RESERVED_DIR, SNAPSHOT_DIR, encodeURIComponent(recordId))
 }
 
 /**
@@ -112,7 +101,7 @@ export async function recordReview(
     note: options.note?.trim() ?? '',
   }
 
-  const directory = snapshotDir(project.root, recordId)
+  const directory = snapshotWriteDir(project.root, recordId)
   await mkdir(directory, { recursive: true })
   const path = join(directory, `${now.replace(/[:.]/g, '-')}.md`)
 
@@ -133,38 +122,12 @@ export async function recordReview(
   return review
 }
 
-/** Reads the most recent valid snapshot. Invalid ones are skipped, not deleted. */
+/**
+ * The most recent valid snapshot, across both storage layouts. Invalid ones are
+ * skipped, not deleted.
+ */
 export async function lastReview(project: Project, recordId: string): Promise<ReviewRecord | null> {
-  let files: string[]
-  try {
-    files = await readdir(snapshotDir(project.root, recordId))
-  } catch {
-    return null
-  }
-
-  const reviews: ReviewRecord[] = []
-  for (const file of files.filter((f) => f.endsWith('.md')).sort()) {
-    try {
-      const raw = await readFile(join(snapshotDir(project.root, recordId), file), 'utf8')
-      const record = parseRecord(raw)
-      const reviewedAt = record.data.get('reviewed_at')
-      const reviewedRevision = record.data.get('reviewed_revision')
-      const fingerprint = record.data.get('content_fingerprint')
-      if (typeof reviewedAt !== 'string' || typeof reviewedRevision !== 'string') continue
-
-      reviews.push({
-        reviewedAt,
-        reviewedRevision,
-        contentFingerprint: typeof fingerprint === 'string' ? fingerprint : '',
-        note:
-          typeof record.data.get('note') === 'string' ? (record.data.get('note') as string) : '',
-      })
-    } catch {
-      continue
-    }
-  }
-
-  return reviews.at(-1) ?? null
+  return (await readSnapshots(project.root, recordId)).at(-1)?.review ?? null
 }
 
 /**
@@ -202,23 +165,9 @@ export async function reviewStatus(
   }
 }
 
-/** Retrieves the reviewed source for comparison. */
+/** Retrieves the reviewed source for comparison, from whichever layout holds it. */
 export async function reviewedSource(project: Project, recordId: string): Promise<string | null> {
-  let files: string[]
-  try {
-    files = await readdir(snapshotDir(project.root, recordId))
-  } catch {
-    return null
-  }
-
-  const latest = files
-    .filter((f) => f.endsWith('.md'))
-    .sort()
-    .at(-1)
-  if (!latest) return null
-
-  const raw = await readFile(join(snapshotDir(project.root, recordId), latest), 'utf8')
-  return parseRecord(raw).body
+  return (await readSnapshots(project.root, recordId)).at(-1)?.body ?? null
 }
 
 /** An AI must never record human validation of its own content (D-003). */
