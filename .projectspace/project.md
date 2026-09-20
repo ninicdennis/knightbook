@@ -22,6 +22,8 @@ backlog_order:
   - 2e4a254f-4069-40e6-be39-7b332399a57a
   - b217a95f-dc62-4319-b3a1-5c649fe183d9
   - f9a3cab0-3a5e-4385-9959-fb19f008d1cd
+  - 4c73d142-22e0-47f0-b5a8-c6db75a2821c
+  - 62fa4846-7525-4399-9bcb-6ce004ec1cda
 ---
 
 # Projectspace
