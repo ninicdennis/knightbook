@@ -23,6 +23,8 @@ function ticket(
     dependencyReady: true,
     dependencyNotes: [],
     blocker: null,
+    verificationIssue: null,
+    affectedBy: [],
     completion: null,
     completionUnattributed: false,
     review: { state: 'unreviewed', lastReviewedAt: null, changeSummary: null },
@@ -125,6 +127,37 @@ const PROJECT: ProjectView = {
           'The content changed in a way that is not only formatting or status. ' +
           'Whether the meaning changed has not been determined.',
       },
+    }),
+    /** D-017: a prerequisite the user did not accept, and the work resting on it. */
+    ticket({
+      id: 'importer',
+      title: 'Import dated records',
+      status: 'verification',
+      verificationIssue: {
+        reason: 'Every imported date is an hour off around the daylight-saving change.',
+        decisionSource: 'direct_user_action',
+        recordedBy: 'user',
+        recordedAt: '2026-09-20T08:00:00Z',
+      },
+    }),
+    ticket({
+      id: 'report',
+      title: 'Summarize records by week',
+      status: 'backlog',
+      dependsOn: ['importer'],
+      dependencyReady: false,
+      dependencyNotes: [
+        'rests on "Import dated records" (importer), which failed verification: ' +
+          'Every imported date is an hour off around the daylight-saving change.',
+      ],
+      affectedBy: [
+        {
+          ticketId: 'importer',
+          title: 'Import dated records',
+          issue: 'Every imported date is an hour off around the daylight-saving change.',
+          direct: true,
+        },
+      ],
     }),
     ticket({
       id: 'schema',
@@ -229,6 +262,14 @@ export const stubApi: ProjectspaceApi = {
     record('completeTicket', id)
     return { ok: true, value: PROJECT }
   },
+  recordVerificationIssue: async (_root, id, _revision, reason) => {
+    record('recordVerificationIssue', id, reason)
+    return { ok: true, value: PROJECT }
+  },
+  resolveVerificationIssue: async (_root, id) => {
+    record('resolveVerificationIssue', id)
+    return { ok: true, value: PROJECT }
+  },
   recordTicketReview: async (_root, id) => {
     record('recordTicketReview', id)
     return { ok: true, value: PROJECT }
@@ -254,6 +295,18 @@ export const stubApi: ProjectspaceApi = {
   /** Add ?mcp=running|none|stale|missing|unknown to review each footer state. */
   mcpStatus: async (root) => stubMcpStatus(root),
 
+  includeDocumentFiles: async (root) => {
+    record('includeDocumentFiles', root)
+    return await stubApi.listDocuments(root)
+  },
+  includeDocumentFolder: async (root) => {
+    record('includeDocumentFolder', root)
+    return await stubApi.listDocuments(root)
+  },
+  removeDocumentEntry: async (root, entry) => {
+    record('removeDocumentEntry', entry)
+    return await stubApi.listDocuments(root)
+  },
   listDocuments: async () => ({
     ok: true,
     value: {

@@ -5,7 +5,9 @@ import {
   projectExists,
   recordTicketReview,
   recordUserCompletion,
+  recordVerificationIssue,
   resolveProjectRoot,
+  resolveVerificationIssue,
   selectNextTicket,
   updateTicket,
   type Project,
@@ -124,6 +126,57 @@ export function registerProjectHandlers(): void {
           recordedBy: 'user',
           userInstructedCompletion: true,
           instruction: 'Moved to Done in the app.',
+        })
+        return await buildView(project)
+      }),
+  )
+
+  /**
+   * Decision D-017: the user saying the work was not accepted. Recorded as a
+   * `direct_user_action`, the same distinction completion draws. It flags
+   * dependent work and moves nothing: rework is for the user to decide.
+   */
+  ipcMain.handle(
+    'ticket:recordVerificationIssue',
+    async (_event, rootPath: unknown, id: unknown, revision: unknown, reason: unknown) =>
+      await guard<ProjectView>(async () => {
+        if (
+          typeof rootPath !== 'string' ||
+          typeof id !== 'string' ||
+          typeof revision !== 'string' ||
+          typeof reason !== 'string'
+        ) {
+          throw new Error('A project, ticket, revision, and reason are required.')
+        }
+
+        const project = await openProject(rootPath)
+        await recordVerificationIssue(project, id, {
+          expectedRevision: revision,
+          recordedBy: 'user',
+          userReportedFailure: true,
+          reason,
+        })
+        return await buildView(project)
+      }),
+  )
+
+  ipcMain.handle(
+    'ticket:resolveVerificationIssue',
+    async (_event, rootPath: unknown, id: unknown, revision: unknown) =>
+      await guard<ProjectView>(async () => {
+        if (
+          typeof rootPath !== 'string' ||
+          typeof id !== 'string' ||
+          typeof revision !== 'string'
+        ) {
+          throw new Error('A project, ticket, and revision are required.')
+        }
+
+        const project = await openProject(rootPath)
+        await resolveVerificationIssue(project, id, {
+          expectedRevision: revision,
+          recordedBy: 'user',
+          userResolvedIssue: true,
         })
         return await buildView(project)
       }),

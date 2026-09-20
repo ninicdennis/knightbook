@@ -5,6 +5,7 @@ import {
   Card,
   Center,
   Code,
+  Divider,
   Group,
   Loader,
   NavLink,
@@ -21,8 +22,9 @@ import {
   IconFileText,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
-import type { DocumentListView, DocumentReadView } from '../../shared/contract.js'
+import type { DocumentListView, DocumentReadView, Result } from '../../shared/contract.js'
 import { renderMarkdown } from '../markdown.js'
+import { IncludedEntries } from './IncludedEntries.js'
 import { MarkdownBody } from './MarkdownBody.js'
 import { ReviewBadge } from './ReviewBadge.js'
 
@@ -46,6 +48,7 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
   const [document, setDocument] = useState<DocumentReadView | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -86,6 +89,28 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
     if (selected) void open(selected)
   }, [selected, open, refreshToken])
 
+  /**
+   * Including and removing both return the whole listing, so the view shows what
+   * the manifest now says rather than guessing at the result. A selected
+   * document that has just been removed is dropped from the selection instead of
+   * being left on screen as if it were still included.
+   */
+  const applyToManifest = useCallback(async (run: () => Promise<Result<DocumentListView>>) => {
+    setBusy(true)
+    setError(null)
+
+    const result = await run()
+    if (result.ok) {
+      setListing(result.value)
+      setSelected((current) =>
+        current && result.value.documents.some((item) => item.path === current)
+          ? current
+          : (result.value.documents[0]?.path ?? null),
+      )
+    } else setError(result.message)
+    setBusy(false)
+  }, [])
+
   const review = useCallback(async () => {
     if (!document) return
     const result = await window.projectspace.reviewDocument(rootPath, document.path)
@@ -109,6 +134,22 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
     )
   }
 
+  const entries = listing && (
+    <IncludedEntries
+      listing={listing}
+      busy={busy}
+      onIncludeFiles={() =>
+        void applyToManifest(() => window.projectspace.includeDocumentFiles(rootPath))
+      }
+      onIncludeFolder={() =>
+        void applyToManifest(() => window.projectspace.includeDocumentFolder(rootPath))
+      }
+      onRemove={(entry) =>
+        void applyToManifest(() => window.projectspace.removeDocumentEntry(rootPath, entry))
+      }
+    />
+  )
+
   if (!listing || listing.documents.length === 0) {
     return (
       <Center style={{ height: '100%' }}>
@@ -120,19 +161,21 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
           w={520}
           maw="100%"
         >
-          <Stack gap={6}>
+          <Stack gap="sm">
             <Text size="sm">
               Existing Markdown stays where it already lives. Nothing is copied or moved when it is
               included here.
             </Text>
             <Text size="sm" c="dimmed">
-              An AI tool connected to this project can include files and folders through MCP.
+              Include files or a folder below, or let an AI tool connected to this project do it
+              through MCP.
             </Text>
-            {listing?.problems.map((problem) => (
-              <Text key={problem.path} size="xs" c="orange">
-                {problem.path} — {problem.reason === 'missing' ? 'no longer exists' : 'unreadable'}
+            {error && (
+              <Text size="sm" c="orange">
+                {error}
               </Text>
-            ))}
+            )}
+            {entries}
           </Stack>
         </Alert>
       </Center>
@@ -161,18 +204,8 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
           </Stack>
         </ScrollArea.Autosize>
 
-        {listing.problems.length > 0 && (
-          <Alert color="orange" variant="light" mt="xs" p="xs">
-            <Text size="xs" fw={600}>
-              Included but missing
-            </Text>
-            {listing.problems.map((problem) => (
-              <Text key={problem.path} size="xs">
-                {problem.path}
-              </Text>
-            ))}
-          </Alert>
-        )}
+        <Divider my="xs" />
+        {entries}
       </Card>
 
       <Card withBorder padding="md" radius="md" style={{ flex: 1, minWidth: 0 }}>

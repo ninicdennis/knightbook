@@ -17,6 +17,10 @@ const api: ProjectspaceApi = {
     ipcRenderer.invoke('ticket:setStatus', rootPath, id, status, revision),
   completeTicket: (rootPath, id, revision) =>
     ipcRenderer.invoke('ticket:complete', rootPath, id, revision),
+  recordVerificationIssue: (rootPath, id, revision, reason) =>
+    ipcRenderer.invoke('ticket:recordVerificationIssue', rootPath, id, revision, reason),
+  resolveVerificationIssue: (rootPath, id, revision) =>
+    ipcRenderer.invoke('ticket:resolveVerificationIssue', rootPath, id, revision),
   recordTicketReview: (rootPath, id, note) =>
     ipcRenderer.invoke('ticket:review', rootPath, id, note),
   readTicket: (rootPath, id) => ipcRenderer.invoke('ticket:read', rootPath, id),
@@ -26,6 +30,10 @@ const api: ProjectspaceApi = {
   saveSettings: (patch) => ipcRenderer.invoke('app:saveSettings', patch),
 
   listDocuments: (rootPath) => ipcRenderer.invoke('documents:list', rootPath),
+  includeDocumentFiles: (rootPath) => ipcRenderer.invoke('documents:includeFiles', rootPath),
+  includeDocumentFolder: (rootPath) => ipcRenderer.invoke('documents:includeFolder', rootPath),
+  removeDocumentEntry: (rootPath, entry) =>
+    ipcRenderer.invoke('documents:removeEntry', rootPath, entry),
   readDocument: (rootPath, path) => ipcRenderer.invoke('document:read', rootPath, path),
   reviewDocument: (rootPath, path) => ipcRenderer.invoke('document:review', rootPath, path),
   openDocumentExternally: (rootPath, path) =>

@@ -26,6 +26,8 @@ export function ticket(overrides: Partial<TicketView> = {}): TicketView {
     dependencyReady: true,
     dependencyNotes: [],
     blocker: null,
+    verificationIssue: null,
+    affectedBy: [],
     completion: null,
     completionUnattributed: false,
     review: { state: 'unreviewed', lastReviewedAt: null, changeSummary: null },
@@ -92,6 +94,8 @@ export function makeApi(): ProjectspaceApi {
     readProject: vi.fn().mockResolvedValue({ ok: true, value: project() }),
     setTicketStatus: vi.fn(),
     completeTicket: vi.fn(),
+    recordVerificationIssue: vi.fn(),
+    resolveVerificationIssue: vi.fn(),
     recordTicketReview: vi.fn(),
     readTicket: vi.fn().mockResolvedValue({ ok: true, value: detail() }),
     mcpLaunchCommand: vi
@@ -101,6 +105,15 @@ export function makeApi(): ProjectspaceApi {
     readSettings: vi.fn().mockResolvedValue({ colorScheme: 'auto' }),
     saveSettings: vi.fn().mockResolvedValue({ ok: true, value: { colorScheme: 'auto' } }),
     listDocuments: vi.fn().mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
+    includeDocumentFiles: vi
+      .fn()
+      .mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
+    includeDocumentFolder: vi
+      .fn()
+      .mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
+    removeDocumentEntry: vi
+      .fn()
+      .mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
     readDocument: vi.fn(),
     reviewDocument: vi.fn(),
     openDocumentExternally: vi.fn(),

@@ -10,6 +10,7 @@ import { McpStatusFooter } from './components/McpStatusFooter.js'
 import { ProjectHeader } from './components/ProjectHeader.js'
 import { SetupFolder } from './components/SetupFolder.js'
 import { TicketDetailModal } from './components/TicketDetailModal.js'
+import { VerificationIssueDialog } from './components/VerificationIssueDialog.js'
 import { Welcome } from './components/Welcome.js'
 import { useRefreshOnFocus } from './hooks/useRefreshOnFocus.js'
 
@@ -33,6 +34,8 @@ export function App() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [pendingCompletion, setPendingCompletion] = useState<string | null>(null)
   const [confirmOpen, confirm] = useDisclosure(false)
+  const [pendingIssue, setPendingIssue] = useState<string | null>(null)
+  const [issueOpen, issueDialog] = useDisclosure(false)
   const [view, setView] = useState<'board' | 'documents'>('board')
   const [detailId, setDetailId] = useState<string | null>(null)
   const [documentTarget, setDocumentTarget] = useState<{ path: string; nonce: number } | null>(null)
@@ -162,6 +165,58 @@ export function App() {
   const pendingTicket =
     screen.kind === 'open' && pendingCompletion
       ? screen.project.tickets.find((t) => t.id === pendingCompletion)
+      : undefined
+
+  /**
+   * D-017: recording a failed verification needs the reason, so it always goes
+   * through the dialog. Nothing downstream changes; dependents are flagged from
+   * this ticket's own record when the board is read back.
+   */
+  const askAboutIssue = useCallback(
+    (ticketId: string) => {
+      setPendingIssue(ticketId)
+      issueDialog.open()
+    },
+    [issueDialog],
+  )
+
+  const issueConfirmed = useCallback(
+    (reason: string) => {
+      if (screen.kind !== 'open' || !pendingIssue) return
+      const ticket = screen.project.tickets.find((t) => t.id === pendingIssue)
+      issueDialog.close()
+      if (!ticket) return
+
+      void apply(ticket.id, () =>
+        window.projectspace.recordVerificationIssue(
+          screen.path,
+          ticket.id,
+          ticket.revision,
+          reason,
+        ),
+      )
+      setPendingIssue(null)
+    },
+    [screen, pendingIssue, apply, issueDialog],
+  )
+
+  /** Clearing the issue un-flags every dependent at once, so it reads back immediately. */
+  const resolveIssue = useCallback(
+    (ticketId: string) => {
+      if (screen.kind !== 'open') return
+      const ticket = screen.project.tickets.find((t) => t.id === ticketId)
+      if (!ticket) return
+
+      void apply(ticketId, () =>
+        window.projectspace.resolveVerificationIssue(screen.path, ticketId, ticket.revision),
+      )
+    },
+    [screen, apply],
+  )
+
+  const pendingIssueTicket =
+    screen.kind === 'open' && pendingIssue
+      ? screen.project.tickets.find((t) => t.id === pendingIssue)
       : undefined
 
   /**
@@ -335,6 +390,8 @@ export function App() {
                 busyTicketId={busyTicketId}
                 onMove={move}
                 onComplete={askToComplete}
+                onReportIssue={askAboutIssue}
+                onResolveIssue={resolveIssue}
                 onReview={review}
                 onOpen={setDetailId}
               />
@@ -365,6 +422,11 @@ export function App() {
             setDetailId(null)
             askToComplete(detailTicket.id)
           }}
+          onReportIssue={() => {
+            setDetailId(null)
+            askAboutIssue(detailTicket.id)
+          }}
+          onResolveIssue={() => resolveIssue(detailTicket.id)}
           onReview={() => review(detailTicket.id)}
           onOpenDocument={openDocument}
         />
@@ -375,6 +437,13 @@ export function App() {
         ticket={pendingTicket}
         onClose={confirm.close}
         onConfirm={completeConfirmed}
+      />
+
+      <VerificationIssueDialog
+        opened={issueOpen}
+        ticket={pendingIssueTicket}
+        onClose={issueDialog.close}
+        onConfirm={issueConfirmed}
       />
     </AppShell>
   )

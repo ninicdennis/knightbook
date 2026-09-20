@@ -44,9 +44,17 @@ export { selectNextTicket, type Candidate, type SelectionResult } from './select
 export {
   describeReason,
   evaluateReadiness,
+  failedPrerequisites,
+  type FailedPrerequisite,
   type IneligibilityReason,
   type Readiness,
 } from './dependencies.js'
+export {
+  recordVerificationIssue,
+  resolveVerificationIssue,
+  type RecordVerificationIssueInput,
+  type ResolveVerificationIssueInput,
+} from './verification.js'
 export {
   mutableStatusSchema,
   ticketStatusSchema,

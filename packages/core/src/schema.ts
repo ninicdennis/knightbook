@@ -30,6 +30,21 @@ export const ticketFrontmatterSchema = z.object({
   updated_at: z.iso.datetime(),
   related_documents: z.array(z.string()).default([]),
   blocker: z.string().optional(),
+  /**
+   * Section 5 and decision D-017: a prerequisite that failed verification keeps
+   * the failure on its own record. Dependent tickets are flagged from this; they
+   * never store a copy, and their own statuses are left alone.
+   */
+  verification_issue: z
+    .object({
+      /** Why the work was not accepted, in the reporter's words. */
+      reason: z.string().min(1).max(500),
+      /** As in `completion`: the decision's source, separate from the writer. */
+      decision_source: z.enum(['direct_user_action', 'reported_user_instruction']),
+      recorded_by: z.enum(['user', 'agent']),
+      recorded_at: z.iso.datetime(),
+    })
+    .optional(),
   completion: z
     .object({
       /**

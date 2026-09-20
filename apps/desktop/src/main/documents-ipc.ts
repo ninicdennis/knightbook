@@ -1,12 +1,15 @@
-import { ipcMain, shell } from 'electron'
+import { dialog, ipcMain, shell } from 'electron'
 import {
   documentRecordId,
+  includeDocuments,
   listIncludedDocuments,
   openProject,
   readDocument,
   recordReview,
+  removeFromWorkspace,
   resolveInRoot,
   reviewStatus,
+  type Project,
 } from '@projectspace/core'
 import type { DocumentListView, DocumentReadView, Result } from '../shared/contract.js'
 import { guard } from './guard.js'
@@ -22,26 +25,92 @@ import { guard } from './guard.js'
  * crafted link in a document cannot reach outside the checkout.
  */
 
+async function buildListing(project: Project): Promise<DocumentListView> {
+  const listing = await listIncludedDocuments(project)
+
+  const documents = []
+  for (const document of listing.documents) {
+    documents.push({
+      path: document.path,
+      title: document.title,
+      includedVia: document.includedVia,
+      review: await documentReview(project, document.path),
+    })
+  }
+  return { documents, problems: listing.problems }
+}
+
+/**
+ * Decision D-011: including is a manifest edit, never a copy or a move. The
+ * picker opens at the project root and `includeDocuments` refuses anything that
+ * resolves outside it, so a path chosen elsewhere is reported rather than stored.
+ */
+async function pickAndInclude(
+  rootPath: string,
+  properties: ('openFile' | 'openDirectory' | 'multiSelections')[],
+  filters?: Electron.FileFilter[],
+): Promise<DocumentListView> {
+  const project = await openProject(rootPath)
+
+  const chosen = await dialog.showOpenDialog({
+    title: 'Include in this project',
+    defaultPath: project.root.path,
+    properties,
+    ...(filters ? { filters } : {}),
+  })
+  // Cancelling is not a failure, and nothing changed, so the caller gets the
+  // list exactly as it was.
+  if (chosen.canceled || chosen.filePaths.length === 0) return await buildListing(project)
+
+  return await buildListing(await includeDocuments(project, chosen.filePaths))
+}
+
 export function registerDocumentHandlers(): void {
   ipcMain.handle(
     'documents:list',
     async (_event, rootPath: unknown) =>
       await guard<DocumentListView>(async () => {
         if (typeof rootPath !== 'string') throw new Error('A project path is required.')
+        return await buildListing(await openProject(rootPath))
+      }),
+  )
+
+  ipcMain.handle(
+    'documents:includeFiles',
+    async (_event, rootPath: unknown) =>
+      await guard<DocumentListView>(async () => {
+        if (typeof rootPath !== 'string') throw new Error('A project path is required.')
+        return await pickAndInclude(
+          rootPath,
+          ['openFile', 'multiSelections'],
+          [{ name: 'Markdown', extensions: ['md'] }],
+        )
+      }),
+  )
+
+  ipcMain.handle(
+    'documents:includeFolder',
+    async (_event, rootPath: unknown) =>
+      await guard<DocumentListView>(async () => {
+        if (typeof rootPath !== 'string') throw new Error('A project path is required.')
+        return await pickAndInclude(rootPath, ['openDirectory'])
+      }),
+  )
+
+  /**
+   * Removing an entry edits the manifest only. The document stays exactly where
+   * it is on disk, which is the whole point of including things in place.
+   */
+  ipcMain.handle(
+    'documents:removeEntry',
+    async (_event, rootPath: unknown, entry: unknown) =>
+      await guard<DocumentListView>(async () => {
+        if (typeof rootPath !== 'string' || typeof entry !== 'string') {
+          throw new Error('A project and an included entry are required.')
+        }
 
         const project = await openProject(rootPath)
-        const listing = await listIncludedDocuments(project)
-
-        const documents = []
-        for (const document of listing.documents) {
-          documents.push({
-            path: document.path,
-            title: document.title,
-            includedVia: document.includedVia,
-            review: await documentReview(project, document.path),
-          })
-        }
-        return { documents, problems: listing.problems }
+        return await buildListing(await removeFromWorkspace(project, entry))
       }),
   )
 
