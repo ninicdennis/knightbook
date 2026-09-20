@@ -1,9 +1,13 @@
-import { createTheme, type MantineColorsTuple } from '@mantine/core'
+import { Badge, createTheme, type MantineColorsTuple } from '@mantine/core'
 
 /**
  * One place for colour, spacing, and radius, as the specification's UI guidance
  * asks. Status colours are defined here rather than at each call site so a
  * column, a badge, and a card border cannot drift apart.
+ *
+ * The board's surface shades are not here: they are CSS custom properties in
+ * surfaces.css, because the same values are needed by plain CSS and by the
+ * native window background.
  */
 
 const accent: MantineColorsTuple = [
@@ -26,6 +30,16 @@ export const theme = createTheme({
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   headings: { fontWeight: '600' },
+  components: {
+    /**
+     * A card can carry several of these at once. Mantine sets them in small
+     * spaced capitals by default, which made a stack of short status words
+     * heavier than the ticket title above them.
+     */
+    Badge: Badge.extend({
+      styles: { label: { textTransform: 'none', letterSpacing: 0, fontWeight: 600 } },
+    }),
+  },
 })
 
 export const STATUS_COLOR = {

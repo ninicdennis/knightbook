@@ -2,6 +2,7 @@ import { app } from 'electron'
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parseRememberedEntries, type RememberedEntry } from './remembered-projects.js'
+import type { AppSettings, ColorSchemeChoice } from '../shared/contract.js'
 
 /**
  * Technical design section 3: remembered checkout locations and window state are
@@ -16,9 +17,27 @@ const MAX_REMEMBERED = 20
 export interface AppState {
   /** Most recently opened first. */
   readonly recentProjects: RememberedEntry[]
+  readonly settings: AppSettings
 }
 
-const EMPTY: AppState = { recentProjects: [] }
+/** Following the operating system is the only choice that needs no prior decision. */
+export const DEFAULT_SETTINGS: AppSettings = { colorScheme: 'auto' }
+
+const EMPTY: AppState = { recentProjects: [], settings: DEFAULT_SETTINGS }
+
+const COLOR_SCHEMES: ColorSchemeChoice[] = ['light', 'dark', 'auto']
+
+/**
+ * Settings written by a later version, edited by hand, or corrupted fall back to
+ * the default rather than being carried through as an unusable value.
+ */
+function parseSettings(stored: unknown): AppSettings {
+  if (typeof stored !== 'object' || stored === null) return DEFAULT_SETTINGS
+  const { colorScheme } = stored as { colorScheme?: unknown }
+  return COLOR_SCHEMES.includes(colorScheme as ColorSchemeChoice)
+    ? { colorScheme: colorScheme as ColorSchemeChoice }
+    : DEFAULT_SETTINGS
+}
 
 function statePath(): string {
   return join(app.getPath('userData'), FILE)
@@ -26,9 +45,13 @@ function statePath(): string {
 
 export async function readAppState(): Promise<AppState> {
   try {
-    const parsed = JSON.parse(await readFile(statePath(), 'utf8')) as { recentProjects?: unknown }
+    const parsed = JSON.parse(await readFile(statePath(), 'utf8')) as {
+      recentProjects?: unknown
+      settings?: unknown
+    }
     return {
       recentProjects: parseRememberedEntries(parsed.recentProjects).slice(0, MAX_REMEMBERED),
+      settings: parseSettings(parsed.settings),
     }
   } catch {
     // Absent or unreadable state is not an error: it is simply a first run.
@@ -36,18 +59,40 @@ export async function readAppState(): Promise<AppState> {
   }
 }
 
-async function writeAppState(state: AppState): Promise<void> {
+/** False when the file could not be written. Callers decide whether that matters. */
+async function writeAppState(state: AppState): Promise<boolean> {
   try {
     await writeFile(statePath(), JSON.stringify(state, null, 2), 'utf8')
+    return true
   } catch {
     // Losing this list is a convenience regression, never a data loss, so a
     // failure here must not interrupt opening the project.
+    return false
   }
+}
+
+export async function readSettings(): Promise<AppSettings> {
+  return (await readAppState()).settings
+}
+
+/**
+ * Merges in the given fields so adding a second setting later cannot have one
+ * screen overwrite another's value. Throws when the file could not be written,
+ * because a preference that silently fails to persist would look like it worked.
+ */
+export async function saveSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
+  const current = await readAppState()
+  const settings: AppSettings = { ...current.settings, ...patch }
+  if (!(await writeAppState({ ...current, settings }))) {
+    throw new Error('The settings file could not be written.')
+  }
+  return settings
 }
 
 export async function rememberProject(checkoutPath: string, name: string): Promise<AppState> {
   const current = await readAppState()
   const next: AppState = {
+    ...current,
     recentProjects: [
       { path: checkoutPath, name },
       ...current.recentProjects.filter((entry) => entry.path !== checkoutPath),
@@ -61,6 +106,7 @@ export async function rememberProject(checkoutPath: string, name: string): Promi
 export async function forgetProject(checkoutPath: string): Promise<AppState> {
   const current = await readAppState()
   const next: AppState = {
+    ...current,
     recentProjects: current.recentProjects.filter((entry) => entry.path !== checkoutPath),
   }
   await writeAppState(next)

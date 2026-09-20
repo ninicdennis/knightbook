@@ -155,6 +155,30 @@ const PROJECT: ProjectView = {
       status: 'done',
       completionUnattributed: true,
     }),
+    // Enough of them to show Done collapsed, which is how a working board looks.
+    ...[
+      'Shared core library',
+      'MCP server over stdio',
+      'Bundled MCP runtime',
+      'Document viewer',
+    ].map((title, index) =>
+      ticket({
+        id: `older-${index}`,
+        title,
+        status: 'done',
+        review: {
+          state: 'reviewed',
+          lastReviewedAt: '2026-09-17T09:00:00Z',
+          changeSummary: null,
+        },
+        completion: {
+          decisionSource: 'direct_user_action',
+          recordedBy: 'user',
+          recordedAt: `2026-09-1${5 + index}T09:00:00Z`,
+          instruction: 'Moved to Done in the app.',
+        },
+      }),
+    ),
   ],
 }
 
@@ -213,6 +237,15 @@ export const stubApi: ProjectspaceApi = {
     record('readTicket', id)
     return stubTicketDetail(PROJECT, id)
   },
+  // Add ?light to the preview URL to start in the light scheme.
+  readSettings: async () => ({
+    colorScheme: new URLSearchParams(window.location.search).has('light') ? 'light' : 'dark',
+  }),
+  saveSettings: async (patch) => {
+    record('saveSettings', patch)
+    return { ok: true, value: { colorScheme: patch.colorScheme ?? 'auto' } }
+  },
+
   mcpLaunchCommand: async (root) => ({
     command: String.raw`C:\Program Files\Projectspace\resources\mcp\node.exe`,
     args: [String.raw`C:\Program Files\Projectspace\resources\mcp\server.mjs`, '--root', root],

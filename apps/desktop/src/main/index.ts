@@ -3,8 +3,10 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { registerDocumentHandlers } from './documents-ipc.js'
 import { registerProjectHandlers } from './ipc.js'
+import { applyStoredColorScheme, registerSettingsHandlers } from './settings-ipc.js'
 import { registerSetupHandlers } from './setup-ipc.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
+import { followSystemChanges, windowBackground } from './window-theme.js'
 
 /**
  * Technical design section 1: the renderer receives narrow operations through
@@ -23,7 +25,8 @@ function createWindow(): BrowserWindow {
     minWidth: 720,
     minHeight: 480,
     show: false,
-    backgroundColor: '#14161a',
+    // Follows the user's colour-scheme setting, which is applied before this runs.
+    backgroundColor: windowBackground(),
     webPreferences: {
       preload: join(HERE, '..', 'preload', 'index.cjs'),
       contextIsolation: true,
@@ -71,11 +74,16 @@ function openExternalIfSafe(url: string): void {
   }
 }
 
-void app.whenReady().then(() => {
+void app.whenReady().then(async () => {
   registerProjectHandlers()
   registerDocumentHandlers()
   registerSetupHandlers()
+  registerSettingsHandlers()
   process.stdout.write(`MCP launch command: ${JSON.stringify(mcpLaunchCommand('<project>'))}\n`)
+
+  // Before the first window, so it is not painted in the other scheme first.
+  await applyStoredColorScheme()
+  followSystemChanges()
   createWindow()
 
   app.on('activate', () => {

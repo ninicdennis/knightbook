@@ -98,6 +98,8 @@ export function makeApi(): ProjectspaceApi {
       .fn()
       .mockResolvedValue({ command: 'node.exe', args: ['server.mjs', '--root', 'demo'] }),
     mcpStatus: vi.fn().mockResolvedValue(mcpStatus()),
+    readSettings: vi.fn().mockResolvedValue({ colorScheme: 'auto' }),
+    saveSettings: vi.fn().mockResolvedValue({ ok: true, value: { colorScheme: 'auto' } }),
     listDocuments: vi.fn().mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
     readDocument: vi.fn(),
     reviewDocument: vi.fn(),
