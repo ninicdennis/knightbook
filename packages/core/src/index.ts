@@ -82,3 +82,12 @@ export {
   type ReviewState,
   type ReviewStatus,
 } from './review.js'
+export {
+  readMcpSessions,
+  startMcpSession,
+  SESSION_HEARTBEAT_MS,
+  SESSION_STALE_MS,
+  type McpSessionHandle,
+  type McpSessionReading,
+  type McpSessionRecord,
+} from './mcp-sessions.js'

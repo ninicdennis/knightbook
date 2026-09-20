@@ -1,4 +1,5 @@
 import type {
+  McpStatusView,
   ProjectView,
   ProjectspaceApi,
   RememberedProject,
@@ -44,6 +45,45 @@ const UNREADABLE = new URLSearchParams(window.location.search).has('problems')
       },
     ]
   : []
+
+/**
+ * The footer has five states and only one of them is reachable by luck, so the
+ * preview picks between them from the URL the same way `?problems` does.
+ */
+function stubMcpStatus(root: string): McpStatusView {
+  const want = new URLSearchParams(window.location.search).get('mcp') ?? 'connected'
+  const now = Date.now()
+  const at = (msAgo: number) => new Date(now - msAgo).toISOString()
+  const base: McpStatusView = {
+    checkoutPath: root,
+    observedAt: at(0),
+    unobservable: null,
+    runtimeAvailable: true,
+    live: [],
+    stale: [],
+  }
+
+  if (want === 'none') return base
+  if (want === 'missing') return { ...base, runtimeAvailable: false }
+  if (want === 'unknown') return { ...base, unobservable: 'EPERM: permission denied' }
+  if (want === 'stale') {
+    const startedAt = at(3_600_000)
+    return {
+      ...base,
+      stale: [{ pid: 8120, startedAt, connectedAt: startedAt, lastSeenAt: at(600_000) }],
+    }
+  }
+  if (want === 'running') {
+    return {
+      ...base,
+      live: [{ pid: 8120, startedAt: at(4_000), connectedAt: null, lastSeenAt: at(1_000) }],
+    }
+  }
+  return {
+    ...base,
+    live: [{ pid: 8120, startedAt: at(900_000), connectedAt: at(880_000), lastSeenAt: at(2_000) }],
+  }
+}
 
 const PROJECT: ProjectView = {
   name: 'Projectspace',
@@ -177,6 +217,9 @@ export const stubApi: ProjectspaceApi = {
     command: String.raw`C:\Program Files\Projectspace\resources\mcp\node.exe`,
     args: [String.raw`C:\Program Files\Projectspace\resources\mcp\server.mjs`, '--root', root],
   }),
+
+  /** Add ?mcp=running|none|stale|missing|unknown to review each footer state. */
+  mcpStatus: async (root) => stubMcpStatus(root),
 
   listDocuments: async () => ({
     ok: true,

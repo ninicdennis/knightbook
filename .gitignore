@@ -12,3 +12,6 @@ Thumbs.db
 
 # Coordination state for the app and MCP write lock; never project content.
 .projectspace/.write-lock
+
+# MCP session heartbeats: coordination state written by the running server.
+.projectspace/runtime/

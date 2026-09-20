@@ -13,6 +13,7 @@ import {
 import { forgetProject, readAppState, rememberProject } from './app-state.js'
 import { guard } from './guard.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
+import { readMcpStatus } from './mcp-status.js'
 import { describeRememberedProjects } from './remembered-projects.js'
 import { allowSetupFor } from './setup-permit.js'
 import { buildLookup, toTicketDetail, toTicketView } from './ticket-view.js'
@@ -161,4 +162,9 @@ export function registerProjectHandlers(): void {
   ipcMain.handle('mcp:launchCommand', (_event, rootPath: unknown) =>
     typeof rootPath === 'string' ? mcpLaunchCommand(rootPath) : null,
   )
+
+  ipcMain.handle('mcp:status', async (_event, rootPath: unknown) => {
+    if (typeof rootPath !== 'string') throw new Error('A project path is required.')
+    return await readMcpStatus(rootPath)
+  })
 }

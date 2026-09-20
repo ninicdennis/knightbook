@@ -3,6 +3,7 @@ import { render } from '@testing-library/react'
 import { vi } from 'vitest'
 import { App } from './App.js'
 import type {
+  McpStatusView,
   ProjectView,
   ProjectspaceApi,
   RememberedProject,
@@ -59,6 +60,28 @@ export function detail(overrides: Partial<TicketDetailView> = {}): TicketDetailV
 
 export const REMEMBERED: RememberedProject = { path: CHECKOUT, name: 'Demo', unavailable: null }
 
+/** Nothing running, runtime present: the state a user sees before they connect. */
+export function mcpStatus(overrides: Partial<McpStatusView> = {}): McpStatusView {
+  return {
+    checkoutPath: CHECKOUT,
+    observedAt: new Date().toISOString(),
+    unobservable: null,
+    runtimeAvailable: true,
+    live: [],
+    stale: [],
+    ...overrides,
+  }
+}
+
+/** One live session with a client attached. */
+export function connectedSession(overrides: Partial<McpStatusView> = {}): McpStatusView {
+  const now = new Date().toISOString()
+  return mcpStatus({
+    live: [{ pid: 4242, startedAt: now, connectedAt: now, lastSeenAt: now }],
+    ...overrides,
+  })
+}
+
 export function makeApi(): ProjectspaceApi {
   return {
     rememberedProjects: vi.fn().mockResolvedValue([REMEMBERED]),
@@ -74,6 +97,7 @@ export function makeApi(): ProjectspaceApi {
     mcpLaunchCommand: vi
       .fn()
       .mockResolvedValue({ command: 'node.exe', args: ['server.mjs', '--root', 'demo'] }),
+    mcpStatus: vi.fn().mockResolvedValue(mcpStatus()),
     listDocuments: vi.fn().mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
     readDocument: vi.fn(),
     reviewDocument: vi.fn(),

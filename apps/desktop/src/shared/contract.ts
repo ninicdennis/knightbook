@@ -107,6 +107,35 @@ export interface McpLaunchCommand {
   args: string[]
 }
 
+/** One MCP server process that recorded itself against this project. */
+export interface McpSessionView {
+  pid: number
+  startedAt: string
+  /** When a client completed an opening handshake, or null if none has. */
+  connectedAt: string | null
+  lastSeenAt: string
+}
+
+/**
+ * What the app could actually observe about MCP for one checkout. These are
+ * three separate facts and the UI must not collapse them: the bundled runtime
+ * existing says nothing about a server running, and a server running says
+ * nothing about a client having connected to it.
+ */
+export interface McpStatusView {
+  /** The checkout this describes, so a reply that arrives late can be discarded. */
+  checkoutPath: string
+  observedAt: string
+  /** Set when nothing could be observed. Not the same as observing nothing. */
+  unobservable: string | null
+  /** Whether the bundled server the copied configuration points at is present. */
+  runtimeAvailable: boolean
+  /** Sessions whose heartbeat is current. */
+  live: McpSessionView[]
+  /** Sessions left behind by a process that stopped without cleaning up. */
+  stale: McpSessionView[]
+}
+
 export interface ProjectspaceApi extends DocumentsApi {
   /** Projects this machine has opened, most recent first, each checked for availability. */
   rememberedProjects(): Promise<RememberedProject[]>
@@ -130,6 +159,8 @@ export interface ProjectspaceApi extends DocumentsApi {
   /** Everything written on one ticket, for the detail view. */
   readTicket(rootPath: string, id: string): Promise<Result<TicketDetailView>>
   mcpLaunchCommand(rootPath: string): Promise<McpLaunchCommand | null>
+  /** Observes MCP status for one checkout. Reads only; it never writes to the project. */
+  mcpStatus(rootPath: string): Promise<McpStatusView>
 }
 
 export interface DocumentSummary {

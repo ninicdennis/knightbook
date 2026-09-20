@@ -6,6 +6,7 @@ import type { MovableStatus, ProjectView, RememberedProject, Result } from '../s
 import { Board } from './components/Board.js'
 import { CompletionDialog } from './components/CompletionDialog.js'
 import { DocumentsView } from './components/DocumentsView.js'
+import { McpStatusFooter } from './components/McpStatusFooter.js'
 import { ProjectHeader } from './components/ProjectHeader.js'
 import { SetupFolder } from './components/SetupFolder.js'
 import { TicketDetailModal } from './components/TicketDetailModal.js'
@@ -221,7 +222,10 @@ export function App() {
   }, [])
 
   return (
-    <AppShell {...(screen.kind === 'open' ? { header: { height: 72 } } : {})} padding="md">
+    <AppShell
+      {...(screen.kind === 'open' ? { header: { height: 72 }, footer: { height: 32 } } : {})}
+      padding="md"
+    >
       {screen.kind === 'open' && (
         <AppShell.Header px="md" py="xs">
           <ProjectHeader
@@ -338,6 +342,12 @@ export function App() {
           </Stack>
         )}
       </AppShell.Main>
+
+      {screen.kind === 'open' && (
+        <AppShell.Footer>
+          <McpStatusFooter checkoutPath={screen.project.checkoutPath} />
+        </AppShell.Footer>
+      )}
 
       {screen.kind === 'open' && detailTicket && (
         <TicketDetailModal

@@ -105,8 +105,10 @@ it has no filesystem or shell access.
 
 ## Connecting an AI tool
 
-The header's plug button copies this project's MCP configuration. In a packaged
-install it points at the runtime shipped beside the application:
+The status bar along the bottom of the window shows whether an AI client can
+reach this project, and opens the connection details. **Copy MCP configuration**
+is in there. In a packaged install it points at the runtime shipped beside the
+application:
 
 ```json
 {
@@ -118,6 +120,25 @@ install it points at the runtime shipped beside the application:
 The AI client starts that process itself, so project access does not depend on
 the desktop window being open. The root is bound at launch rather than supplied
 per call, so a connection reaches exactly one checkout.
+
+### What the status bar can and cannot tell you
+
+The client starts and stops the server, so the app has no Start or Stop to offer
+and does not pretend otherwise. What it does have is evidence: a running server
+writes a heartbeat into `.projectspace/runtime/` (coordination state, ignored by
+Git), and the window reads it.
+
+| Indicator | What was observed |
+| --- | --- |
+| **MCP connected** | A server is running for this project and a client has opened a connection to it |
+| **MCP server running** | A server process is up, but no client has connected to it yet |
+| **MCP not connected** | No running server was observed — not the same as one being stopped |
+| **MCP runtime missing** | The bundled server is not where it should be, so the copied configuration would start nothing |
+| **MCP status unknown** | The folder could not be read, so nothing could be observed at all |
+
+Only a server from this build is visible. A client running a different build
+against the same folder shows as no connection, which is why the wording is
+about what was observed rather than about what is true.
 
 ## Teaching an AI tool the workflow
 
