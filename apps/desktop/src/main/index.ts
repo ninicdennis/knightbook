@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, Menu, shell } from 'electron'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { registerDocumentHandlers } from './documents-ipc.js'
@@ -6,6 +6,7 @@ import { registerProjectHandlers } from './ipc.js'
 import { applyStoredColorScheme, registerSettingsHandlers } from './settings-ipc.js'
 import { registerSetupHandlers } from './setup-ipc.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
+import { applicationMenuTemplate, menuBarIsVisible } from './app-menu.js'
 import { followSystemChanges, windowBackground } from './window-theme.js'
 
 /**
@@ -35,6 +36,13 @@ function createWindow(): BrowserWindow {
       webviewTag: false,
     },
   })
+
+  /*
+   * Hidden rather than absent: the menu built in `whenReady` still supplies the
+   * edit accelerators, and leaving `autoHideMenuBar` off means Alt does not
+   * bring the bar back. macOS has no per-window menu bar to hide.
+   */
+  if (!menuBarIsVisible(process.platform)) window.setMenuBarVisibility(false)
 
   window.once('ready-to-show', () => window.show())
 
@@ -75,6 +83,11 @@ function openExternalIfSafe(url: string): void {
 }
 
 void app.whenReady().then(async () => {
+  // Before any window, so no window is ever built around the default menu.
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate(applicationMenuTemplate({ platform: process.platform, isDevelopment })),
+  )
+
   registerProjectHandlers()
   registerDocumentHandlers()
   registerSetupHandlers()
