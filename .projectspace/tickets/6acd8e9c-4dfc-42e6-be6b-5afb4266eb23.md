@@ -5,7 +5,7 @@ title: "Stage the matching Node runtime for each release target"
 status: verification
 depends_on: []
 created_at: 2026-09-19T20:05:15.184Z
-updated_at: 2026-09-21T02:34:50.403Z
+updated_at: 2026-09-21T02:50:57.339Z
 related_documents: [ "docs/experiments/packaging-findings.md", "docs/release-automation.md" ]
 ---
 
@@ -106,3 +106,36 @@ at the cost of never testing that path. Say which you prefer.
 "checksum verified", and warns about the executable bit; then run it again and confirm
 it uses the cache. A normal `pnpm pack:dir` should behave as it always has and print
 which runtime it staged and where it came from.
+
+### Addendum: Linux CI proved two of the unverified items (2026-09-20)
+
+The first CI run on the pull request did on Ubuntu what this machine could not.
+From the job log:
+
+```
+fetching checksums for Node v24.19.0
+downloading node-v24.19.0-linux-x64.tar.gz
+checksum verified
+staged node, staged server.mjs in .../apps/desktop/resources/mcp
+Staged Node 24.19.0 for linux-x64.
+```
+
+That runner's own Node did not match the pin, so it took the download path, and the
+whole thing took about 2.3 seconds including the fetch. `electron-builder` then packaged
+that runtime and the three packaged-app tests launched the staged binary and passed with
+`REQUIRE_PACKAGED_APP=1`.
+
+Two items move out of "not verified":
+
+- **A real `pnpm pack:dir`** ran against a downloaded runtime, not just the staging step.
+- **The executable bit on a POSIX host.** The packaged tests start that binary as a
+  process; a runtime without the bit could not have run at all. The chmod path had only
+  been reasoned about before this.
+
+It also answers the CI question in the handoff. A 2.3-second download per runner is not
+worth pinning CI's Node version to avoid, so leaving `node-version: 24` floating — and
+therefore exercising the download and the checksum on every run — looks like the better
+trade rather than a merely defensible one.
+
+Still not verified: macOS and Windows as build hosts for a full package, and the
+`darwin` and `linux-arm64` archives, which have still never been fetched.
