@@ -41,7 +41,7 @@ export function SetupFolder({ path, onSetUp, onChooseAnother }: Props) {
 
   useEffect(() => {
     let cancelled = false
-    void window.projectspace.inspectFolder(path).then((result) => {
+    void window.knightbook.inspectFolder(path).then((result) => {
       if (cancelled) return
       if (result.ok) {
         setInspection(result.value)
@@ -59,7 +59,7 @@ export function SetupFolder({ path, onSetUp, onChooseAnother }: Props) {
   const setUp = async () => {
     setWorking(true)
     setError(null)
-    const result = await window.projectspace.setUpFolder(path, name, include)
+    const result = await window.knightbook.setUpFolder(path, name, include)
     setWorking(false)
     if (result.ok) onSetUp(result.value.path, result.value.warning)
     else setError(result.message)
@@ -80,7 +80,7 @@ export function SetupFolder({ path, onSetUp, onChooseAnother }: Props) {
         <Alert icon={<IconInfoCircle size={18} />} color="blue" variant="light">
           <Stack gap={6}>
             <Text size="sm">
-              A Projectspace project is a shared workspace of Markdown documents and a Kanban board
+              A Knightbook project is a shared workspace of Markdown documents and a Kanban board
               that you and your AI tools both work in.
             </Text>
             <Text size="sm">

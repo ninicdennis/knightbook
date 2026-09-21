@@ -149,7 +149,7 @@ describe('MCP session records', () => {
   it('writes nothing into a folder that is not a project yet', async () => {
     // A server bound to a folder before setup must leave `.projectspace/` empty,
     // or `project_initialize` will refuse the folder as somebody else's.
-    const dir = await mkdtemp(join(tmpdir(), 'projectspace-unset-'))
+    const dir = await mkdtemp(join(tmpdir(), 'knightbook-unset-'))
     try {
       const session = await startMcpSession({ path: dir }, 1234)
       await session.beat()
@@ -163,7 +163,7 @@ describe('MCP session records', () => {
   })
 
   it('starts recording once the project it is bound to exists', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'projectspace-late-'))
+    const dir = await mkdtemp(join(tmpdir(), 'knightbook-late-'))
     try {
       const session = await startMcpSession({ path: dir }, 1234)
       expect((await readMcpSessions({ path: dir })).live).toHaveLength(0)

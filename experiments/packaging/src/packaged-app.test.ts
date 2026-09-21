@@ -13,7 +13,7 @@ import { REPO_ROOT, type StagedResources } from './stage.js'
  *
  * Skipped when the packaged build is absent, so the suite still runs on a
  * machine that has not built the app. Produce it with
- * `pnpm --filter @projectspace/desktop pack:dir`.
+ * `pnpm --filter @knightbook/desktop pack:dir`.
  *
  * CI sets REQUIRE_PACKAGED_APP=1, which turns "absent" into a failure: a check
  * that quietly skips is not a check.
@@ -64,7 +64,7 @@ let workspace: string
 let projectRoot: string
 
 beforeAll(async () => {
-  workspace = await mkdtemp(join(tmpdir(), 'projectspace-packaged-'))
+  workspace = await mkdtemp(join(tmpdir(), 'knightbook-packaged-'))
   projectRoot = join(workspace, 'project')
 })
 

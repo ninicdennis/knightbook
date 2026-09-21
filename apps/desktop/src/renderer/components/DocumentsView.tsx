@@ -52,7 +52,7 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
 
   useEffect(() => {
     let cancelled = false
-    void window.projectspace.listDocuments(rootPath).then((result) => {
+    void window.knightbook.listDocuments(rootPath).then((result) => {
       if (cancelled) return
       setLoading(false)
       if (result.ok) {
@@ -75,7 +75,7 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
     async (path: string) => {
       setSelected(path)
       setError(null)
-      const result = await window.projectspace.readDocument(rootPath, path)
+      const result = await window.knightbook.readDocument(rootPath, path)
       if (result.ok) setDocument(result.value)
       else {
         setDocument(null)
@@ -113,10 +113,10 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
 
   const review = useCallback(async () => {
     if (!document) return
-    const result = await window.projectspace.reviewDocument(rootPath, document.path)
+    const result = await window.knightbook.reviewDocument(rootPath, document.path)
     if (result.ok) {
       setDocument(result.value)
-      const refreshed = await window.projectspace.listDocuments(rootPath)
+      const refreshed = await window.knightbook.listDocuments(rootPath)
       if (refreshed.ok) setListing(refreshed.value)
     } else setError(result.message)
   }, [rootPath, document])
@@ -139,13 +139,13 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
       listing={listing}
       busy={busy}
       onIncludeFiles={() =>
-        void applyToManifest(() => window.projectspace.includeDocumentFiles(rootPath))
+        void applyToManifest(() => window.knightbook.includeDocumentFiles(rootPath))
       }
       onIncludeFolder={() =>
-        void applyToManifest(() => window.projectspace.includeDocumentFolder(rootPath))
+        void applyToManifest(() => window.knightbook.includeDocumentFolder(rootPath))
       }
       onRemove={(entry) =>
-        void applyToManifest(() => window.projectspace.removeDocumentEntry(rootPath, entry))
+        void applyToManifest(() => window.knightbook.removeDocumentEntry(rootPath, entry))
       }
     />
   )
@@ -226,7 +226,7 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
             document={document}
             onReview={() => void review()}
             onOpenExternally={() =>
-              void window.projectspace.openDocumentExternally(rootPath, document.path)
+              void window.knightbook.openDocumentExternally(rootPath, document.path)
             }
             onFollowLink={(path) => setSelected(path)}
           />

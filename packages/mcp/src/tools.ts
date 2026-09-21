@@ -22,7 +22,7 @@ import {
   type Ticket,
   type TicketFrontmatter,
   type TicketProblem,
-} from '@projectspace/core'
+} from '@knightbook/core'
 import { z } from 'zod'
 import { guard, ok } from './result.js'
 import type { McpServer } from '@modelcontextprotocol/server'

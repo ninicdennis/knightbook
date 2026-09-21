@@ -174,7 +174,7 @@ export async function ensureRuntime({
     return cached
   }
 
-  const work = await mkdtemp(join(tmpdir(), 'projectspace-runtime-'))
+  const work = await mkdtemp(join(tmpdir(), 'knightbook-runtime-'))
   try {
     log(`fetching checksums for Node v${version}`)
     const shasums = await (await fetchImpl(distUrl('SHASUMS256.txt', version))).text()

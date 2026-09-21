@@ -1,6 +1,6 @@
 import { stat } from 'node:fs/promises'
 import { basename } from 'node:path'
-import { projectExists, resolveProjectRoot } from '@projectspace/core'
+import { projectExists, resolveProjectRoot } from '@knightbook/core'
 import type { RememberedProject } from '../shared/contract.js'
 
 export interface RememberedEntry {

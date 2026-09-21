@@ -1,6 +1,6 @@
 import { access } from 'node:fs/promises'
 import { join } from 'node:path'
-import { readMcpSessions, resolveProjectRoot, type McpSessionRecord } from '@projectspace/core'
+import { readMcpSessions, resolveProjectRoot, type McpSessionRecord } from '@knightbook/core'
 import { mcpResourcesDir, NODE_BINARY } from './mcp-resources.js'
 import type { McpSessionView, McpStatusView } from '../shared/contract.js'
 

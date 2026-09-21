@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectspaceApi } from '../shared/contract.js'
+import type { KnightbookApi } from '../shared/contract.js'
 import { makeApi, renderApp } from './test-fixtures.js'
 
 /**
@@ -10,13 +10,13 @@ import { makeApi, renderApp } from './test-fixtures.js'
  * and a choice that could not be saved says so instead of looking stored.
  */
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
   user = userEvent.setup()
   api = makeApi()
-  window.projectspace = api
+  window.knightbook = api
 })
 
 /**

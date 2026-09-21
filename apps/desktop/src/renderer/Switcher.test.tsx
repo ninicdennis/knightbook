@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectspaceApi, RememberedProject } from '../shared/contract.js'
+import type { KnightbookApi, RememberedProject } from '../shared/contract.js'
 import { CHECKOUT, REMEMBERED, makeApi, project, renderApp, ticket } from './test-fixtures.js'
 
 /**
@@ -19,14 +19,14 @@ const GONE_PROJECT: RememberedProject = {
   unavailable: 'This folder was not found. It may have been moved, renamed, or deleted.',
 }
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
   user = userEvent.setup()
   api = makeApi()
   api.rememberedProjects = vi.fn().mockResolvedValue([REMEMBERED, SECOND_PROJECT, GONE_PROJECT])
-  window.projectspace = api
+  window.knightbook = api
 })
 
 async function openMenu() {

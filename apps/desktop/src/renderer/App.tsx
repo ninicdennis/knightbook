@@ -54,10 +54,10 @@ export function App() {
   const load = useCallback(async (path: string) => {
     setScreen({ kind: 'loading', path })
     setActionError(null)
-    const result = await window.projectspace.readProject(path)
+    const result = await window.knightbook.readProject(path)
     if (result.ok) {
       setScreen({ kind: 'open', path, project: result.value })
-      void window.projectspace.rememberedProjects().then(setRecentProjects)
+      void window.knightbook.rememberedProjects().then(setRecentProjects)
     } else {
       setScreen({ kind: 'failed', path, code: result.code, message: result.message })
     }
@@ -69,14 +69,14 @@ export function App() {
    * screen rather than silently showing nothing.
    */
   useEffect(() => {
-    void window.projectspace.rememberedProjects().then((recent) => {
+    void window.knightbook.rememberedProjects().then((recent) => {
       setRecentProjects(recent)
       if (recent[0]) void load(recent[0].path)
     })
   }, [load])
 
   const choose = useCallback(async () => {
-    const chosen = await window.projectspace.chooseProject()
+    const chosen = await window.knightbook.chooseProject()
     if (!chosen) return
     if (!chosen.initialized) {
       setScreen({ kind: 'not-a-project', path: chosen.path })
@@ -127,7 +127,7 @@ export function App() {
       if (!ticket) return
 
       void apply(ticketId, () =>
-        window.projectspace.setTicketStatus(screen.path, ticketId, status, ticket.revision),
+        window.knightbook.setTicketStatus(screen.path, ticketId, status, ticket.revision),
       )
     },
     [screen, apply],
@@ -145,7 +145,7 @@ export function App() {
       if (!ticket) return
 
       void apply(ticketId, () =>
-        window.projectspace.setTicketType(screen.path, ticketId, type, ticket.revision),
+        window.knightbook.setTicketType(screen.path, ticketId, type, ticket.revision),
       )
     },
     [screen, apply],
@@ -172,7 +172,7 @@ export function App() {
       const next = [...ids]
       next.splice(from, 1)
       next.splice(target, 0, ticketId)
-      void apply(ticketId, () => window.projectspace.reorderBacklog(screen.path, next))
+      void apply(ticketId, () => window.knightbook.reorderBacklog(screen.path, next))
     },
     [screen, apply],
   )
@@ -185,7 +185,7 @@ export function App() {
   const review = useCallback(
     (ticketId: string) => {
       if (screen.kind !== 'open') return
-      void apply(ticketId, () => window.projectspace.recordTicketReview(screen.path, ticketId, ''))
+      void apply(ticketId, () => window.knightbook.recordTicketReview(screen.path, ticketId, ''))
     },
     [screen, apply],
   )
@@ -210,7 +210,7 @@ export function App() {
     if (!ticket) return
 
     void apply(ticket.id, () =>
-      window.projectspace.completeTicket(screen.path, ticket.id, ticket.revision),
+      window.knightbook.completeTicket(screen.path, ticket.id, ticket.revision),
     )
     setPendingCompletion(null)
   }, [screen, pendingCompletion, apply, confirm])
@@ -241,12 +241,7 @@ export function App() {
       if (!ticket) return
 
       void apply(ticket.id, () =>
-        window.projectspace.recordVerificationIssue(
-          screen.path,
-          ticket.id,
-          ticket.revision,
-          reason,
-        ),
+        window.knightbook.recordVerificationIssue(screen.path, ticket.id, ticket.revision, reason),
       )
       setPendingIssue(null)
     },
@@ -261,7 +256,7 @@ export function App() {
       if (!ticket) return
 
       void apply(ticketId, () =>
-        window.projectspace.resolveVerificationIssue(screen.path, ticketId, ticket.revision),
+        window.knightbook.resolveVerificationIssue(screen.path, ticketId, ticket.revision),
       )
     },
     [screen, apply],
@@ -282,7 +277,7 @@ export function App() {
     const path = screen.path
     setRefreshing(true)
 
-    const result = await window.projectspace.readProject(path)
+    const result = await window.knightbook.readProject(path)
     if (result.ok) {
       // The user may have switched projects while this was reading.
       setScreen((current) =>

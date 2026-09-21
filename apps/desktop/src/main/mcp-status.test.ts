@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { initializeProject, startMcpSession } from '@projectspace/core'
+import { initializeProject, startMcpSession } from '@knightbook/core'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -23,7 +23,7 @@ let projectDir: string
 let runtimeDir: string
 
 beforeEach(async () => {
-  sandbox = await mkdtemp(join(tmpdir(), 'projectspace-mcp-status-'))
+  sandbox = await mkdtemp(join(tmpdir(), 'knightbook-mcp-status-'))
   projectDir = join(sandbox, 'project')
   // Deliberately absent: a source checkout that has not been staged yet.
   runtimeDir = join(sandbox, 'no-runtime-here')
@@ -44,7 +44,7 @@ describe('observing MCP status', () => {
   })
 
   it('sees a server that recorded itself against this project', async () => {
-    const { resolveProjectRoot } = await import('@projectspace/core')
+    const { resolveProjectRoot } = await import('@knightbook/core')
     const session = await startMcpSession(await resolveProjectRoot(projectDir), 4321)
     await session.markConnected()
 
@@ -56,7 +56,7 @@ describe('observing MCP status', () => {
   })
 
   it('does not see a server serving a different project', async () => {
-    const { resolveProjectRoot } = await import('@projectspace/core')
+    const { resolveProjectRoot } = await import('@knightbook/core')
     const other = join(sandbox, 'other')
     await initializeProject(other, { name: 'Other' })
     await startMcpSession(await resolveProjectRoot(other), 4321)

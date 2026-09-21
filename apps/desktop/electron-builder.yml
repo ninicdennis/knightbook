@@ -1,8 +1,12 @@
-appId: dev.projectspace.app
-productName: Projectspace
+appId: dev.knightbook.app
+productName: Knightbook
 directories:
   output: release
   buildResources: build
+
+# build/icon.png is the 1024px master derived from docs/assets/knightbook-logo.png.
+# electron-builder derives the .ico and .icns from it, so there is one source
+# image rather than three that can drift apart.
 
 files:
   - dist/**

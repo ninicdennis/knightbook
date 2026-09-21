@@ -10,7 +10,7 @@ import {
   resolveInRoot,
   reviewStatus,
   type Project,
-} from '@projectspace/core'
+} from '@knightbook/core'
 import type { DocumentListView, DocumentReadView, Result } from '../shared/contract.js'
 import { guard } from './guard.js'
 

@@ -18,7 +18,7 @@ export function Welcome({ recentProjects, onChoose, onOpenRecent }: Props) {
     <Center style={{ height: '100%' }}>
       <Stack gap="lg" w={520} maw="100%">
         <Stack gap={4}>
-          <Title order={2}>Projectspace</Title>
+          <Title order={2}>Knightbook</Title>
           <Text c="dimmed" size="sm">
             Open a project folder to see its documents and board. The folder can be an existing code
             repository.

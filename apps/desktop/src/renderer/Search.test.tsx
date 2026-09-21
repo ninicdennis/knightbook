@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectspaceApi, TicketSearchView } from '../shared/contract.js'
+import type { KnightbookApi, TicketSearchView } from '../shared/contract.js'
 import { CHECKOUT, makeApi, project, renderApp, ticket } from './test-fixtures.js'
 
 /**
@@ -43,7 +43,7 @@ function answer(overrides: Partial<TicketSearchView> = {}): TicketSearchView {
   }
 }
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
@@ -58,7 +58,7 @@ beforeEach(() => {
       ],
     }),
   })
-  window.projectspace = api
+  window.knightbook = api
 })
 
 async function openSearch() {

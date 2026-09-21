@@ -1,5 +1,5 @@
 {
-  "name": "@projectspace/mcp",
+  "name": "@knightbook/mcp",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",
-    "@projectspace/core": "workspace:*",
+    "@knightbook/core": "workspace:*",
     "zod": "^4.6.5"
   },
   "devDependencies": {

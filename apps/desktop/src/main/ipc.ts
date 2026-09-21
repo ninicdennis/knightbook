@@ -16,7 +16,7 @@ import {
   updateTicket,
   type Project,
   type TicketType,
-} from '@projectspace/core'
+} from '@knightbook/core'
 import { forgetProject, readAppState, rememberProject } from './app-state.js'
 import { guard } from './guard.js'
 import { mcpLaunchCommand } from './mcp-resources.js'

@@ -46,7 +46,7 @@ export async function initializeProject(
   if (await projectExists(root)) {
     throw new ProjectError(
       'already_exists',
-      `${root.path} is already a Projectspace project. Open it instead of initializing it.`,
+      `${root.path} is already a Knightbook project. Open it instead of initializing it.`,
     )
   }
   await assertReservedDirIsOurs(root)

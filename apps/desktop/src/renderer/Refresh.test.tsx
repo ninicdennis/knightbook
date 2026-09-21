@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectspaceApi } from '../shared/contract.js'
+import type { KnightbookApi } from '../shared/contract.js'
 import { makeApi, project, renderApp, ticket } from './test-fixtures.js'
 
 /**
@@ -9,13 +9,13 @@ import { makeApi, project, renderApp, ticket } from './test-fixtures.js'
  * tool wrote through MCP did not appear until the app was closed and reopened.
  */
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
   user = userEvent.setup()
   api = makeApi()
-  window.projectspace = api
+  window.knightbook = api
 })
 
 describe('refreshing', () => {

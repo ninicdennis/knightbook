@@ -1,12 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { ProjectspaceApi } from '../shared/contract.js'
+import type { KnightbookApi } from '../shared/contract.js'
 
 /**
  * The only bridge between the renderer and the host. Each method is a named
  * operation, so the renderer cannot reach the filesystem, the shell, or an
  * arbitrary IPC channel.
  */
-const api: ProjectspaceApi = {
+const api: KnightbookApi = {
   rememberedProjects: () => ipcRenderer.invoke('app:rememberedProjects'),
   forgetProject: (path) => ipcRenderer.invoke('app:forgetProject', path),
   chooseProject: () => ipcRenderer.invoke('project:choose'),
@@ -46,4 +46,4 @@ const api: ProjectspaceApi = {
   openExternalLink: (url) => ipcRenderer.invoke('link:openExternal', url),
 }
 
-contextBridge.exposeInMainWorld('projectspace', api)
+contextBridge.exposeInMainWorld('knightbook', api)

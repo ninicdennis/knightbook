@@ -1,6 +1,6 @@
-# Project Workspace — Product Specification
+# Knightbook — Product Specification
 
-Status: Working draft v0.18. Product name is a placeholder.
+Status: Working draft v0.19. Knightbook is the chosen product name (2026-09-20); Projectspace was the working placeholder.
 
 This document records the agreed concept and proposals for discussion. Proposed behavior and open decisions are not approved implementation requirements. Electron, TypeScript, and React are accepted stack choices; the companion design records remaining implementation recommendations.
 
@@ -256,7 +256,7 @@ Deferred delivery feature: [releases after merge](release-automation.md). Mergin
 changes into a designated release branch should eventually build and publish a
 GitHub Release automatically. Tooling, version policy, and platform validation
 remain proposed; implementation is deferred while the product is built out.
-This concerns distributing Projectspace, not automatic Git operations inside
+This concerns distributing Knightbook, not automatic Git operations inside
 users' projects or in-app automatic updates.
 
 1. **Document editing details:** validate the tentative formatted editor, determine supported Markdown syntax and fallback behavior, and decide whether a built-in source view is needed.
@@ -267,6 +267,10 @@ users' projects or in-app automatic updates.
 6. **Platform delivery:** supported OS versions and processor architectures, Linux packaging, and MCP process setup/lifecycle. Windows, macOS, and Linux are all required, and MCP must work with the app window closed.
 
 ## Accepted decisions
+
+- **D-021 — Approved logo (2026-09-20):** The user selected [the generated Knightbook logo](assets/knightbook-logo.png): a white chess knight on a navy book cover with a solid white page block and no line inside the pages. This PNG is the sole approved source artwork; the SVG attempts were rejected and removed, and the mark is not to be traced or redrawn from them. Application icons are derived from it: `apps/desktop/build/icon.png` is a 1024×1024 resize that electron-builder turns into the Windows and macOS icons at package time.
+
+- **D-020 — Product name: Knightbook (2026-09-20):** The user selected Knightbook to replace the Projectspace placeholder. Knightbook is a documentation and Kanban workspace for preserving project context, with human direction and completion decisions. It supplements external AI tools; it is not itself an AI assistant. Application branding, package identifiers and MCP naming were migrated on 2026-09-20; `.projectspace/` storage keeps its name deliberately, because it is written into every existing project and renaming it would be a migration of the user's own files rather than of this product. Domain selection and trademark clearance remain unresolved; no domain has been purchased. “Your project, remembered.” remains a proposed tagline. Logo selection is recorded in D-021.
 
 - **D-001 — Project location:** The user selects a folder per project; that folder may be an existing code repository. D-011 establishes that selected existing documents remain in place. Storage conventions for app-specific records remain undecided.
 - **D-002 — External AI tools:** Planning conversations and implementation remain in the user's existing AI tools, connected through MCP. The user wants to avoid locking people into tooling they do not already use. A companion skill is the likely way to supply workflow guidance, with details still open. No built-in AI chat is required for the first version.

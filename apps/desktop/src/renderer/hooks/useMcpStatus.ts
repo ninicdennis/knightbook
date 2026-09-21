@@ -27,7 +27,7 @@ export function useMcpStatus(checkoutPath: string): McpStatusView | null {
     let cancelled = false
     const read = async (): Promise<void> => {
       try {
-        const next = await window.projectspace.mcpStatus(checkoutPath)
+        const next = await window.knightbook.mcpStatus(checkoutPath)
         if (!cancelled && next.checkoutPath === checkoutPath) setStatus(next)
       } catch {
         // The host is unreachable, which is not evidence about MCP. Leave the

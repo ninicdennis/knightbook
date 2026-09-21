@@ -1,4 +1,4 @@
-import { isProjectError } from '@projectspace/core'
+import { isProjectError } from '@knightbook/core'
 
 /** Shared tool-result shaping, so every tool reports failures the same way. */
 export type ToolResult = {

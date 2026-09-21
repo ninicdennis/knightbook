@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { DocumentListView, ProjectspaceApi, ReviewView } from '../shared/contract.js'
+import type { DocumentListView, KnightbookApi, ReviewView } from '../shared/contract.js'
 import { CHECKOUT, makeApi, renderApp } from './test-fixtures.js'
 
 /**
@@ -28,7 +28,7 @@ function listing(): DocumentListView {
   }
 }
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
@@ -39,7 +39,7 @@ beforeEach(() => {
     ok: true,
     value: { path: 'README.md', content: '# README\n', revision: 'rev-doc', review: REVIEWED },
   })
-  window.projectspace = api
+  window.knightbook = api
 })
 
 async function openDocuments() {

@@ -35,7 +35,7 @@ export function MarkdownBody({ html, onFollowLink, compact = false }: Props) {
         return
       }
       const external = anchor.getAttribute('data-external')
-      if (external) void window.projectspace.openExternalLink(external)
+      if (external) void window.knightbook.openExternalLink(external)
     }
 
     node.addEventListener('click', handler)

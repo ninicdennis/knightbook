@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectspaceApi } from '../shared/contract.js'
+import type { KnightbookApi } from '../shared/contract.js'
 import {
   CHECKOUT,
   connectedSession,
@@ -18,13 +18,13 @@ import {
  * and dressing up "I could not look" as "nothing is running".
  */
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
   user = userEvent.setup()
   api = makeApi()
-  window.projectspace = api
+  window.knightbook = api
 })
 
 afterEach(() => {

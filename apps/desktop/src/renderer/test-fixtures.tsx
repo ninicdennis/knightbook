@@ -5,7 +5,7 @@ import { App } from './App.js'
 import type {
   McpStatusView,
   ProjectView,
-  ProjectspaceApi,
+  KnightbookApi,
   RememberedProject,
   TicketDetailView,
   TicketView,
@@ -87,7 +87,7 @@ export function connectedSession(overrides: Partial<McpStatusView> = {}): McpSta
   })
 }
 
-export function makeApi(): ProjectspaceApi {
+export function makeApi(): KnightbookApi {
   return {
     rememberedProjects: vi.fn().mockResolvedValue([REMEMBERED]),
     forgetProject: vi.fn().mockResolvedValue([]),

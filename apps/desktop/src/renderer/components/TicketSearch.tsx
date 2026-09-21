@@ -101,7 +101,7 @@ export function TicketSearch({ opened, rootPath, refreshToken, onClose, onOpenTi
     const sequence = (latest.current += 1)
     setLoading(true)
     const timer = setTimeout(() => {
-      void window.projectspace.searchTickets(rootPath, trimmed).then((answer) => {
+      void window.knightbook.searchTickets(rootPath, trimmed).then((answer) => {
         if (sequence !== latest.current) return
         setLoading(false)
         if (!answer.ok) {

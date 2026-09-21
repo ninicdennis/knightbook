@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectspaceApi } from '../shared/contract.js'
+import type { KnightbookApi } from '../shared/contract.js'
 import { makeApi, project, renderApp, ticket } from './test-fixtures.js'
 
 /**
@@ -11,7 +11,7 @@ import { makeApi, project, renderApp, ticket } from './test-fixtures.js'
 
 const FOLDER = 'C:\\code\\my-app'
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
@@ -28,7 +28,7 @@ beforeEach(() => {
     ok: true,
     value: project({ name: 'my-app', checkoutPath: FOLDER, tickets: [ticket()] }),
   })
-  window.projectspace = api
+  window.knightbook = api
 })
 
 async function chooseBareFolder() {
@@ -110,7 +110,7 @@ describe('setting up from the app', () => {
       .mockResolvedValueOnce({
         ok: false,
         code: 'unexpected_error',
-        message: 'Permission denied: Projectspace is not allowed to write in this folder.',
+        message: 'Permission denied: Knightbook is not allowed to write in this folder.',
       })
       .mockResolvedValueOnce({ ok: true, value: { path: FOLDER, warning: null } })
     await chooseBareFolder()

@@ -1,13 +1,13 @@
 ---
 name: projectspace
-description: How to work in a Projectspace project through its MCP tools (project_get, ticket_list, ticket_next, ticket_update, document_read, and the rest). Use when the projectspace MCP server is connected, when a folder has a .projectspace directory, or when the user talks about their Projectspace board, tickets, Verification column, or project documents.
+description: How to work in a Knightbook project through its MCP tools (project_get, ticket_list, ticket_next, ticket_update, document_read, and the rest). Use when the knightbook MCP server is connected, when a folder has a .projectspace directory, or when the user talks about their Knightbook board, tickets, Verification column, or project documents.
 ---
 
-# Working in a Projectspace project
+# Working in a Knightbook project
 
-Projectspace is a desktop app where a person and their AI tools share one project:
+Knightbook is a desktop app where a person and their AI tools share one project:
 Markdown documents plus a Kanban board of tickets (Backlog, In progress,
-Verification, Done). You reach it through the `projectspace` MCP server. The person
+Verification, Done). You reach it through the `knightbook` MCP server. The person
 sees the same records in the app.
 
 This file is plain Markdown. It works as a Claude Code skill, and in any other client

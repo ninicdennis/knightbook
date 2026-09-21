@@ -9,7 +9,7 @@ import {
   type Ticket,
   type TicketFrontmatter,
   type TicketListing,
-} from '@projectspace/core'
+} from '@knightbook/core'
 import type { DependencyView, TicketDetailView, TicketView } from '../shared/contract.js'
 
 /**

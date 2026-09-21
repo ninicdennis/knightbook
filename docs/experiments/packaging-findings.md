@@ -4,8 +4,8 @@ Status: validated on Windows, 2026-09-19. Answers the "Independent packaging" ro
 of [Technical Design v0.3](../project-workspace-technical-design.md) section 11,
 and supports decision **D-008** (MCP without an open window).
 
-Reproduce with `pnpm --filter @projectspace/experiment-packaging test`. The
-packaged-build checks need `pnpm --filter @projectspace/desktop pack:dir` first
+Reproduce with `pnpm --filter @knightbook/experiment-packaging test`. The
+packaged-build checks need `pnpm --filter @knightbook/desktop pack:dir` first
 and skip themselves when it is absent.
 
 ## Result
@@ -52,7 +52,7 @@ actually packaging.
 
 **The workspace library was left as a bare import.** electron-vite externalizes
 anything listed in `dependencies` for the main and preload builds, so
-`@projectspace/core` resolved at build time and would have thrown at runtime
+`@knightbook/core` resolved at build time and would have thrown at runtime
 inside the ASAR, where no `node_modules` exists. Neither `ssr.noExternal` nor
 `resolve.noExternal` overrode it; moving the package to `devDependencies` is what
 works, which is accurate anyway since it is bundled rather than installed. The
@@ -93,7 +93,7 @@ carries whichever Node the person who ran the build happened to have, so two bui
 of the same commit do not contain the same thing. Anything else is downloaded from
 `nodejs.org/dist`, checked against that release's `SHASUMS256.txt`, and unpacked
 only if the hash matches; a mismatch throws and stages nothing. Downloads are
-cached under `apps/desktop/node_modules/.cache/projectspace-runtimes`, keyed by
+cached under `apps/desktop/node_modules/.cache/knightbook-runtimes`, keyed by
 version and target.
 
 What that check is worth: it proves the bytes are what nodejs.org published over
@@ -135,3 +135,27 @@ off unless `STAGE_RUNTIME_NETWORK=1`.
   allowed to execute at all on macOS.
 - **Clean shutdown under a client that kills rather than closes the transport.**
   Every connection here closed normally.
+
+## The rename to Knightbook (2026-09-20)
+
+Two things about packaging changed with the product name, and one of them was only
+found by looking at a running process.
+
+**The state directory was not where the name suggested.** The app never called
+`app.setName`, so Electron fell back to the `name` in package.json and the installed
+app kept its settings and recent projects in `%APPDATA%/@projectspace/desktop` —
+scope included — rather than in `%APPDATA%/Projectspace`. A migration written
+against the obvious path would have found an older, staler file there and adopted
+it over the real one. The app now names itself explicitly, so the directory is
+`Knightbook` on every platform in both development and packaged runs, and the
+migration checks the scoped path first and the older one second.
+
+**The installed path changed, so saved MCP client configurations break.** The
+folder is named after the product. A command saved while this was Projectspace
+points somewhere the new install does not use; the client fails to start the server
+rather than reaching a wrong one. Re-copy the configuration from the status bar
+after upgrading. The server reports itself as `knightbook` now.
+
+`.projectspace/` inside each project is deliberately unchanged. It is written into
+every project anyone has already made, and renaming it would be a migration of the
+user's own files rather than of this product.

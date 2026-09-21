@@ -8,7 +8,7 @@ import { resolve } from 'node:path'
  * beside it, so anything left as a bare import resolves at build time and fails
  * at runtime. Only Electron itself and Node's builtins exist there.
  *
- * `@projectspace/core` is a devDependency rather than a dependency for exactly
+ * `@knightbook/core` is a devDependency rather than a dependency for exactly
  * this reason: Vite externalizes runtime dependencies for the main and preload
  * builds, and the workspace library has to be bundled in instead.
  *

@@ -91,7 +91,7 @@ describe('the checksum gate', () => {
   })
 
   it('refuses an archive whose bytes do not match, and stages nothing', async () => {
-    const cacheDir = join(tmpdir(), `projectspace-runtime-test-${Date.now()}`)
+    const cacheDir = join(tmpdir(), `knightbook-runtime-test-${Date.now()}`)
     const target = resolveTarget('linux', 'x64')
     const { file } = archiveFor(target)
 
@@ -114,7 +114,7 @@ describe('the checksum gate', () => {
         : { ok: false, status: 404, statusText: 'Not Found' }
 
     await expect(
-      ensureRuntime({ target, cacheDir: join(tmpdir(), 'projectspace-runtime-404'), fetchImpl }),
+      ensureRuntime({ target, cacheDir: join(tmpdir(), 'knightbook-runtime-404'), fetchImpl }),
     ).rejects.toThrow(/returned 404 Not Found/)
   })
 })
@@ -125,7 +125,7 @@ describe('the checksum gate', () => {
  * STAGE_RUNTIME_NETWORK=1 to run it.
  */
 describe.runIf(process.env['STAGE_RUNTIME_NETWORK'] === '1')('against nodejs.org', () => {
-  const cacheDir = join(tmpdir(), `projectspace-runtime-live-${process.pid}`)
+  const cacheDir = join(tmpdir(), `knightbook-runtime-live-${process.pid}`)
   afterAll(async () => await rm(cacheDir, { recursive: true, force: true }))
 
   it('downloads, verifies and unpacks a runtime for another platform', async () => {

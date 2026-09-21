@@ -41,7 +41,7 @@ describe('link classification', () => {
       'javascript:alert(1)',
       'data:text/html,<script>alert(1)</script>',
       'vbscript:msgbox(1)',
-      'projectspace://do-something',
+      'knightbook://do-something',
       '//evil.example.com',
       '/etc/passwd',
     ]) {
