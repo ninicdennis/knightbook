@@ -79,18 +79,57 @@ the alternatives couple MCP launch to Electron's executable and fuses, or depend
 on a Node feature its own documentation still labels active development — but the
 number is worth knowing before committing to it for every release.
 
+## Per-target runtime staging (2026-09-20)
+
+`scripts/stage-mcp-runtime.mjs` used to copy the Node running the build, which is
+only the right binary when the build host is the target. It now stages for a named
+target — `--platform` and `--arch`, defaulting to this machine, and `--out` for a
+directory other than the one electron-builder installs from.
+
+The build host's own Node is reused only when the platform, the CPU **and** the
+version all match the one the project ships, pinned as `NODE_VERSION` in
+`scripts/node-runtime.mjs`. Pinning it is the point: without it the application
+carries whichever Node the person who ran the build happened to have, so two builds
+of the same commit do not contain the same thing. Anything else is downloaded from
+`nodejs.org/dist`, checked against that release's `SHASUMS256.txt`, and unpacked
+only if the hash matches; a mismatch throws and stages nothing. Downloads are
+cached under `apps/desktop/node_modules/.cache/projectspace-runtimes`, keyed by
+version and target.
+
+What that check is worth: it proves the bytes are what nodejs.org published over
+TLS. It is **not** a signature check. Node signs `SHASUMS256.txt` separately with
+GPG, and verifying that needs a trusted key shipped with this repository. That is a
+real gap, and it is named here rather than implied away.
+
+Unpacking uses `tar`, which reads both formats on Windows and macOS; GNU tar on
+Linux does not read zip, so a Windows target built there falls back to `unzip`. The
+archive is named relative to the working directory rather than absolutely, because
+GNU tar reads a leading `C:` as a remote host — which is how this first broke on
+Windows, where Git ships its own tar ahead of the system one.
+
+**The executable bit is the one thing a Windows host cannot give.** The tarball
+carries it and a zip does not, so the script sets it explicitly — but NTFS has no
+executable bit to set, so a Linux or macOS runtime staged on Windows is packaged
+without one and the installed application could not start its own server. The script
+warns loudly in that case. It is not a problem for releases, because CI builds each
+target on its own runner; it is a limit on checking a cross-build by hand.
+
+Verified on Windows: a `linux-x64` runtime downloaded, checksum-verified, unpacked
+and staged as a real ELF x86-64 binary, and a second run served it from the cache
+without downloading. The host path still reuses the build machine's own Node when
+it matches the pin. Ten tests cover the target and archive naming, the supported
+target list, the host-reuse rule, a checksum that is absent, a checksum that does
+not match, and a download that 404s; the one that really fetches from nodejs.org is
+off unless `STAGE_RUNTIME_NETWORK=1`.
+
 ## What this does not establish
 
 - **macOS and Linux.** This ran on Windows only. The layout and launch command
-  are platform-independent, but each platform needs its own runtime binary,
-  executable permissions, and signing, and the row is not complete until the same
-  test runs there. On Linux the design's warning about portable formats with a
+  are platform-independent, and each platform's runtime binary is now staged for
+  it, but executable permissions and signing still need the same test to run
+  there, and the row is not complete until it does. On Linux the design's warning about portable formats with a
   transient mount path still applies: the saved client command must point at a
   persistent install location.
-- **Cross-platform runtime staging.** `scripts/stage-mcp-runtime.mjs` copies the
-  Node running the build, which is only correct for the host platform. A real
-  release has to download the matching runtime per target. The script says so
-  rather than hiding it.
 - **An installer.** This used `--dir`, which skips NSIS, DMG, AppImage and deb.
 - **Code signing and notarization**, which affect whether the shipped runtime is
   allowed to execute at all on macOS.
