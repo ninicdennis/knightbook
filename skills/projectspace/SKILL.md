@@ -70,6 +70,10 @@ bypass it. Follow it because the person is relying on the board being honest.
   can be any of the three, so never derive a version bump or a release from a type.
 - A Done ticket with `completion_unattributed: true` has no recorded decision (its
   file was edited by hand). Do not describe it as accepted by the user.
+- `previous_completions` are acceptances that were taken back by moving the ticket
+  out of Done. They are history, not state: a ticket with entries here and no
+  `completion` is **not** accepted work, and saying so would misread its own record.
+  Say it was accepted earlier and reopened, and when, if it matters.
 - `project_get` reports `backlog_order_problems`: entries listed twice, or ids with no
   ticket. They are reported and never removed. Mention them; do not tidy them away.
 - `verification_issue` is a ticket the user did not accept, with their reason.

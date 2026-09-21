@@ -66,14 +66,21 @@ export async function toTicketView(
       issue: failed.issue,
       direct: failed.direct,
     })),
-    completion: frontmatter.completion
-      ? {
-          decisionSource: frontmatter.completion.decision_source,
-          recordedBy: frontmatter.completion.recorded_by,
-          recordedAt: frontmatter.completion.recorded_at,
-          instruction: frontmatter.completion.instruction,
-        }
-      : null,
+    /*
+     * Only a Done ticket has a current acceptance. Reopening clears the record,
+     * so this is about the other way in: a file edited by hand or merged from a
+     * branch can carry an acceptance next to a status that contradicts it, and
+     * the board must not repeat that claim.
+     */
+    completion:
+      frontmatter.status === 'done' && frontmatter.completion
+        ? {
+            decisionSource: frontmatter.completion.decision_source,
+            recordedBy: frontmatter.completion.recorded_by,
+            recordedAt: frontmatter.completion.recorded_at,
+            instruction: frontmatter.completion.instruction,
+          }
+        : null,
     completionUnattributed: frontmatter.status === 'done' && frontmatter.completion === undefined,
     review: {
       state: review.state,
@@ -127,5 +134,17 @@ export async function toTicketDetail(project: Project, id: string): Promise<Tick
     updatedAt: ticket.frontmatter.updated_at,
     relatedDocuments: ticket.frontmatter.related_documents,
     dependencies,
+    /*
+     * Acceptances that were taken back. This belongs to reading one ticket
+     * closely, not to scanning the board, so it is on the detail only.
+     */
+    previousCompletions: (ticket.frontmatter.previous_completions ?? []).map((previous) => ({
+      decisionSource: previous.decision_source,
+      recordedBy: previous.recorded_by,
+      recordedAt: previous.recorded_at,
+      instruction: previous.instruction,
+      reopenedAt: previous.reopened_at,
+      reopenedTo: previous.reopened_to,
+    })),
   }
 }

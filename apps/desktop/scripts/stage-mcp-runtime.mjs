@@ -1,18 +1,24 @@
-import { createReadStream } from 'node:fs'
 import { chmod, copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises'
-import { createHash } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import { execPath } from 'node:process'
 import { fileURLToPath } from 'node:url'
+import {
+  archiveFor,
+  ensureRuntime,
+  hostProvides,
+  NODE_VERSION,
+  resolveTarget,
+  sha256,
+} from './node-runtime.mjs'
 
 /**
  * Places the Node runtime and the bundled MCP server where electron-builder's
  * `extraResources` entry expects them.
  *
- * This copies the Node running the build, which is only correct when building
- * for the host platform. A real cross-platform release has to download the
- * matching runtime for each target instead; that is a release task, and this
- * script is deliberately explicit about the limitation rather than hiding it.
+ * The runtime staged is the one that matches the target being built, not the
+ * one running this script. `--platform` and `--arch` name that target and
+ * default to this machine; `node-runtime.mjs` supplies the binary, downloading
+ * and checksumming it when the host cannot provide it itself.
  *
  * Nothing already staged is replaced unless it differs. On a development machine
  * an AI client usually has the MCP server running from this very directory, and
@@ -24,9 +30,41 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const APP_DIR = join(HERE, '..')
 const REPO_ROOT = join(APP_DIR, '..', '..')
 
-const target = join(APP_DIR, 'resources', 'mcp')
-const nodeName = process.platform === 'win32' ? 'node.exe' : 'node'
 const server = join(REPO_ROOT, 'packages', 'mcp', 'dist', 'server.mjs')
+
+/** Downloads land here, under node_modules so they are already ignored by Git. */
+const CACHE = join(APP_DIR, 'node_modules', '.cache', 'projectspace-runtimes')
+
+function option(argv, name) {
+  const match = argv.find((arg) => arg.startsWith(`--${name}=`))
+  return match ? match.slice(name.length + 3) : undefined
+}
+
+const args = process.argv.slice(2)
+
+/**
+ * `--platform=darwin --arch=arm64`, or this machine when neither is given, and
+ * `--out` for a directory other than the one electron-builder installs from.
+ * A cross-target stage clears the runtime for the platform it replaces, so
+ * checking one without disturbing a working resources directory needs `--out`.
+ */
+/** A target this project does not build is a mistake in the command, not a crash. */
+function targetOrExit() {
+  try {
+    return resolveTarget(
+      option(args, 'platform') ?? process.platform,
+      option(args, 'arch') ?? process.arch,
+    )
+  } catch (error) {
+    console.error(error.message)
+    process.exit(1)
+  }
+}
+
+const buildTarget = targetOrExit()
+const target = option(args, 'out') ?? join(APP_DIR, 'resources', 'mcp')
+const runtime = archiveFor(buildTarget)
+const nodeName = runtime.binaryName
 
 /** A file being in use, which on Windows is how a running executable reports. */
 const IN_USE = new Set(['EPERM', 'EBUSY', 'EACCES', 'ETXTBSY'])
@@ -37,12 +75,6 @@ async function sizeOf(path) {
   } catch {
     return null
   }
-}
-
-async function sha256(path) {
-  const hash = createHash('sha256')
-  for await (const chunk of createReadStream(path)) hash.update(chunk)
-  return hash.digest('hex')
 }
 
 /**
@@ -131,11 +163,42 @@ await mkdir(target, { recursive: true })
 const strays = await removeStrays()
 if (strays.length > 0) console.log(`Removed from an earlier build: ${strays.join(', ')}`)
 
-const results = [await stage(execPath, nodeName), await stage(server, 'server.mjs')]
+/*
+ * The build host's own Node is used only when it is the same platform, CPU and
+ * version as the runtime this project ships. Anything else is fetched for the
+ * target, so a macOS arm64 release is never a copy of the Linux x64 Node that
+ * built it.
+ */
+const source = hostProvides(buildTarget)
+  ? execPath
+  : await ensureRuntime({ target: buildTarget, cacheDir: CACHE, log: (line) => console.log(line) })
 
-if (process.platform !== 'win32') {
+const results = [await stage(source, nodeName), await stage(server, 'server.mjs')]
+
+/*
+ * Set on the staged copy as well: copyFile carries the mode on POSIX, but a
+ * binary just unpacked from a zip never had one to carry.
+ *
+ * On Windows this call does nothing that survives. NTFS has no executable bit,
+ * so a Linux or macOS runtime staged here is packaged without one and the
+ * installed application cannot start its own server. Each target is built on
+ * its own runner in CI, so this is a warning about a cross-build a person ran
+ * by hand rather than something the release path depends on.
+ */
+if (buildTarget.platform !== 'win32') {
   await chmod(join(target, nodeName), 0o755)
+
+  if (process.platform === 'win32') {
+    console.warn(
+      `\nWarning: staged a ${buildTarget.key} runtime on Windows.\n` +
+        'NTFS cannot record the executable bit, so this staging directory is not\n' +
+        `fit to package. Build the ${buildTarget.platform} target on ${buildTarget.platform}.`,
+    )
+  }
 }
 
 console.log(`${results.join(', ')} in ${target}`)
-console.log(`Built for ${process.platform}-${process.arch} only.`)
+console.log(
+  `Staged Node ${hostProvides(buildTarget) ? process.versions.node : NODE_VERSION} ` +
+    `for ${buildTarget.key}${source === execPath ? ', from this build host' : ''}.`,
+)

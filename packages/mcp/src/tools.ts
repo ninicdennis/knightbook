@@ -80,9 +80,22 @@ function summarize(ticket: Ticket, index: TicketIndex) {
       issue: failed.issue,
       direct: failed.direct,
     })),
-    /** Section 6: a Done status with no provenance is shown, not silently trusted. */
-    completion: ticket.frontmatter.completion ?? null,
+    /**
+     * Section 6: a Done status with no provenance is shown, not silently
+     * trusted. Only a Done ticket has a current acceptance — a record that
+     * carries one beside another status was edited outside these operations,
+     * and repeating its claim would present the work as accepted when the board
+     * says it is not.
+     */
+    completion:
+      ticket.frontmatter.status === 'done' ? (ticket.frontmatter.completion ?? null) : null,
     completion_unattributed: isUnattributedCompletion(ticket),
+    /**
+     * Acceptances taken back by moving the ticket out of Done, oldest first.
+     * History: it says a decision was made and when it stopped applying. Do not
+     * describe a ticket as accepted because this is non-empty.
+     */
+    previous_completions: ticket.frontmatter.previous_completions ?? [],
   }
 }
 

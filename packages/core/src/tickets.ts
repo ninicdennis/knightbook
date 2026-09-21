@@ -7,6 +7,7 @@ import {
   parseRecord,
   serializeRecord,
   SUPPORTED_SCHEMA_VERSION,
+  type ParsedRecord,
 } from './frontmatter.js'
 import { RESERVED_DIR, reservedPaths } from './paths.js'
 import type { Project } from './project.js'
@@ -209,11 +210,14 @@ export async function updateTicket(
   const path = reservedPaths.ticketFile(project.root, id)
   const { content } = await readRecord(project.root, path)
   // Refuse before changing anything: an invalid record stays exactly as it is.
-  parseTicket(content, id)
+  const current = parseTicket(content, id)
   const record = parseRecord(content)
 
   if (input.title !== undefined) record.data.set('title', input.title)
-  if (input.status !== undefined) record.data.set('status', input.status)
+  if (input.status !== undefined) {
+    record.data.set('status', input.status)
+    if (current.frontmatter.status === 'done') reopen(record, current.frontmatter, input.status)
+  }
   if (input.dependsOn !== undefined) record.data.set('depends_on', input.dependsOn)
   if (input.type !== undefined) {
     if (input.type === null) record.data.delete('type')
@@ -243,6 +247,26 @@ export async function updateTicket(
 
 async function readTicketAt(project: Project, id: string, _revision: Revision): Promise<Ticket> {
   return await readTicket(project, id)
+}
+
+/**
+ * Moving a ticket out of Done takes back the acceptance recorded on it. The
+ * record is moved to `previous_completions` rather than deleted: the user did
+ * accept the work, and a record that drops that says the acceptance never
+ * happened, which is as untrue as leaving it where it is.
+ *
+ * Only `completion` is cleared. A Done ticket with no provenance has nothing to
+ * archive, and the reopened ticket keeps everything else it had, because
+ * reopening is a statement about acceptance and about nothing else.
+ */
+function reopen(record: ParsedRecord, current: TicketFrontmatter, movedTo: TicketStatus): void {
+  if (current.completion === undefined) return
+
+  record.data.set('previous_completions', [
+    ...(current.previous_completions ?? []),
+    { ...current.completion, reopened_at: new Date().toISOString(), reopened_to: movedTo },
+  ])
+  record.data.delete('completion')
 }
 
 function defaultTicketBody(title: string): string {

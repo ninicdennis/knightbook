@@ -74,6 +74,24 @@ export function stubTicketDetail(project: ProjectView, id: string): Result<Ticke
         // Long enough to prove a path wraps rather than widening the dialog.
         'docs/decisions/0017-a-prerequisite-that-failed-verification-keeps-the-failure-on-its-own-record.md',
       ],
+      /*
+       * One reopened ticket, so the preview shows an acceptance that was taken
+       * back. Only this one: a board where every ticket had been reopened would
+       * not show how quiet the section is meant to be.
+       */
+      previousCompletions:
+        found.id === 'editor'
+          ? [
+              {
+                decisionSource: 'direct_user_action',
+                recordedBy: 'user',
+                recordedAt: '2026-09-18T09:00:00Z',
+                instruction: 'Moved to Done in the app.',
+                reopenedAt: '2026-09-19T14:00:00Z',
+                reopenedTo: 'in_progress',
+              },
+            ]
+          : [],
       dependencies: found.dependsOn.map((dependencyId) => {
         const prerequisite = project.tickets.find((t) => t.id === dependencyId)
         return prerequisite

@@ -22,6 +22,16 @@ export interface CompletionView {
 }
 
 /**
+ * An acceptance that was later taken back by moving the ticket out of Done. It
+ * is history: it says the decision happened, and when it stopped describing
+ * where the work stands.
+ */
+export interface ReopenedCompletionView extends CompletionView {
+  reopenedAt: string
+  reopenedTo: 'backlog' | 'in_progress' | 'verification'
+}
+
+/**
  * D-017: a verification that the user did not accept, kept on the ticket that
  * failed. Its provenance is recorded the same way completion's is, so an
  * AI-reported failure never presents itself as a direct user action.
@@ -92,6 +102,8 @@ export interface TicketDetailView extends TicketView {
   updatedAt: string
   relatedDocuments: string[]
   dependencies: DependencyView[]
+  /** Oldest first. Empty for a ticket that was never accepted and reopened. */
+  previousCompletions: ReopenedCompletionView[]
 }
 
 /** Where a match sits in a string, so the view can mark it up without building markup. */

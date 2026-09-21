@@ -5,7 +5,9 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    include: ['src/renderer/**/*.test.tsx', 'src/main/**/*.test.ts'],
+    // The build scripts are plain JavaScript and run under Node, not jsdom;
+    // each of those files asks for the node environment in its own docblock.
+    include: ['src/renderer/**/*.test.tsx', 'src/main/**/*.test.ts', 'scripts/**/*.test.mjs'],
     setupFiles: ['./src/renderer/test-setup.ts'],
   },
 })

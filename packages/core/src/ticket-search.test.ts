@@ -2,7 +2,7 @@ import { writeFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
 import { reservedPaths } from './paths.js'
 import { searchTickets } from './ticket-search.js'
-import { createTicket, readTicket, updateTicket } from './tickets.js'
+import { createTicket, listTickets, readTicket, updateTicket } from './tickets.js'
 import { withFixtureProject } from './fixture-project.js'
 import type { Project } from './project.js'
 
@@ -184,7 +184,18 @@ describe('bounding the results', () => {
       const once = await searchTickets(project, 'importer')
       const twice = await searchTickets(project, 'importer')
       expect(once.hits.map((hit) => hit.title)).toEqual(twice.hits.map((hit) => hit.title))
-      expect(once.hits.map((hit) => hit.title)).toEqual(['Importer A', 'Importer B', 'Importer C'])
+
+      /*
+       * Compared against the board rather than against a written-out order.
+       * Tickets created in one burst can share a `created_at` — it has
+       * millisecond resolution — and `sortByBacklogOrder` then falls back to the
+       * stable id, which is a random UUID. The board's own order is arbitrary in
+       * that case but not wrong, and the rule search has to keep is that it does
+       * not reorder results relative to it. Asserting a written-out order here
+       * instead made this fail on whichever machine wrote the files fastest.
+       */
+      const board = (await listTickets(project)).map((ticket) => ticket.frontmatter.title)
+      expect(once.hits.map((hit) => hit.title)).toEqual(board)
     })
   })
 })

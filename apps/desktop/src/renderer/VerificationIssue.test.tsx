@@ -74,6 +74,7 @@ describe('a prerequisite that failed verification', () => {
         updatedAt: '2026-09-02T10:00:00Z',
         relatedDocuments: [],
         dependencies: [],
+        previousCompletions: [],
       },
     })
 
