@@ -18,6 +18,7 @@ import {
   CompletionRecord,
   Dependencies,
   RelatedDocuments,
+  ReopenedRecord,
 } from './TicketDetailSections.js'
 import { VerificationIssueNotice } from './VerificationIssueNotice.js'
 
@@ -231,6 +232,7 @@ export function TicketDetailModal({
                 <MarkdownBody compact html={rendered.html} onFollowLink={onOpenDocument} />
 
                 <RelatedDocuments paths={detail.relatedDocuments} onOpen={onOpenDocument} />
+                <ReopenedRecord previous={detail.previousCompletions} />
                 <AuditDetails detail={detail} lastReviewedAt={ticket.review.lastReviewedAt} />
               </>
             )}

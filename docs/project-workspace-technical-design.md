@@ -195,6 +195,36 @@ dependent at once. Both operations exist as MCP tools and as direct actions in t
 app; the agent-facing ones require the same explicit assertion completion does,
 and neither can be set or cleared through a general `ticket_update`.
 
+### Reopening a Done ticket as built (2026-09-20)
+
+The rule this section asked for. Moving a ticket out of Done through an ordinary
+`ticket_update` is reopening it, and it takes back the acceptance recorded on it.
+The `completion` block is removed and appended to an optional
+`previous_completions` list, oldest first, carrying everything that was known
+when the decision was made plus `reopened_at` and the `reopened_to` status that
+ended it.
+
+Archived rather than deleted, because both halves of the record have to stay
+true. Leaving `completion` in place says a Backlog ticket is accepted work;
+deleting it says the user never accepted it. The list is history and nothing
+reads it as state: readiness, selection, review and the unattributed check all
+ignore it. Re-accepting a reopened ticket goes through Verification and
+`ticket_record_user_completion` exactly as the first acceptance did, so a ticket
+can hold several archived decisions and one current one.
+
+Three cases follow from that and are tested. An update that does not change
+status leaves a Done ticket's acceptance alone — editing a Done ticket is not
+reopening it. A Done ticket with no provenance has nothing to archive, so it
+reopens with no history and stays unattributed while it is Done. Nothing else on
+the record changes: reopening is a statement about acceptance and about nothing
+else.
+
+Reading is gated on status in both surfaces. The board and the MCP tools report a
+current `completion` only when the ticket is Done, so a file edited by hand or
+merged from a branch that carries an acceptance beside a contradicting status is
+not repeated as a claim. The app shows the archived decisions in the ticket
+detail, worded in the past, and never on a card.
+
 ## 6. Human completion through the existing AI tool
 
 Keep completion separate from ordinary status mutation. A dedicated `ticket_record_user_completion` operation requires the current ticket revision, an assertion that the user explicitly instructed completion, and a brief description of that instruction. It is valid from Verification. The app can also record completion through a direct user action.

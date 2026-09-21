@@ -58,6 +58,7 @@ export function detail(overrides: Partial<TicketDetailView> = {}): TicketDetailV
     updatedAt: '2026-09-02T10:00:00Z',
     relatedDocuments: [],
     dependencies: [],
+    previousCompletions: [],
     ...overrides,
   }
 }

@@ -186,6 +186,45 @@ export function CompletionRecord({
   )
 }
 
+/**
+ * Acceptances that were taken back. Kept separate from the completion record
+ * and worded in the past, so nothing here can be read as the ticket's current
+ * standing — this is what happened, not where the work is.
+ */
+export function ReopenedRecord({
+  previous,
+}: {
+  previous: TicketDetailView['previousCompletions']
+}) {
+  // Absent rather than empty means a host that predates this field. There is no
+  // history to show either way, and a missing list must not blank the dialog.
+  if (!previous || previous.length === 0) return null
+
+  return (
+    <Section title={previous.length === 1 ? 'Reopened after acceptance' : 'Reopened twice or more'}>
+      <Stack gap="xs">
+        {previous.map((entry) => (
+          <Stack key={entry.reopenedAt} gap={0}>
+            <Text size="sm">
+              {entry.recordedBy === 'agent'
+                ? 'Recorded by an AI tool on your instruction'
+                : 'Accepted by you in the app'}{' '}
+              · {formatWhen(entry.recordedAt)}
+            </Text>
+            <Text size="sm" c="dimmed">
+              &ldquo;{entry.instruction}&rdquo;
+            </Text>
+            <Text size="xs" c="dimmed">
+              Moved to {STATUS_LABEL[entry.reopenedTo]} on {formatWhen(entry.reopenedAt)}, which
+              took that acceptance back.
+            </Text>
+          </Stack>
+        ))}
+      </Stack>
+    </Section>
+  )
+}
+
 export function formatWhen(iso: string): string {
   const date = new Date(iso)
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleString()

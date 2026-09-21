@@ -34,6 +34,26 @@ export const ticketTypeSchema = z.enum(TICKET_TYPES)
 
 export const uuidSchema = z.uuid()
 
+/**
+ * One recorded acceptance. Section 6: the decision's source is recorded
+ * separately from whoever wrote the file, so an agent-recorded completion
+ * cannot present itself as a direct user action in the app.
+ *
+ * The same shape describes a current acceptance and a reopened one, so that a
+ * reopened record loses none of what was known when the decision was made.
+ */
+export const completionSchema = z.object({
+  decision_source: z.enum(['direct_user_action', 'reported_user_instruction']),
+  recorded_by: z.enum(['user', 'agent']),
+  recorded_at: z.iso.datetime(),
+  /** Brief description of the instruction, not a stored conversation. */
+  instruction: z.string().min(1).max(500),
+  /** The ticket revision the completion decision was made against. */
+  accepted_revision: z.string(),
+})
+
+export type TicketCompletion = z.infer<typeof completionSchema>
+
 export const ticketFrontmatterSchema = z.object({
   schema_version: z.int().positive(),
   id: uuidSchema,
@@ -65,21 +85,22 @@ export const ticketFrontmatterSchema = z.object({
       recorded_at: z.iso.datetime(),
     })
     .optional(),
-  completion: z
-    .object({
-      /**
-       * Section 6: the decision's source is recorded separately from whoever
-       * wrote the file, so an agent-recorded completion cannot present itself as
-       * a direct user action in the app.
-       */
-      decision_source: z.enum(['direct_user_action', 'reported_user_instruction']),
-      recorded_by: z.enum(['user', 'agent']),
-      recorded_at: z.iso.datetime(),
-      /** Brief description of the instruction, not a stored conversation. */
-      instruction: z.string().min(1).max(500),
-      /** The ticket revision the completion decision was made against. */
-      accepted_revision: z.string(),
-    })
+  completion: completionSchema.optional(),
+  /**
+   * Acceptances that were later reopened, oldest first. Moving a ticket out of
+   * Done takes back what `completion` claims about where the work stands, but
+   * the user did accept it once, and deleting that would leave the record
+   * saying the acceptance never happened. It is history, not a current state:
+   * nothing reads it to decide readiness, selection, or review.
+   */
+  previous_completions: z
+    .array(
+      completionSchema.extend({
+        reopened_at: z.iso.datetime(),
+        /** The status the ticket was moved to, which is why the acceptance lapsed. */
+        reopened_to: mutableStatusSchema,
+      }),
+    )
     .optional(),
 })
 
