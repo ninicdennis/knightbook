@@ -13,7 +13,7 @@ import {
   ticketRecordId,
   writeDocument,
   type Project,
-} from '@projectspace/core'
+} from '@knightbook/core'
 import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/server'

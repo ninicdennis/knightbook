@@ -20,7 +20,7 @@ let resources: StagedResources
 let projectRoot: string
 
 beforeAll(async () => {
-  workspace = await mkdtemp(join(tmpdir(), 'projectspace-documents-'))
+  workspace = await mkdtemp(join(tmpdir(), 'knightbook-documents-'))
   resources = await stageResources(join(workspace, 'resources'))
   projectRoot = join(workspace, 'existing-app')
 

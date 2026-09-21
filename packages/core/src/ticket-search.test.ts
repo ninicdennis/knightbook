@@ -186,13 +186,12 @@ describe('bounding the results', () => {
       expect(once.hits.map((hit) => hit.title)).toEqual(twice.hits.map((hit) => hit.title))
 
       /*
-       * Compared against the board rather than against a written-out order.
-       * Tickets created in one burst can share a `created_at` — it has
-       * millisecond resolution — and `sortByBacklogOrder` then falls back to the
-       * stable id, which is a random UUID. The board's own order is arbitrary in
-       * that case but not wrong, and the rule search has to keep is that it does
-       * not reorder results relative to it. Asserting a written-out order here
-       * instead made this fail on whichever machine wrote the files fastest.
+       * Compared against the board rather than against a written-out order,
+       * because the rule search has to keep is that it does not reorder results
+       * relative to the board — not that any particular order comes back.
+       * Asserting a written-out order here instead made this fail on whichever
+       * machine wrote the files fastest, back when a burst of creations could
+       * share a `created_at` and the sort fell through to a random UUID.
        */
       const board = (await listTickets(project)).map((ticket) => ticket.frontmatter.title)
       expect(once.hits.map((hit) => hit.title)).toEqual(board)

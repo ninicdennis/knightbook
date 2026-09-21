@@ -2,6 +2,7 @@ import { app } from 'electron'
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parseRememberedEntries, type RememberedEntry } from './remembered-projects.js'
+import { adoptLegacyAppState, type AdoptionResult } from './state-migration.js'
 import type { AppSettings, ColorSchemeChoice } from '../shared/contract.js'
 
 /**
@@ -41,6 +42,28 @@ function parseSettings(stored: unknown): AppSettings {
 
 function statePath(): string {
   return join(app.getPath('userData'), FILE)
+}
+
+/**
+ * Where the state sat before the rename, best first.
+ *
+ * The app did not set its own name until the rename, so Electron used the
+ * `name` from package.json and the directory was literally `@projectspace/desktop`,
+ * scope included. That is the one with real content on an installed machine. An
+ * earlier build produced `Projectspace`, so it is checked second.
+ */
+const LEGACY_APP_DIRECTORIES = [join('@projectspace', 'desktop'), 'Projectspace']
+
+/**
+ * Carries settings and the recent-project list across the rename. Called once
+ * at startup, before anything reads either.
+ */
+export async function adoptStateFromPreviousName(): Promise<AdoptionResult> {
+  const appData = app.getPath('appData')
+  return await adoptLegacyAppState(
+    statePath(),
+    LEGACY_APP_DIRECTORIES.map((directory) => join(appData, directory, FILE)),
+  )
 }
 
 export async function readAppState(): Promise<AppState> {

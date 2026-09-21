@@ -42,8 +42,36 @@ export interface CreateTicketInput {
   readonly type?: TicketType
 }
 
+/**
+ * The last creation time this process issued, so the next one can be made to
+ * follow it. Only `createTicket` writes it.
+ */
+let lastIssued: number | null = null
+
+/**
+ * A creation time strictly later than the previous one.
+ *
+ * `created_at` has millisecond resolution, and creating several tickets in one
+ * burst — an AI filing a handful at the end of a conversation — lands more than
+ * one in the same millisecond on any machine with a fast disk.
+ * `sortByBacklogOrder` then falls back to the stable id, which is a random UUID,
+ * so tickets appear in an order nobody chose. Section 5 says creation order
+ * decides until someone arranges the backlog, and that promise has to hold.
+ *
+ * The cost is stated rather than hidden: a ticket created in a burst carries a
+ * timestamp up to a few milliseconds later than the instant it was written. That
+ * buys a record whose order matches the order the tickets were actually made in,
+ * which is the thing anyone reads it for. Ties between separate processes are
+ * still possible and still fall back to the id, deterministically.
+ */
+export function nextCreatedAt(now: number, previous: number | null): number {
+  return previous !== null && now <= previous ? previous + 1 : now
+}
+
 export async function createTicket(project: Project, input: CreateTicketInput): Promise<Ticket> {
-  const now = new Date().toISOString()
+  const issued = nextCreatedAt(Date.now(), lastIssued)
+  lastIssued = issued
+  const now = new Date(issued).toISOString()
   const frontmatter: TicketFrontmatter = {
     schema_version: SUPPORTED_SCHEMA_VERSION,
     id: randomUUID(),

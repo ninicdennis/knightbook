@@ -18,7 +18,7 @@ let realDir: string
 let linkedDir: string
 
 beforeEach(async () => {
-  sandbox = await realpath(await mkdtemp(join(tmpdir(), 'projectspace-paths-')))
+  sandbox = await realpath(await mkdtemp(join(tmpdir(), 'knightbook-paths-')))
   realDir = join(sandbox, 'real')
   linkedDir = join(sandbox, 'link')
   await mkdir(realDir)

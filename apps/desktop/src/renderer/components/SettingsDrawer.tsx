@@ -39,7 +39,7 @@ export function SettingsDrawer() {
     setColorScheme(choice)
     setSaveError(null)
 
-    void window.projectspace.saveSettings({ colorScheme: choice }).then(
+    void window.knightbook.saveSettings({ colorScheme: choice }).then(
       (result) => {
         if (!result.ok) setSaveError(result.message)
       },

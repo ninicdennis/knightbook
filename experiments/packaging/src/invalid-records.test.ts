@@ -20,7 +20,7 @@ let badFile: string
 let badContent: string
 
 beforeAll(async () => {
-  workspace = await mkdtemp(join(tmpdir(), 'projectspace-invalid-'))
+  workspace = await mkdtemp(join(tmpdir(), 'knightbook-invalid-'))
   resources = await stageResources(join(workspace, 'resources'))
   projectRoot = join(workspace, 'project')
 

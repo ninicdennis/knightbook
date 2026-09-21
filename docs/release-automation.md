@@ -7,7 +7,7 @@ document.
 ## Intended outcome
 
 Merging changes into the designated release branch should automatically build,
-validate, and publish a downloadable Projectspace release on GitHub. A separate
+validate, and publish a downloadable Knightbook release on GitHub. A separate
 manual tag or release-publishing step should not be necessary. Implementation can
 follow the current product work; the particular tooling remains a proposal.
 
@@ -33,7 +33,7 @@ inside the desktop app is a separate future decision.
 
 ## Methods considered
 
-| Method | What causes a release | Fit for Projectspace |
+| Method | What causes a release | Fit for Knightbook |
 | --- | --- | --- |
 | GitHub Actions + Electron Builder + GitHub CLI | Push to the release branch after an ordinary PR merge; version is supplied in that PR | Recommended initial approach: reuse the existing packager and publish installers together. Version selection stays explicit; the workflow needs a small amount of release validation. |
 | semantic-release | Release-eligible commits land on the configured branch; commit conventions determine the version | Best alternative if automatic version calculation is important. Requires agreed commit rules and desktop-specific build/version integration; default rules do not release every docs/chore change. |

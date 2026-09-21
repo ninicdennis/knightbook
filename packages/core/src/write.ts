@@ -60,7 +60,7 @@ async function acquireLock(root: ProjectRoot): Promise<() => Promise<void>> {
       if (Date.now() > deadline) {
         throw new ProjectError(
           'locked',
-          'Another Projectspace process is writing to this project. Try again.',
+          'Another Knightbook process is writing to this project. Try again.',
         )
       }
       await new Promise((r) => setTimeout(r, LOCK_RETRY_MS))

@@ -65,6 +65,6 @@ jobs:
       # The first run skipped the packaged-app tests because the app did not exist
       # yet. Run them again now that it does, and fail if they are still skipped.
       - name: Test the packaged app
-        run: pnpm --filter @projectspace/experiment-packaging test
+        run: pnpm --filter @knightbook/experiment-packaging test
         env:
           REQUIRE_PACKAGED_APP: '1'

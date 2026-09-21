@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { initializeProject } from '@projectspace/core'
+import { initializeProject } from '@knightbook/core'
 import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
@@ -9,7 +9,7 @@ import { describeRememberedProjects, parseRememberedEntries } from './remembered
 let sandbox: string
 
 beforeEach(async () => {
-  sandbox = await mkdtemp(join(tmpdir(), 'projectspace-remembered-'))
+  sandbox = await mkdtemp(join(tmpdir(), 'knightbook-remembered-'))
 })
 
 afterEach(async () => {

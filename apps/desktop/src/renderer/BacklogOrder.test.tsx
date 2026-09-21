@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectspaceApi } from '../shared/contract.js'
+import type { KnightbookApi } from '../shared/contract.js'
 import { CHECKOUT, makeApi, project, renderApp, ticket } from './test-fixtures.js'
 
 /**
@@ -26,7 +26,7 @@ function board(overrides = {}) {
   })
 }
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
@@ -34,7 +34,7 @@ beforeEach(() => {
   api = makeApi()
   api.readProject = vi.fn().mockResolvedValue({ ok: true, value: board() })
   api.reorderBacklog = vi.fn().mockResolvedValue({ ok: true, value: board() })
-  window.projectspace = api
+  window.knightbook = api
 })
 
 async function menuFor(title: string) {

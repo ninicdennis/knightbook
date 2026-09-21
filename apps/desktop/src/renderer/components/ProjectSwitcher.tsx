@@ -46,7 +46,7 @@ export function ProjectSwitcher({ currentPath, blockedReason, onSwitch, onOpenFo
     let cancelled = false
     setProjects(null)
     setError(null)
-    window.projectspace.rememberedProjects().then(
+    window.knightbook.rememberedProjects().then(
       (list) => {
         if (!cancelled) setProjects(list)
       },
@@ -61,7 +61,7 @@ export function ProjectSwitcher({ currentPath, blockedReason, onSwitch, onOpenFo
 
   const forget = useCallback(async (path: string) => {
     try {
-      setProjects(await window.projectspace.forgetProject(path))
+      setProjects(await window.knightbook.forgetProject(path))
     } catch {
       setError('Could not forget that project. Nothing was changed.')
     }

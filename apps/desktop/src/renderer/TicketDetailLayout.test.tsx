@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectspaceApi } from '../shared/contract.js'
+import type { KnightbookApi } from '../shared/contract.js'
 import { TICKET_ID, detail, makeApi, project, renderApp, ticket } from './test-fixtures.js'
 
 /**
@@ -17,13 +17,13 @@ import { TICKET_ID, detail, makeApi, project, renderApp, ticket } from './test-f
  * ticket.
  */
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
   user = userEvent.setup()
   api = makeApi()
-  window.projectspace = api
+  window.knightbook = api
 })
 
 /** The scrolling region, which is Mantine's modal body. */

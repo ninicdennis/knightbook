@@ -33,7 +33,7 @@ const REPO_ROOT = join(APP_DIR, '..', '..')
 const server = join(REPO_ROOT, 'packages', 'mcp', 'dist', 'server.mjs')
 
 /** Downloads land here, under node_modules so they are already ignored by Git. */
-const CACHE = join(APP_DIR, 'node_modules', '.cache', 'projectspace-runtimes')
+const CACHE = join(APP_DIR, 'node_modules', '.cache', 'knightbook-runtimes')
 
 function option(argv, name) {
   const match = argv.find((arg) => arg.startsWith(`--${name}=`))
@@ -97,11 +97,11 @@ function explainInUse(staged) {
     `Could not replace the staged file: ${staged}`,
     '',
     'It is in use, and it differs from what this build would stage, so the build',
-    'cannot continue. The usual cause is an AI client running the Projectspace MCP',
+    'cannot continue. The usual cause is an AI client running the Knightbook MCP',
     'server from this directory; an operating system will not overwrite a running',
     'executable.',
     '',
-    'Close that client, or stop its Projectspace server, and build again.',
+    'Close that client, or stop its Knightbook server, and build again.',
     'To see what is holding it:',
     finder,
   ].join('\n')
@@ -153,7 +153,7 @@ try {
   await stat(server)
 } catch {
   console.error(
-    `Bundled server is missing: ${server}\nRun "pnpm --filter @projectspace/mcp build" first.`,
+    `Bundled server is missing: ${server}\nRun "pnpm --filter @knightbook/mcp build" first.`,
   )
   process.exit(1)
 }

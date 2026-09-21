@@ -1,7 +1,7 @@
 import type {
   McpStatusView,
   ProjectView,
-  ProjectspaceApi,
+  KnightbookApi,
   RememberedProject,
   TicketView,
 } from '../src/shared/contract.js'
@@ -90,9 +90,9 @@ function stubMcpStatus(root: string): McpStatusView {
 }
 
 const PROJECT: ProjectView = {
-  name: 'Projectspace',
+  name: 'Knightbook',
   problems: UNREADABLE,
-  checkoutPath: String.raw`C:\Users\Denny\Projects\projectspace-demo`,
+  checkoutPath: String.raw`C:\Users\Denny\Projects\knightbook-demo`,
   nextTicketId: 'board',
   nextExplanation: '',
   backlogOrderProblems: { duplicates: [], unknown: [] },
@@ -242,7 +242,7 @@ const REMEMBERED: RememberedProject[] = [
   },
 ]
 
-export const stubApi: ProjectspaceApi = {
+export const stubApi: KnightbookApi = {
   rememberedProjects: async () => REMEMBERED,
   forgetProject: async (path) => {
     record('forgetProject', path)
@@ -311,8 +311,8 @@ export const stubApi: ProjectspaceApi = {
   },
 
   mcpLaunchCommand: async (root) => ({
-    command: String.raw`C:\Program Files\Projectspace\resources\mcp\node.exe`,
-    args: [String.raw`C:\Program Files\Projectspace\resources\mcp\server.mjs`, '--root', root],
+    command: String.raw`C:\Program Files\Knightbook\resources\mcp\node.exe`,
+    args: [String.raw`C:\Program Files\Knightbook\resources\mcp\server.mjs`, '--root', root],
   }),
 
   /** Add ?mcp=running|none|stale|missing|unknown to review each footer state. */

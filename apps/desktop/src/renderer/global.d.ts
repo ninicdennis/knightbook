@@ -1,7 +1,7 @@
-import type { ProjectspaceApi } from '../shared/contract.js'
+import type { KnightbookApi } from '../shared/contract.js'
 
 declare global {
   interface Window {
-    projectspace: ProjectspaceApi
+    knightbook: KnightbookApi
   }
 }

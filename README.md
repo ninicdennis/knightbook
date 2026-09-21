@@ -1,4 +1,17 @@
-# Projectspace
+# Knightbook
+
+<img src="docs/assets/knightbook-logo.png" alt="Knightbook: a white chess knight on a navy book cover" width="192" />
+
+Knightbook is the product name, replacing the Projectspace placeholder
+([naming decision D-020](docs/project-workspace-spec.md#accepted-decisions)).
+The application, the workspace packages and the MCP server were renamed with it.
+
+Two names deliberately did not change. Each project's records live in a
+`.projectspace/` folder, and that folder exists in every project anyone has already
+made — renaming it would be a migration of the user's own files, not of this
+product. The bundled workflow skill keeps its `skills/projectspace/` path and
+`projectspace` name for the same reason: tools that already load it refer to it by
+that name.
 
 A desktop workspace for developing project ideas, preserving decisions, and
 tracking implementation on a Kanban board, where humans and different AI tools
@@ -40,7 +53,7 @@ skip if the package is missing. To run the same steps locally:
 
 ```bash
 pnpm install --frozen-lockfile && pnpm build:mcp && pnpm check && pnpm pack:dir
-REQUIRE_PACKAGED_APP=1 pnpm --filter @projectspace/experiment-packaging test
+REQUIRE_PACKAGED_APP=1 pnpm --filter @knightbook/experiment-packaging test
 ```
 
 The workflow has read-only access, no secrets, and publishes nothing; actions are
@@ -50,6 +63,10 @@ required is a branch-protection setting in the repository's GitHub settings.
 Future delivery work: [releases after merge](docs/release-automation.md) compares
 GitHub release tooling and proposes an automated build-and-publish workflow.
 It is deferred; no release automation is enabled yet.
+
+The [landing page and user documentation plan](docs/landing-page-and-user-documentation.md)
+covers the public download site, draft page copy, getting-started guides, and launch
+requirements. It is a documentation proposal; no site has been published.
 
 ## Requirements
 
@@ -121,6 +138,14 @@ The AI client starts that process itself, so project access does not depend on
 the desktop window being open. The root is bound at launch rather than supplied
 per call, so a connection reaches exactly one checkout.
 
+**After the Knightbook rename, re-copy that configuration.** The installed folder
+is named after the product, so a command saved while this was Projectspace points
+at a path the new install does not use, and the client will fail to start the
+server rather than silently talk to the wrong one. Open the status bar, use **Copy
+MCP configuration**, and replace the old entry. The name you give the entry in your
+client's own config is yours and does not have to change. The server now reports
+itself as `knightbook`.
+
 ### What the status bar can and cannot tell you
 
 The client starts and stops the server, so the app has no Start or Stop to offer
@@ -148,7 +173,7 @@ Verification, and never decide Done. It is plain Markdown, so it works in any cl
 
 - **Claude Code:** copy the `skills/projectspace` folder into your personal skills
   folder (`~/.claude/skills/`), or into a project's `.claude/skills/`. It is used
-  automatically when the `projectspace` tools are connected.
+  automatically when the `knightbook` tools are connected.
 - **Any other client:** paste the file into that project's instructions
   (`AGENTS.md`, `CLAUDE.md`, a system prompt).
 - **With nothing installed:** the server sends a short version of the core rules to

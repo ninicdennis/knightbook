@@ -235,7 +235,7 @@ export interface AppSettings {
   colorScheme: ColorSchemeChoice
 }
 
-export interface ProjectspaceApi extends DocumentsApi {
+export interface KnightbookApi extends DocumentsApi {
   /** Projects this machine has opened, most recent first, each checked for availability. */
   rememberedProjects(): Promise<RememberedProject[]>
   /** Forgets one entry and returns the updated list. Deletes nothing on disk. */

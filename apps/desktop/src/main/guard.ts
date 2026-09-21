@@ -1,4 +1,4 @@
-import { isProjectError } from '@projectspace/core'
+import { isProjectError } from '@knightbook/core'
 import type { Result } from '../shared/contract.js'
 
 /**

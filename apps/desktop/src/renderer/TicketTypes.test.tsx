@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectspaceApi, TicketSearchView } from '../shared/contract.js'
+import type { KnightbookApi, TicketSearchView } from '../shared/contract.js'
 import {
   CHECKOUT,
   TICKET_ID,
@@ -21,13 +21,13 @@ import {
  * that say whether work can move.
  */
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
   user = userEvent.setup()
   api = makeApi()
-  window.projectspace = api
+  window.knightbook = api
 })
 
 async function openDetail(title = 'A ticket') {

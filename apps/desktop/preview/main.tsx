@@ -15,7 +15,7 @@ import { stubApi } from './stub-api.js'
  * It starts from the same stored-settings read the real renderer does, so both
  * colour schemes can be reviewed here.
  */
-window.projectspace = stubApi
+window.knightbook = stubApi
 
 void stubApi.readSettings().then((settings) => {
   createRoot(document.getElementById('root')!).render(

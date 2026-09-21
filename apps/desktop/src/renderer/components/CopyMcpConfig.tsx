@@ -20,7 +20,7 @@ export function CopyMcpConfig({ rootPath, label }: Props) {
 
   useEffect(() => {
     let cancelled = false
-    void window.projectspace.mcpLaunchCommand(rootPath).then((command) => {
+    void window.knightbook.mcpLaunchCommand(rootPath).then((command) => {
       if (!cancelled) setLaunch(command)
     })
     return () => {

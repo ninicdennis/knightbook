@@ -28,7 +28,7 @@ function start(colorScheme: ColorSchemeChoice): void {
   )
 }
 
-window.projectspace.readSettings().then(
+window.knightbook.readSettings().then(
   (settings) => start(settings.colorScheme),
   // An unreadable setting must not leave a blank window: follow the system.
   () => start('auto'),

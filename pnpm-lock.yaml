@@ -184,7 +184,7 @@ importers:
       '@mantine/hooks':
         specifier: ^9.6.1
         version: 9.6.1(react@19.3.0)
-      '@projectspace/core':
+      '@knightbook/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@tabler/icons-react':
@@ -312,7 +312,7 @@ importers:
       '@modelcontextprotocol/server':
         specifier: ^2.0.0
         version: 2.0.0
-      '@projectspace/core':
+      '@knightbook/core':
         specifier: workspace:*
         version: link:../core
       zod:

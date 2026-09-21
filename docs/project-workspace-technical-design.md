@@ -160,7 +160,7 @@ Git operations remain external. Detect conflict markers and invalid records, pre
 
 Persist a logical project UUID in `project.md`. A clone or worktree retains that UUID, but each local checkout has its own canonical root path and current files. Never silently combine two checkouts because their project UUID matches.
 
-Propose an explicitly root-bound MCP connection, such as `projectspace-mcp --root <selected-folder>`. The name and command are illustrative. The root is selected during setup, not taken from an arbitrary path supplied by the model on each call. `project_initialize` can initialize that selected folder even if it has no project records yet. Project discovery and local path bindings do not grant access to other roots.
+Propose an explicitly root-bound MCP connection, such as `knightbook-mcp --root <selected-folder>`. The name and command are illustrative. The root is selected during setup, not taken from an arbitrary path supplied by the model on each call. `project_initialize` can initialize that selected folder even if it has no project records yet. Project discovery and local path bindings do not grant access to other roots.
 
 Show project name and checkout identity in responses. Switching the visible UI project must not redirect an already-running MCP connection. A local recent-project registry can list multiple checkouts, with the user choosing the right path. Setup convenience for several projects is a follow-up design detail; do not depend on client-specific workspace-root behavior without validating it.
 
@@ -175,6 +175,27 @@ Use four status values: `backlog`, `in_progress`, `verification`, `done`. Keep c
 The next-ticket query returns the first Backlog ticket in that order whose prerequisites satisfy readiness and which has no explicit blocker or invalid record. It does not reserve or start it. On the user's request, the external agent reads its linked context and changes it to In progress. Revalidate eligibility at that mutation. One active AI session per project is the initial usage assumption; there is no automatic execution queue.
 
 If a prerequisite fails verification, persist an issue on that prerequisite and derive an affected-work flag for dependent tickets. Existing downstream statuses stay intact. Proposed default: do not suggest new affected work until the prerequisite is corrected or the user explicitly resolves the issue. This failure flag takes precedence over a still-Verification status. Direct overrides and reopening Done tickets need explicit transition rules during implementation design.
+
+### Creation order in a burst as built (2026-09-20)
+
+"Deterministically by creation time and stable ID" was deterministic but not the
+order anyone meant. `created_at` has millisecond resolution, so creating several
+tickets at once — an AI filing a handful at the end of a conversation — puts more
+than one in the same millisecond on a machine with a fast disk, and the sort fell
+through to the stable id, which is a random UUID. The tickets then appeared in an
+order nobody chose. It surfaced twice as a CI failure that reproduced only on the
+fastest runner, first in `ticket-search.test.ts` and then in
+`backlog-order.test.ts` on the rule itself.
+
+`createTicket` now issues a creation time strictly later than the previous one it
+issued in this process, so a burst is strictly increasing and the existing
+comparison does the rest. The cost, stated rather than hidden: a ticket created in
+a burst carries a timestamp up to a few milliseconds after the instant it was
+written. That buys a record whose order matches the order the tickets were made
+in, which is what anyone reads it for.
+
+Two processes creating tickets in the same millisecond can still tie, and still
+fall back to the id. That is rare, deterministic, and left alone.
 
 ### Failed-prerequisite transitions as built (2026-09-20)
 

@@ -5,7 +5,7 @@ import {
   startMcpSession,
   SESSION_HEARTBEAT_MS,
   type McpSessionHandle,
-} from '@projectspace/core'
+} from '@knightbook/core'
 import { parseRootArgument } from './root.js'
 import { registerDocumentTools } from './document-tools.js'
 import { SERVER_INSTRUCTIONS } from './instructions.js'
@@ -19,7 +19,7 @@ import { registerTools } from './tools.js'
  * Logs go to stderr because stdout carries the protocol.
  */
 
-const NAME = 'projectspace'
+const NAME = 'knightbook'
 const VERSION = '0.0.0'
 
 /**

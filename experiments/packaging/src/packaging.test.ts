@@ -23,7 +23,7 @@ let projectRoot: string
 let unrelatedCwd: string
 
 beforeAll(async () => {
-  workspace = await mkdtemp(join(tmpdir(), 'projectspace-packaging-'))
+  workspace = await mkdtemp(join(tmpdir(), 'knightbook-packaging-'))
   resources = await stageResources(join(workspace, 'resources'))
   projectRoot = join(workspace, 'fixture-project')
   unrelatedCwd = workspace
@@ -68,7 +68,7 @@ describe('the shipped runtime starts without a system Node', () => {
     try {
       // The server announces its root on stderr at startup, proving it is our build.
       await new Promise((r) => setTimeout(r, 150))
-      expect(connection.stderr()).toContain('projectspace')
+      expect(connection.stderr()).toContain('knightbook')
     } finally {
       await connection.close()
     }

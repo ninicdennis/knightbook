@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectspaceApi } from '../shared/contract.js'
+import type { KnightbookApi } from '../shared/contract.js'
 import { makeApi, project, renderApp, ticket } from './test-fixtures.js'
 
 /**
@@ -12,14 +12,14 @@ import { makeApi, project, renderApp, ticket } from './test-fixtures.js'
  * keyboard user takes.
  */
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 /** A fresh instance per test: the shared default keeps pointer state between tests. */
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
   user = userEvent.setup()
   api = makeApi()
-  window.projectspace = api
+  window.knightbook = api
 })
 
 describe('opening a project', () => {

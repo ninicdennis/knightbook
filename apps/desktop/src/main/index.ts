@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { registerDocumentHandlers } from './documents-ipc.js'
 import { registerProjectHandlers } from './ipc.js'
+import { adoptStateFromPreviousName } from './app-state.js'
 import { applyStoredColorScheme, registerSettingsHandlers } from './settings-ipc.js'
 import { registerSetupHandlers } from './setup-ipc.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
@@ -18,6 +19,16 @@ import { followSystemChanges, windowBackground } from './window-theme.js'
 
 const HERE = fileURLToPath(new URL('.', import.meta.url))
 const isDevelopment = !app.isPackaged
+
+/*
+ * Set before anything asks for a path, because `userData` is derived from it.
+ * Left to itself Electron falls back to the `name` in package.json, which is a
+ * scoped package name, and the state directory was literally
+ * `%APPDATA%/@projectspace/desktop`. Naming the app here means the directory is
+ * the product's name on every platform, in development and packaged alike,
+ * rather than whichever field happened to win.
+ */
+app.setName('Knightbook')
 
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
@@ -93,6 +104,21 @@ void app.whenReady().then(async () => {
   registerSetupHandlers()
   registerSettingsHandlers()
   process.stdout.write(`MCP launch command: ${JSON.stringify(mcpLaunchCommand('<project>'))}\n`)
+
+  /*
+   * Before anything reads settings or the recent-project list: renaming the
+   * product moved Electron's userData directory, and without this the first
+   * launch after the rename would look like a first launch ever.
+   */
+  const adopted = await adoptStateFromPreviousName()
+  if (adopted.outcome === 'adopted') {
+    process.stdout.write(`Carried settings and recent projects over from ${adopted.from}\n`)
+  } else if (adopted.outcome === 'failed') {
+    process.stderr.write(
+      `Could not carry state over from ${adopted.from}: ${adopted.reason}\n` +
+        'Starting with defaults; the previous file was left untouched.\n',
+    )
+  }
 
   // Before the first window, so it is not painted in the other scheme first.
   await applyStoredColorScheme()

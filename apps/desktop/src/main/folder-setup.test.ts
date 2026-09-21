@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { ProjectError, openProject } from '@projectspace/core'
+import { ProjectError, openProject } from '@knightbook/core'
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
@@ -7,14 +7,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { explainSetupFailure, inspectFolder, setUpFolder } from './folder-setup.js'
 import { allowSetupFor, assertAwaitingSetup } from './setup-permit.js'
 
-const README = '# My app\n\nWritten long before Projectspace.\n'
+const README = '# My app\n\nWritten long before Knightbook.\n'
 const GUIDE = '# Guide\n\nAlready here.\n'
 
 let sandbox: string
 let folder: string
 
 beforeEach(async () => {
-  sandbox = await mkdtemp(join(tmpdir(), 'projectspace-setup-'))
+  sandbox = await mkdtemp(join(tmpdir(), 'knightbook-setup-'))
   folder = join(sandbox, 'my-app')
   await mkdir(join(folder, 'docs'), { recursive: true })
   await writeFile(join(folder, 'README.md'), README, 'utf8')
@@ -121,7 +121,7 @@ describe('setup that must not go ahead', () => {
     await setUpFolder(folder, { name: 'First', include: [] })
 
     await expect(setUpFolder(folder, { name: 'Second', include: [] })).rejects.toThrow(
-      /already a Projectspace project/i,
+      /already a Knightbook project/i,
     )
     expect((await openProject(folder)).frontmatter.name).toBe('First')
   })

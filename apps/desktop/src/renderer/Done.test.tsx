@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CompletionView, ProjectspaceApi, TicketView } from '../shared/contract.js'
+import type { CompletionView, KnightbookApi, TicketView } from '../shared/contract.js'
 import { makeApi, project, renderApp, ticket } from './test-fixtures.js'
 import { COLLAPSED_DONE_COUNT, orderDone } from './done-order.js'
 
@@ -11,13 +11,13 @@ import { COLLAPSED_DONE_COUNT, orderDone } from './done-order.js'
  * accounted for, which is what most of this covers.
  */
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
   user = userEvent.setup()
   api = makeApi()
-  window.projectspace = api
+  window.knightbook = api
 })
 
 function accepted(at: string): CompletionView {

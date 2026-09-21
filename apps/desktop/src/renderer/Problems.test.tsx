@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectspaceApi, RecordProblemView } from '../shared/contract.js'
+import type { KnightbookApi, RecordProblemView } from '../shared/contract.js'
 import { detail, makeApi, project, renderApp, ticket } from './test-fixtures.js'
 
 /**
@@ -19,13 +19,13 @@ const BAD_STATUS: RecordProblemView = {
   reason: 'Ticket bbbb is not valid: status must be one of backlog, in_progress.',
 }
 
-let api: ProjectspaceApi
+let api: KnightbookApi
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
   user = userEvent.setup()
   api = makeApi()
-  window.projectspace = api
+  window.knightbook = api
 })
 
 function withProblems(problems: RecordProblemView[]) {

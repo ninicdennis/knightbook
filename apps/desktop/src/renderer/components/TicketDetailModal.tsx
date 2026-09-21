@@ -80,7 +80,7 @@ export function TicketDetailModal({
   useEffect(() => {
     let cancelled = false
     setError(null)
-    void window.projectspace.readTicket(rootPath, ticket.id).then((result) => {
+    void window.knightbook.readTicket(rootPath, ticket.id).then((result) => {
       if (cancelled) return
       if (result.ok) setDetail(result.value)
       else {

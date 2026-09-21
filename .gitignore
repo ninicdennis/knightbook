@@ -2,6 +2,9 @@ node_modules/
 dist/
 out/
 build/
+# electron-builder's buildResources directory is source, not output: it holds the
+# icon every packaged build is made from, so it has to be in the repository.
+!apps/desktop/build/
 release/
 coverage/
 *.log

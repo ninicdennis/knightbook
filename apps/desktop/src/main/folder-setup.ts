@@ -5,7 +5,7 @@ import {
   initializeProject,
   isProjectError,
   resolveProjectRoot,
-} from '@projectspace/core'
+} from '@knightbook/core'
 import type { FolderInspection, SetupOutcome } from '../shared/contract.js'
 
 /**
@@ -85,7 +85,7 @@ export function explainSetupFailure(error: unknown): Error {
     case 'EACCES':
     case 'EPERM':
       return new Error(
-        'Permission denied: Projectspace is not allowed to write in this folder. ' +
+        'Permission denied: Knightbook is not allowed to write in this folder. ' +
           'No project was created. Check the folder’s permissions, or choose another folder.',
       )
     case 'EROFS':

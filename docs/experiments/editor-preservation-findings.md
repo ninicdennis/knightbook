@@ -6,7 +6,7 @@ informs **T-001** and **D-018** in the [Product Specification v0.18](../project-
 
 Measured against **`@milkdown/kit` 7.22.1**, the latest published release
 (2026-08-12), running the real editor through jsdom. Reproduce with
-`pnpm --filter @projectspace/experiment-editor-preservation report`.
+`pnpm --filter @knightbook/experiment-editor-preservation report`.
 
 ## Result
 
