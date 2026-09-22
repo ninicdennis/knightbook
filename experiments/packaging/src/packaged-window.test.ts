@@ -1,10 +1,11 @@
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright-core'
 import { call, connect } from './client.js'
 import { packagedApp, requireWhenAsked } from './packaged.js'
+import { removeWorkspace } from './stage.js'
 
 /**
  * The real Electron window of the packaged app. Every other suite here stops at
@@ -25,7 +26,7 @@ import { packagedApp, requireWhenAsked } from './packaged.js'
  */
 
 const app = await packagedApp()
-requireWhenAsked(app, 'a packaged app')
+requireWhenAsked(app, 'a packaged app with a launchable binary')
 const describeWindow = app ? describe : describe.skip
 
 /** The board reopens the most recent project, so seeding this file chooses it. */
@@ -90,7 +91,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await electronApp?.close().catch(() => {})
-  if (workspace) await rm(workspace, { recursive: true, force: true })
+  if (workspace) await removeWorkspace(workspace)
 })
 
 describeWindow('the packaged window', () => {

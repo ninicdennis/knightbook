@@ -1,9 +1,9 @@
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises'
+import { mkdtemp, readFile, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { call, callExpectingError, connect } from './client.js'
-import { stageResources, type StagedResources } from './stage.js'
+import { removeWorkspace, stageResources, type StagedResources } from './stage.js'
 
 /**
  * The "Independent packaging" row of technical design section 11: invoke the
@@ -30,7 +30,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await rm(workspace, { recursive: true, force: true })
+  await removeWorkspace(workspace)
 })
 
 describe('the shipped runtime starts without a system Node', () => {

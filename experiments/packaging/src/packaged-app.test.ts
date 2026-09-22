@@ -1,9 +1,10 @@
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises'
+import { mkdtemp, readFile, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { call, callExpectingError, connect } from './client.js'
-import { packagedApp, requireWhenAsked } from './packaged.js'
+import { packagedResources, requireWhenAsked } from './packaged.js'
+import { removeWorkspace } from './stage.js'
 
 /**
  * The same checks as packaging.test.ts, but against the output of a real
@@ -16,7 +17,7 @@ import { packagedApp, requireWhenAsked } from './packaged.js'
  * `pnpm --filter @knightbook/desktop pack:dir`.
  */
 
-const resources = await packagedApp()
+const resources = await packagedResources()
 requireWhenAsked(resources, 'a packaged app')
 
 const describePackaged = resources ? describe : describe.skip
@@ -30,7 +31,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await rm(workspace, { recursive: true, force: true })
+  await removeWorkspace(workspace)
 })
 
 describePackaged('the installed application', () => {

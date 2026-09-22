@@ -1,4 +1,4 @@
-import { access, readdir } from 'node:fs/promises'
+import { access, readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { REPO_ROOT, type StagedResources } from './stage.js'
 
@@ -53,44 +53,89 @@ async function candidates(): Promise<Array<{ resources: string; executableIn: st
 }
 
 /*
- * Electron ships its own helper binaries beside the app. None of them is the
- * thing a user launches, so they are excluded by name rather than by guessing
- * which of the remaining files is the product.
+ * Electron ships helper binaries beside the app, and electron-builder leaves a
+ * licence and a version stamp there too. None of them is the thing a user
+ * launches, so they are excluded by name rather than by guessing which of the
+ * remaining entries is the product.
  */
-const NOT_THE_APP = new Set(['chrome-sandbox', 'chrome_crashpad_handler'])
+const NOT_THE_APP = new Set(['chrome-sandbox', 'chrome_crashpad_handler', 'LICENSE', 'version'])
 
-/** The single launchable binary in a packaged layout, or null if it is not obvious. */
-async function executableIn(directory: string): Promise<string | null> {
+/**
+ * The single launchable binary in a packaged layout, or null if it is not
+ * obvious. Exported, and taking its platform, so the layouts this has to cope
+ * with can be tested from any machine — the Linux branch broke CI precisely
+ * because it could only ever be exercised by running CI.
+ *
+ * Windows names the binary `.exe`. macOS and Linux leave it extensionless,
+ * which by itself is not enough: the directory also holds `resources/` and
+ * `locales/`, and electron-builder leaves a licence and a version stamp beside
+ * them. Filtering on the extension alone let those through, found several
+ * candidates, and returned null.
+ */
+export async function launchableBinaryIn(
+  directory: string,
+  platform: NodeJS.Platform = process.platform,
+): Promise<string | null> {
   const entries = await readdir(directory).catch(() => [])
-  const launchable = entries.filter((entry) => {
-    if (NOT_THE_APP.has(entry)) return false
-    // Windows names it `.exe`; macOS and Linux leave the binary extensionless,
-    // which also excludes the bundled `.so`/`.dll`/`.pak` files beside it.
-    return process.platform === 'win32' ? entry.endsWith('.exe') : !entry.includes('.')
-  })
+  const launchable: string[] = []
+
+  for (const entry of entries) {
+    if (NOT_THE_APP.has(entry)) continue
+    if (platform === 'win32') {
+      if (entry.endsWith('.exe')) launchable.push(entry)
+      continue
+    }
+    if (entry.includes('.')) continue
+    // Directories are the reason this check exists; `resources` and `locales`
+    // have no extension either.
+    const info = await stat(join(directory, entry)).catch(() => null)
+    if (info?.isFile()) launchable.push(entry)
+  }
+
   return launchable.length === 1 ? join(directory, launchable[0]!) : null
 }
 
-/** The packaged build, or null when the app has not been packaged on this machine. */
-export async function packagedApp(): Promise<PackagedApp | null> {
+/**
+ * The packaged build's resources, or null when the app has not been packaged
+ * here. This deliberately knows nothing about the launchable binary: the suites
+ * that only drive the MCP server must not start skipping because the executable
+ * could not be identified. Coupling the two is exactly how the Linux job broke.
+ */
+export async function packagedResources(): Promise<StagedResources | null> {
   for (const candidate of await candidates()) {
-    const resourcesDir = join(RELEASE_DIR, candidate.resources)
-    const mcpDir = join(resourcesDir, 'mcp')
-    const nodePath = join(mcpDir, NODE_BINARY)
-    const serverPath = join(mcpDir, 'server.mjs')
-    try {
-      await access(nodePath)
-      await access(serverPath)
-    } catch {
-      continue
-    }
-
-    const executablePath = await executableIn(join(RELEASE_DIR, candidate.executableIn))
-    if (!executablePath) continue
-
-    return { resourcesDir, nodePath, serverPath, executablePath }
+    const resources = await resourcesOf(candidate.resources)
+    if (resources) return resources
   }
   return null
+}
+
+/** The packaged build including the binary to launch, for the window tests. */
+export async function packagedApp(): Promise<PackagedApp | null> {
+  for (const candidate of await candidates()) {
+    const resources = await resourcesOf(candidate.resources)
+    if (!resources) continue
+
+    const executablePath = await launchableBinaryIn(join(RELEASE_DIR, candidate.executableIn))
+    if (!executablePath) continue
+
+    return { ...resources, executablePath }
+  }
+  return null
+}
+
+/** The resource layout under one candidate directory, if the runtime is there. */
+async function resourcesOf(candidate: string): Promise<StagedResources | null> {
+  const resourcesDir = join(RELEASE_DIR, candidate)
+  const mcpDir = join(resourcesDir, 'mcp')
+  const nodePath = join(mcpDir, NODE_BINARY)
+  const serverPath = join(mcpDir, 'server.mjs')
+  try {
+    await access(nodePath)
+    await access(serverPath)
+  } catch {
+    return null
+  }
+  return { resourcesDir, nodePath, serverPath }
 }
 
 /**
@@ -98,8 +143,8 @@ export async function packagedApp(): Promise<PackagedApp | null> {
  * that quietly skips is not a check. Elsewhere, a missing build is simply a
  * machine that has not run `pnpm pack:dir`, and the suite skips.
  */
-export function requireWhenAsked(app: PackagedApp | null, what: string): void {
-  if (app || !process.env['REQUIRE_PACKAGED_APP']) return
+export function requireWhenAsked(found: StagedResources | null, what: string): void {
+  if (found || !process.env['REQUIRE_PACKAGED_APP']) return
   throw new Error(
     `REQUIRE_PACKAGED_APP is set but ${what} was not found under apps/desktop/release. ` +
       'Run pnpm pack:dir first.',
