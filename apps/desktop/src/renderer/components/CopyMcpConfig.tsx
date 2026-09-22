@@ -4,29 +4,29 @@ import { useEffect, useState } from 'react'
 import type { McpLaunchCommand } from '../../shared/contract.js'
 
 /**
- * Copies the MCP configuration for one project folder. It is the one piece of
- * setup the user has to move into their AI client by hand, so it appears both in
- * the header of an open project and beside the setup of a new one.
+ * Copies the shared MCP configuration. It is the one piece of setup the user
+ * moves into their AI client by hand, and they do it once: it names the list of
+ * allowed projects rather than any project, so it is the same whichever project
+ * it is copied from.
  */
 
 interface Props {
-  rootPath: string
   /** Shows a labelled button instead of the compact icon. */
   label?: string
 }
 
-export function CopyMcpConfig({ rootPath, label }: Props) {
+export function CopyMcpConfig({ label }: Props) {
   const [launch, setLaunch] = useState<McpLaunchCommand | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    void window.knightbook.mcpLaunchCommand(rootPath).then((command) => {
+    void window.knightbook.mcpLaunchCommand().then((command) => {
       if (!cancelled) setLaunch(command)
     })
     return () => {
       cancelled = true
     }
-  }, [rootPath])
+  }, [])
 
   if (!launch) return null
   const configJson = JSON.stringify({ command: launch.command, args: launch.args }, null, 2)
@@ -51,7 +51,7 @@ export function CopyMcpConfig({ rootPath, label }: Props) {
             label={
               copied
                 ? 'Copied. Paste it into your AI client config.'
-                : 'Copy this project’s MCP configuration for your AI client.'
+                : 'Copy the MCP configuration for your AI client. It covers every project you allow.'
             }
           >
             <ActionIcon

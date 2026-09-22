@@ -1,14 +1,15 @@
 import { Divider, List, Stack, Text } from '@mantine/core'
-import type { McpStatusView } from '../../shared/contract.js'
-import { describeAge, type McpDisplay } from '../mcp-status.js'
+import type { McpAccessView, McpStatusView } from '../../shared/contract.js'
+import { describeActivity, describeAge, type McpDisplay } from '../mcp-status.js'
 import { CopyMcpConfig } from './CopyMcpConfig.js'
+import { McpAccessSwitch } from './McpAccessSwitch.js'
 
 /**
  * What the indicator is actually based on, and the one action the user can take
  * about it.
  *
- * The three observations are listed separately rather than summarized, because
- * they answer different questions and can disagree. A user debugging a client
+ * The observations are listed separately rather than summarized, because they
+ * answer different questions and can disagree. A user debugging a client
  * that will not connect needs to know which of the three failed.
  *
  * There are no Start and Stop buttons here, and the panel says why. The AI
@@ -22,6 +23,7 @@ interface Props {
   status: McpStatusView
   display: McpDisplay
   checkoutPath: string
+  onAccessChange: (access: McpAccessView) => void
 }
 
 function Fact({ label, value }: { label: string; value: string }) {
@@ -39,6 +41,26 @@ function describeRuntime(status: McpStatusView): string {
   return status.runtimeAvailable
     ? 'Present — the copied configuration points at a server that exists.'
     : 'Not found where it should be installed.'
+}
+
+function describeAccess(status: McpStatusView): string {
+  if (status.access.problem !== null)
+    return 'Unknown — the list of allowed projects could not be read.'
+  return status.access.enabled
+    ? 'Allowed through the shared connection.'
+    : 'Not allowed. The shared connection cannot reach this project.'
+}
+
+/** A shared client can reach every allowed project, so this never says it is using this one. */
+function describeShared(status: McpStatusView): string {
+  const connected = status.shared.filter((session) => session.connectedAt !== null).length
+  if (connected > 0) {
+    const clients = connected === 1 ? '1 client connected' : `${connected} clients connected`
+    return `${clients}. It reaches every allowed project. ${describeActivity(status)}`
+  }
+  return status.shared.length > 0
+    ? 'A server is running, but no client has connected yet.'
+    : 'None observed.'
 }
 
 function describeProcess(status: McpStatusView): string {
@@ -63,7 +85,7 @@ function describeConnection(status: McpStatusView): string {
   return `Opened ${describeAge(connected[0]!.connectedAt!)}.`
 }
 
-export function McpStatusDetails({ status, display, checkoutPath }: Props) {
+export function McpStatusDetails({ status, display, checkoutPath, onAccessChange }: Props) {
   return (
     <Stack gap="xs">
       <Text size="sm" fw={600}>
@@ -77,8 +99,10 @@ export function McpStatusDetails({ status, display, checkoutPath }: Props) {
 
       <Stack gap={4}>
         <Fact label="Bundled runtime" value={describeRuntime(status)} />
-        <Fact label="Server process" value={describeProcess(status)} />
-        <Fact label="Client connection" value={describeConnection(status)} />
+        <Fact label="AI access" value={describeAccess(status)} />
+        <Fact label="Shared connection" value={describeShared(status)} />
+        <Fact label="Server process (this project only)" value={describeProcess(status)} />
+        <Fact label="Client connection (this project only)" value={describeConnection(status)} />
         <Text size="xs" c="dimmed" mt={2} style={{ wordBreak: 'break-all' }}>
           Observed {describeAge(status.observedAt)} for {checkoutPath}
         </Text>
@@ -97,7 +121,15 @@ export function McpStatusDetails({ status, display, checkoutPath }: Props) {
 
       <Divider />
 
-      <CopyMcpConfig rootPath={checkoutPath} label="Copy MCP configuration" />
+      <McpAccessSwitch
+        checkoutPath={checkoutPath}
+        access={status.access}
+        onChange={onAccessChange}
+      />
+
+      <Divider />
+
+      <CopyMcpConfig label="Copy MCP configuration" />
 
       <Text size="xs" c="dimmed">
         Your AI client starts and stops this server itself, so the app has no Start or Stop to

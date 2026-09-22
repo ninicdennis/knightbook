@@ -1,5 +1,6 @@
 import { app } from 'electron'
 import { join } from 'node:path'
+import { accessRegistryPath } from './mcp-access.js'
 
 /**
  * Where the shipped MCP runtime lives once installed. Technical design section 2
@@ -25,10 +26,15 @@ export interface McpLaunchCommand {
   readonly args: string[]
 }
 
-export function mcpLaunchCommand(projectRoot: string): McpLaunchCommand {
+/**
+ * The one configuration a client needs for every project the user enables. It
+ * names the access list rather than a project, so enabling another project later
+ * changes nothing in the client.
+ */
+export function mcpLaunchCommand(): McpLaunchCommand {
   const dir = mcpResourcesDir()
   return {
     command: join(dir, NODE_BINARY),
-    args: [join(dir, 'server.mjs'), '--root', projectRoot],
+    args: [join(dir, 'server.mjs'), '--registry', accessRegistryPath()],
   }
 }

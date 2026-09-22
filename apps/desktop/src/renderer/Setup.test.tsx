@@ -181,6 +181,7 @@ describe('connecting an AI tool afterwards', () => {
     expect(
       await within(section).findByRole('button', { name: /copy mcp configuration/i }),
     ).toBeTruthy()
-    expect(api.mcpLaunchCommand).toHaveBeenCalledWith(FOLDER)
+    // One shared configuration: it names no folder, so it is the same for every project.
+    expect(api.mcpLaunchCommand).toHaveBeenCalledWith()
   })
 })

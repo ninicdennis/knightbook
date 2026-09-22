@@ -8,9 +8,21 @@ import type { McpStatusView } from '../shared/contract.js'
  * what is assumed. Nothing here may turn an absence of evidence into a claim.
  * "No connection observed" and "Stopped" sound alike and mean different things —
  * the app cannot see a client's process, so it can only ever say the first.
+ *
+ * The shared connection adds a trap of its own: a client connected to it can
+ * reach every enabled project, which is not the same as working on this one. So
+ * it reads as "available" here, with any observed use reported separately, and
+ * never as the "connected" a project-bound server earns.
  */
 
-export type McpState = 'connected' | 'running' | 'not_connected' | 'runtime_missing' | 'unknown'
+export type McpState =
+  | 'connected'
+  | 'available'
+  | 'running'
+  | 'not_enabled'
+  | 'not_connected'
+  | 'runtime_missing'
+  | 'unknown'
 
 export interface McpDisplay {
   state: McpState
@@ -40,10 +52,22 @@ export function describeAge(iso: string, now: number = Date.now()): string {
   return `${hours} hour${hours === 1 ? '' : 's'} ago`
 }
 
+const ENABLE_STEP =
+  'Turn on Allow AI access through MCP below. The client picks it up on its next call; ' +
+  'its configuration does not change.'
+
 const CONNECT_STEPS = [
-  'Copy the MCP configuration below and add it to your AI client.',
-  'Start or restart the client so it launches the server for this project.',
+  'Copy the MCP configuration below and add it to your AI client. You only do this once: ' +
+    'it covers every project you allow.',
+  'Start or restart the client so it launches the server.',
 ]
+
+/** The one sentence about use of this project through the shared connection. */
+export function describeActivity(status: McpStatusView, now: number = Date.now()): string {
+  return status.lastActivityAt === null
+    ? 'No call to this project has been observed from it yet.'
+    : `It last worked on this project ${describeAge(status.lastActivityAt, now)}.`
+}
 
 export function describeMcpStatus(status: McpStatusView, now: number = Date.now()): McpDisplay {
   if (status.unobservable !== null) {
@@ -71,12 +95,49 @@ export function describeMcpStatus(status: McpStatusView, now: number = Date.now(
     }
   }
 
-  if (status.live.length > 0) {
+  if (status.access.problem !== null) {
+    return {
+      state: 'unknown',
+      label: 'MCP access unknown',
+      summary:
+        'The list of projects allowed for AI access could not be read, so the shared ' +
+        `connection reaches no project: ${status.access.problem}`,
+      guidance: [
+        'The file was left untouched. Repair it, or remove it and allow your projects again.',
+      ],
+    }
+  }
+
+  const sharedConnected = status.shared.filter((session) => session.connectedAt !== null)
+  if (sharedConnected.length > 0) {
+    if (!status.access.enabled) {
+      return {
+        state: 'not_enabled',
+        label: 'MCP not allowed here',
+        summary:
+          'An AI client is connected to the shared Knightbook connection, but this project is ' +
+          'not allowed for it, so the client cannot reach it.',
+        guidance: [ENABLE_STEP],
+      }
+    }
+    return {
+      state: 'available',
+      label: 'MCP available',
+      summary:
+        'An AI client is connected to the shared Knightbook connection, and this project is ' +
+        `allowed for it. ${describeActivity(status, now)}`,
+      guidance: [],
+    }
+  }
+
+  if (status.live.length > 0 || status.shared.length > 0) {
     return {
       state: 'running',
       label: 'MCP server running',
       summary:
-        'A server process is running for this project, but no client has opened a connection to it yet.',
+        status.live.length > 0
+          ? 'A server process is running for this project, but no client has opened a connection to it yet.'
+          : 'A shared server process is running, but no client has opened a connection to it yet.',
       guidance: ['If your AI client is starting up, this usually resolves on its own.'],
     }
   }
@@ -101,7 +162,7 @@ export function describeMcpStatus(status: McpStatusView, now: number = Date.now(
       ? `No running server was observed for this project. A previous session stopped without ` +
         `cleaning up; it was last seen ${describeAge(latestBeat(status), now)}.`
       : 'No running server was observed for this project.',
-    guidance: CONNECT_STEPS,
+    guidance: status.access.enabled ? CONNECT_STEPS : [ENABLE_STEP, ...CONNECT_STEPS],
   }
 }
 

@@ -18,9 +18,26 @@ export async function connect(
   projectRoot: string,
   cwd: string,
 ): Promise<Connection> {
+  return await connectWithArgs(resources, ['--root', projectRoot], cwd)
+}
+
+/** The shared configuration: one entry that reaches every project enabled in the registry. */
+export async function connectShared(
+  resources: StagedResources,
+  registryPath: string,
+  cwd: string,
+): Promise<Connection> {
+  return await connectWithArgs(resources, ['--registry', registryPath], cwd)
+}
+
+async function connectWithArgs(
+  resources: StagedResources,
+  serverArgs: string[],
+  cwd: string,
+): Promise<Connection> {
   const transport = new StdioClientTransport({
     command: resources.nodePath,
-    args: [resources.serverPath, '--root', projectRoot],
+    args: [resources.serverPath, ...serverArgs],
     env: environmentWithoutNode() as Record<string, string>,
     cwd,
     stderr: 'pipe',

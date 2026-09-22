@@ -109,9 +109,12 @@ Illustrative client launch fields (not a universal client configuration or a com
 ```json
 {
   "command": "<installed-resources>/mcp/node[.exe]",
-  "args": ["<installed-resources>/mcp/server.mjs", "--root", "<selected-project>"]
+  "args": ["<installed-resources>/mcp/server.mjs", "--registry", "<user-data>/mcp-access.json"]
 }
 ```
+
+Since 2026-09-22 the default names the access list of enabled projects (section 4);
+`--root <selected-project>` in place of `--registry` is the older one-project form.
 
 Use a compiled/bundled JavaScript entry point with any required runtime assets beside it. The shared TypeScript project logic is bundled into both applications; there is no need for a separate deployed service. Electron-builder is the proposed packager for this route, not an installed dependency.
 
@@ -160,9 +163,81 @@ Git operations remain external. Detect conflict markers and invalid records, pre
 
 Persist a logical project UUID in `project.md`. A clone or worktree retains that UUID, but each local checkout has its own canonical root path and current files. Never silently combine two checkouts because their project UUID matches.
 
-Propose an explicitly root-bound MCP connection, such as `knightbook-mcp --root <selected-folder>`. The name and command are illustrative. The root is selected during setup, not taken from an arbitrary path supplied by the model on each call. `project_initialize` can initialize that selected folder even if it has no project records yet. Project discovery and local path bindings do not grant access to other roots.
+### One shared connection for enabled projects (revised 2026-09-22)
 
-Show project name and checkout identity in responses. Switching the visible UI project must not redirect an already-running MCP connection. A local recent-project registry can list multiple checkouts, with the user choosing the right path. Setup convenience for several projects is a follow-up design detail; do not depend on client-specific workspace-root behavior without validating it.
+The original design bound each MCP connection to one root (`--root <folder>`), which
+meant a separate client entry per project. That mode still exists unchanged, but new
+setup uses **one shared connection** for every project the user explicitly enables.
+The transport does not change: it is still the client-launched stdio process with the
+bundled Node runtime. No HTTP endpoint, listener, hosted backend or always-running
+service is introduced. Each client (or each chat, if a client starts one per chat)
+launches its own process from the same configuration; "one connection" means one
+configuration, not one process.
+
+**Launch.** `node server.mjs --registry <user-data>/mcp-access.json`. The flag names the
+access list, not a project, so the copied configuration never changes when projects
+are enabled or disabled. `--root` and `--registry` together are refused rather than
+one being picked.
+
+**The access registry.** A JSON file in the desktop app's user-data folder (outside
+every repository), separate from the recent-project list, which is capped, evicts and
+ignores write failures. Each entry is a grant: an opaque random `checkout_id`, the
+canonical checkout path, the project UUID and name found there when enabled, and when.
+Only the user adds an entry, with **Allow AI access through MCP** in the app's MCP
+panel; opening a folder or its being in recent projects grants nothing. Entries stay
+until the user turns the setting off. Writes take a lock file beside the registry and
+replace it through a temporary file. A file that is missing means nothing is enabled;
+a file that cannot be parsed, fails validation, has an unknown schema version or holds
+duplicate ids or paths is reported as `registry_unreadable`, grants nothing, and is
+never overwritten — a guess could lose grants or broaden them.
+
+**Targeting.** On a shared connection every project tool requires `checkout_id`, and
+`projects_list` returns each enabled checkout's `checkout_id`, `project_id`, name,
+canonical path, availability and any other enabled checkouts of the same project. On
+every call the server re-reads the registry, finds the entry, and checks that the
+folder still exists at the same canonical path and still holds the same project UUID.
+It refuses with `checkout_not_enabled` (unknown or revoked id), `checkout_unavailable`
+(folder missing or moved, records gone or unreadable) or `checkout_mismatch` (the path
+now resolves elsewhere, or holds a different project). It never falls back to the last
+project used, never accepts a filesystem path as authority, and never rebinds a moved
+folder to another checkout sharing its UUID or name — clones and worktrees share both,
+which is why the path and the id, not the name, identify a checkout. There is no
+server-side "current project": concurrent calls each carry their own target, and the
+desktop's visible project plays no part. Every response on a shared connection carries
+a `project` block (checkout id, project id, name, path) so the caller can verify where
+it acted. After resolution, the existing boundary checks, per-checkout write lock,
+revisions, completion provenance and user-only Done rules apply unchanged.
+
+**Revocation.** Checked at the start of each operation. Turning access off blocks the
+next call from any running connection without the client reconnecting. An operation
+already past its check finishes; project writes replace files through a temporary file
+under the lock, so finishing cannot leave a file half-written.
+
+**Initialization.** A shared connection does not offer `project_initialize`. The app
+enables only a project it can open, so its identity is known when granted; a folder
+whose records later disappear is reported as unavailable. Creating a project stays an
+explicit act in the app (or on a root-bound connection, in the folder it was launched
+for), so no tool call can pick a new path.
+
+**Status.** A shared server heartbeats beside the registry (`mcp-runtime/sessions/`),
+not in any project, because running says nothing about which project it is working
+on. When a call targets a project it leaves a small activity record in that project's
+Git-ignored `.projectspace/runtime/activity/`, at most every few seconds and removed on
+clean exit. The footer keeps the facts apart: a project-bound server connected here
+reads **MCP connected**; a shared client connected while this project is allowed reads
+**MCP available**, with observed use reported separately ("last worked on this
+project 2 minutes ago", counted only from a session still alive); a shared client
+connected while this project is not allowed reads **MCP not allowed here**.
+
+**Compatibility.** `--root` configurations keep working exactly as before and are never
+widened: they register no `projects_list`, take no `checkout_id` (one supplied is
+ignored), and still offer `project_initialize`. Moving to the shared connection is the
+user's step (README, "Moving from one entry per project"); the app never edits a
+client's configuration or removes its old entries.
+
+Proposed interfaces from the research note (`projects_list()`, `ticket_list({ checkout_id })`,
+`ticket_read({ checkout_id, id })`) are what shipped. MCP Roots are not used for this:
+they are informational, not an access-control boundary.
 
 ## 5. Ticket state and ordering
 

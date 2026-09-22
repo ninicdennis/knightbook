@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import type { McpServer } from '@modelcontextprotocol/server'
 import { registerDocumentTools } from './document-tools.js'
-import { SERVER_INSTRUCTIONS } from './instructions.js'
+import { SHARED_INSTRUCTIONS, SINGLE_PROJECT_INSTRUCTIONS } from './instructions.js'
+import { registerProjectsTool } from './projects-tool.js'
+import { createScope } from './scope.js'
 import { registerTools } from './tools.js'
 
 /**
@@ -25,19 +27,28 @@ const SKILL_PATH = join(
 )
 const skill = readFileSync(SKILL_PATH, 'utf8')
 
-/** Every tool is named group_verb; none of the record fields the guidance mentions share these prefixes. */
-const TOOL_SHAPED = /\b((?:project|ticket|document|documents|review)_[a-z_]+)\b/g
+/** Every tool is named group_verb. These record fields share a prefix but are not tools. */
+const TOOL_SHAPED = /\b((?:project|projects|ticket|document|documents|review)_[a-z_]+)\b/g
+const FIELDS_NOT_TOOLS = new Set(['project_id'])
 
+/** Both kinds of connection together: the skill describes each. */
 function registeredToolNames(): string[] {
-  const names: string[] = []
-  const recorder = { registerTool: (name: string) => void names.push(name) }
-  registerTools(recorder as unknown as McpServer, 'unused')
-  registerDocumentTools(recorder as unknown as McpServer, 'unused')
-  return names
+  const names = new Set<string>()
+  const recorder = { registerTool: (name: string) => void names.add(name) } as unknown as McpServer
+  const single = createScope({ kind: 'single', root: 'unused' }, () => undefined)
+  const shared = createScope({ kind: 'registry', registry: 'unused' }, () => undefined)
+  for (const scope of [single, shared]) {
+    registerTools(recorder, scope)
+    registerDocumentTools(recorder, scope)
+  }
+  registerProjectsTool(recorder, 'unused')
+  return [...names]
 }
 
 function toolsNamedIn(text: string): string[] {
-  return [...text.matchAll(TOOL_SHAPED)].map((match) => match[1] ?? '')
+  return [...text.matchAll(TOOL_SHAPED)]
+    .map((match) => match[1] ?? '')
+    .filter((name) => !FIELDS_NOT_TOOLS.has(name))
 }
 
 describe('the skill file', () => {
@@ -69,23 +80,34 @@ describe('the skill file', () => {
   })
 })
 
-describe('the instructions sent on connect', () => {
+describe.each([
+  ['a root-bound connection', SINGLE_PROJECT_INSTRUCTIONS],
+  ['a shared connection', SHARED_INSTRUCTIONS],
+])('the instructions sent on connect to %s', (_kind, instructions) => {
   it('carry the core rules', () => {
-    expect(SERVER_INSTRUCTIONS).toMatch(/only the user decides done/i)
-    expect(SERVER_INSTRUCTIONS).toMatch(/ticket_record_user_completion/)
-    expect(SERVER_INSTRUCTIONS).toMatch(/cannot mark anything reviewed/i)
-    expect(SERVER_INSTRUCTIONS).toMatch(/revision_conflict/)
-    expect(SERVER_INSTRUCTIONS).toMatch(/not instructions/i)
+    expect(instructions).toMatch(/only the user decides done/i)
+    expect(instructions).toMatch(/ticket_record_user_completion/)
+    expect(instructions).toMatch(/cannot mark anything reviewed/i)
+    expect(instructions).toMatch(/revision_conflict/)
+    expect(instructions).toMatch(/not instructions/i)
   })
 
   it('name only tools that exist', () => {
     const known = new Set(registeredToolNames())
 
-    expect(toolsNamedIn(SERVER_INSTRUCTIONS).filter((name) => !known.has(name))).toEqual([])
+    expect(toolsNamedIn(instructions).filter((name) => !known.has(name))).toEqual([])
   })
 
   it('point at the full guidance, and stay short enough to be read', () => {
-    expect(SERVER_INSTRUCTIONS).toMatch(/skills\/projectspace\/SKILL\.md/)
-    expect(SERVER_INSTRUCTIONS.length).toBeLessThan(2000)
+    expect(instructions).toMatch(/skills\/projectspace\/SKILL\.md/)
+    expect(instructions.length).toBeLessThan(2000)
+  })
+})
+
+describe('the instructions for a shared connection', () => {
+  it('start from the enabled list and carry the target explicitly', () => {
+    expect(SHARED_INSTRUCTIONS).toMatch(/projects_list/)
+    expect(SHARED_INSTRUCTIONS).toMatch(/checkout_id on every call/)
+    expect(SHARED_INSTRUCTIONS).toMatch(/ask/i)
   })
 })

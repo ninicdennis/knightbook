@@ -1,6 +1,8 @@
 import {
+  IconAccessPoint,
   IconAlertTriangle,
   IconHelpCircle,
+  IconLock,
   IconPlug,
   IconPlugConnected,
   IconPlugOff,
@@ -16,7 +18,9 @@ import type { McpState } from '../mcp-status.js'
 
 const GLYPH = {
   connected: { Icon: IconPlugConnected, color: 'var(--mantine-color-teal-5)' },
+  available: { Icon: IconAccessPoint, color: 'var(--mantine-color-teal-5)' },
   running: { Icon: IconPlug, color: 'var(--mantine-color-blue-5)' },
+  not_enabled: { Icon: IconLock, color: 'var(--mantine-color-dimmed)' },
   not_connected: { Icon: IconPlugOff, color: 'var(--mantine-color-dimmed)' },
   runtime_missing: { Icon: IconAlertTriangle, color: 'var(--mantine-color-orange-5)' },
   unknown: { Icon: IconHelpCircle, color: 'var(--mantine-color-dimmed)' },

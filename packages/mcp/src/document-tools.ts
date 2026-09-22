@@ -2,7 +2,6 @@ import {
   documentRecordId,
   includeDocuments,
   listIncludedDocuments,
-  openProject,
   readDocument,
   readTicket,
   removeFromWorkspace,
@@ -17,7 +16,8 @@ import {
 import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/server'
-import { guard, ok } from './result.js'
+import { guard, ok, type ToolResult } from './result.js'
+import type { ProjectScope } from './scope.js'
 
 /**
  * The document, search, and review half of the section 9 surface.
@@ -27,8 +27,9 @@ import { guard, ok } from './result.js'
  * not exist here rather than existing behind an instruction not to use it.
  */
 
-export function registerDocumentTools(server: McpServer, rootPath: string): void {
-  const load = async (): Promise<Project> => await openProject(rootPath)
+export function registerDocumentTools(server: McpServer, scope: ProjectScope): void {
+  const echo = (project: Project, input: object, value: object): ToolResult =>
+    ok(scope.echo(project, input, value))
 
   server.registerTool(
     'documents_include',
@@ -39,13 +40,14 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
         'the workspace. This does not move, copy, or rewrite anything, and it does ' +
         'not add frontmatter to the documents. Paths are relative to the project root.',
       inputSchema: z.object({
+        ...scope.shape,
         paths: z.array(z.string().min(1)).min(1),
       }),
     },
-    async ({ paths }) =>
+    async (input) =>
       await guard(async () => {
-        const project = await includeDocuments(await load(), paths)
-        return ok({ documents_include: project.frontmatter.documents_include })
+        const project = await includeDocuments(await scope.open(input), input.paths)
+        return echo(project, input, { documents_include: project.frontmatter.documents_include })
       }),
   )
 
@@ -58,12 +60,12 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
         'where it is on disk: this un-includes a document, it does not delete one. ' +
         'Pass the entry as it appears in documents_include, which for a document ' +
         'inside an included folder is the folder, not the file.',
-      inputSchema: z.object({ path: z.string().min(1) }),
+      inputSchema: z.object({ ...scope.shape, path: z.string().min(1) }),
     },
-    async ({ path }) =>
+    async (input) =>
       await guard(async () => {
-        const project = await removeFromWorkspace(await load(), path)
-        return ok({ documents_include: project.frontmatter.documents_include })
+        const project = await removeFromWorkspace(await scope.open(input), input.path)
+        return echo(project, input, { documents_include: project.frontmatter.documents_include })
       }),
   )
 
@@ -74,11 +76,11 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
       description:
         'Included documents, resolved to the files they point at now. Entries that ' +
         'no longer resolve are reported as problems rather than omitted silently.',
-      inputSchema: z.object({}),
+      inputSchema: z.object({ ...scope.shape }),
     },
-    async () =>
+    async (input) =>
       await guard(async () => {
-        const project = await load()
+        const project = await scope.open(input)
         const listing = await listIncludedDocuments(project)
 
         const documents = []
@@ -88,7 +90,7 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
             review: await documentReview(project, document.path),
           })
         }
-        return ok({ documents, problems: listing.problems })
+        return echo(project, input, { documents, problems: listing.problems })
       }),
   )
 
@@ -99,13 +101,16 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
       description:
         'The original Markdown plus a revision token. Pass that token back to write, ' +
         'so a change made since you read cannot be overwritten.',
-      inputSchema: z.object({ path: z.string().min(1) }),
+      inputSchema: z.object({ ...scope.shape, path: z.string().min(1) }),
     },
-    async ({ path }) =>
+    async (input) =>
       await guard(async () => {
-        const project = await load()
-        const document = await readDocument(project, path)
-        return ok({ ...document, review: await documentReview(project, document.path) })
+        const project = await scope.open(input)
+        const document = await readDocument(project, input.path)
+        return echo(project, input, {
+          ...document,
+          review: await documentReview(project, document.path),
+        })
       }),
   )
 
@@ -118,6 +123,7 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
         'last read. This writes the whole file: preserve what you did not mean to ' +
         'change, including any frontmatter the document already had.',
       inputSchema: z.object({
+        ...scope.shape,
         path: z.string().min(1),
         content: z.string(),
         expected_revision: z.string().min(1),
@@ -125,14 +131,14 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
     },
     async (input) =>
       await guard(async () => {
-        const project = await load()
+        const project = await scope.open(input)
         const written = await writeDocument(
           project,
           input.path,
           input.content,
           input.expected_revision,
         )
-        return ok({ path: written.path, revision: written.revision })
+        return echo(project, input, { path: written.path, revision: written.revision })
       }),
   )
 
@@ -143,9 +149,13 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
       description:
         'Bounded text search across included documents and tickets, returning ' +
         'snippets. Use this to find the relevant record instead of reading everything.',
-      inputSchema: z.object({ query: z.string().min(1) }),
+      inputSchema: z.object({ ...scope.shape, query: z.string().min(1) }),
     },
-    async ({ query }) => await guard(async () => ok(await searchProject(await load(), query))),
+    async (input) =>
+      await guard(async () => {
+        const project = await scope.open(input)
+        return echo(project, input, await searchProject(project, input.query))
+      }),
   )
 
   server.registerTool(
@@ -158,6 +168,7 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
         'different from each other and from "changed_since_review". You cannot set ' +
         'this; only the user can, in the app.',
       inputSchema: z.object({
+        ...scope.shape,
         ticket_id: z.uuid().optional(),
         document_path: z.string().min(1).optional(),
         include_reviewed_source: z.boolean().optional(),
@@ -165,7 +176,7 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
     },
     async (input) =>
       await guard(async () => {
-        const project = await load()
+        const project = await scope.open(input)
         if ((input.ticket_id === undefined) === (input.document_path === undefined)) {
           throw new Error('Give exactly one of ticket_id or document_path.')
         }
@@ -181,7 +192,7 @@ export function registerDocumentTools(server: McpServer, rootPath: string): void
             }
 
         const status = await reviewStatus(project, recordId, source)
-        return ok({
+        return echo(project, input, {
           ...status,
           reviewed_source: input.include_reviewed_source
             ? await reviewedSource(project, recordId)

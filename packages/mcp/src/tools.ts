@@ -7,7 +7,6 @@ import {
   initializeProject,
   isUnattributedCompletion,
   listTicketRecords,
-  openProject,
   projectExists,
   readTicket,
   recordUserCompletion,
@@ -24,7 +23,8 @@ import {
   type TicketProblem,
 } from '@knightbook/core'
 import { z } from 'zod'
-import { guard, ok } from './result.js'
+import { guard, ok, type ToolResult } from './result.js'
+import type { ProjectScope } from './scope.js'
 import type { McpServer } from '@modelcontextprotocol/server'
 
 /**
@@ -99,31 +99,35 @@ function summarize(ticket: Ticket, index: TicketIndex) {
   }
 }
 
-export function registerTools(server: McpServer, rootPath: string): void {
-  const load = async (): Promise<Project> => await openProject(rootPath)
+export function registerTools(server: McpServer, scope: ProjectScope): void {
+  const echo = (project: Project, input: object, value: object): ToolResult =>
+    ok(scope.echo(project, input, value))
 
   server.registerTool(
     'project_get',
     {
       title: 'Get project',
       description:
-        'Identity and a compact index of the project bound to this connection. ' +
-        'Always report the project name and checkout path back to the user.',
-      inputSchema: z.object({}),
+        'Identity and a compact index of the project: the one bound to this connection, ' +
+        'or the one checkout_id names. Always report the project name and checkout path ' +
+        'back to the user.',
+      inputSchema: z.object({ ...scope.shape }),
     },
-    async () =>
+    async (input) =>
       await guard(async () => {
-        const root = await resolveProjectRoot(rootPath)
-        if (!(await projectExists(root))) {
-          return ok({ initialized: false, checkout_path: root.path })
+        if (scope.boundRoot !== null) {
+          const root = await resolveProjectRoot(scope.boundRoot)
+          if (!(await projectExists(root))) {
+            return ok({ initialized: false, checkout_path: root.path })
+          }
         }
-        const project = await load()
+        const project = await scope.open(input)
         const { tickets, problems } = await listTicketRecords(project)
         const byStatus = { backlog: 0, in_progress: 0, verification: 0, done: 0 }
         for (const t of tickets) byStatus[t.frontmatter.status] += 1
 
         const order = await backlogOrderReport(project)
-        return ok({
+        return echo(project, input, {
           initialized: true,
           id: project.frontmatter.id,
           name: project.frontmatter.name,
@@ -144,25 +148,34 @@ export function registerTools(server: McpServer, rootPath: string): void {
       }),
   )
 
-  server.registerTool(
-    'project_initialize',
-    {
-      title: 'Initialize project',
-      description:
-        'Create project records in the folder bound to this connection. Existing ' +
-        'files are preserved; this only adds the reserved folder when it is absent.',
-      inputSchema: z.object({ name: z.string().min(1).optional() }),
-    },
-    async ({ name }) =>
-      await guard(async () => {
-        const project = await initializeProject(rootPath, name ? { name } : {})
-        return ok({
-          id: project.frontmatter.id,
-          name: project.frontmatter.name,
-          checkout_path: project.root.path,
-        })
-      }),
-  )
+  /**
+   * Only a root-bound connection can create a project, and only in the folder it
+   * was launched for. A shared connection reaches folders the user enabled in the
+   * app, which already hold projects; offering creation there would let a tool
+   * call decide where a new project goes, so setup stays in the app.
+   */
+  const boundRoot = scope.boundRoot
+  if (boundRoot !== null) {
+    server.registerTool(
+      'project_initialize',
+      {
+        title: 'Initialize project',
+        description:
+          'Create project records in the folder bound to this connection. Existing ' +
+          'files are preserved; this only adds the reserved folder when it is absent.',
+        inputSchema: z.object({ name: z.string().min(1).optional() }),
+      },
+      async ({ name }) =>
+        await guard(async () => {
+          const project = await initializeProject(boundRoot, name ? { name } : {})
+          return ok({
+            id: project.frontmatter.id,
+            name: project.frontmatter.name,
+            checkout_path: project.root.path,
+          })
+        }),
+    )
+  }
 
   server.registerTool(
     'ticket_list',
@@ -174,17 +187,21 @@ export function registerTools(server: McpServer, rootPath: string): void {
         'dependency; that does not mean it is accepted. Report problems to the user; do ' +
         'not try to repair those files unless asked.',
       inputSchema: z.object({
+        ...scope.shape,
         status: z.enum(['backlog', 'in_progress', 'verification', 'done']).optional(),
       }),
     },
-    async ({ status }) =>
+    async (input) =>
       await guard(async () => {
-        const project = await load()
+        const project = await scope.open(input)
         const index = await indexTickets(project)
-        const filtered = status
-          ? index.tickets.filter((t) => t.frontmatter.status === status)
+        const filtered = input.status
+          ? index.tickets.filter((t) => t.frontmatter.status === input.status)
           : index.tickets
-        return ok({ tickets: filtered.map((t) => summarize(t, index)), problems: index.problems })
+        return echo(project, input, {
+          tickets: filtered.map((t) => summarize(t, index)),
+          problems: index.problems,
+        })
       }),
   )
 
@@ -195,17 +212,21 @@ export function registerTools(server: McpServer, rootPath: string): void {
       description:
         'The first Backlog ticket in order whose prerequisites are all in Verification ' +
         'or Done. This selects a candidate; it does not start or reserve it.',
-      inputSchema: z.object({}),
+      inputSchema: z.object({ ...scope.shape }),
     },
-    async () =>
+    async (input) =>
       await guard(async () => {
-        const project = await load()
+        const project = await scope.open(input)
         const result = await selectNextTicket(project)
         if (!result.next) {
-          return ok({ next: null, explanation: result.explanation, problems: result.problems })
+          return echo(project, input, {
+            next: null,
+            explanation: result.explanation,
+            problems: result.problems,
+          })
         }
         const index = await indexTickets(project)
-        return ok({
+        return echo(project, input, {
           next: summarize(result.next, index),
           body: result.next.body,
           problems: result.problems,
@@ -218,13 +239,16 @@ export function registerTools(server: McpServer, rootPath: string): void {
     {
       title: 'Read ticket',
       description: 'Full ticket content plus its revision, needed for any later write.',
-      inputSchema: z.object({ id: z.uuid() }),
+      inputSchema: z.object({ ...scope.shape, id: z.uuid() }),
     },
-    async ({ id }) =>
+    async (input) =>
       await guard(async () => {
-        const project = await load()
-        const ticket = await readTicket(project, id)
-        return ok({ ...summarize(ticket, await indexTickets(project)), body: ticket.body })
+        const project = await scope.open(input)
+        const ticket = await readTicket(project, input.id)
+        return echo(project, input, {
+          ...summarize(ticket, await indexTickets(project)),
+          body: ticket.body,
+        })
       }),
   )
 
@@ -234,6 +258,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
       title: 'Create ticket',
       description: 'Create a Backlog ticket. New tickets always start in Backlog.',
       inputSchema: z.object({
+        ...scope.shape,
         title: z.string().min(1),
         body: z.string().optional(),
         depends_on: z.array(z.uuid()).optional(),
@@ -249,7 +274,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
     },
     async (input) =>
       await guard(async () => {
-        const project = await load()
+        const project = await scope.open(input)
         const ticket = await createTicket(project, {
           title: input.title,
           ...(input.body !== undefined ? { body: input.body } : {}),
@@ -259,7 +284,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
             : {}),
           ...(input.type !== undefined ? { type: input.type } : {}),
         })
-        return ok({ id: ticket.frontmatter.id, revision: ticket.revision })
+        return echo(project, input, { id: ticket.frontmatter.id, revision: ticket.revision })
       }),
   )
 
@@ -272,6 +297,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
         'completion is the user decision and goes through ticket_record_user_completion. ' +
         'Leave implemented work in Verification.',
       inputSchema: z.object({
+        ...scope.shape,
         id: z.uuid(),
         expected_revision: z.string(),
         title: z.string().min(1).optional(),
@@ -287,7 +313,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
     },
     async (input) =>
       await guard(async () => {
-        const project = await load()
+        const project = await scope.open(input)
         const ticket = await updateTicket(project, input.id, {
           expectedRevision: input.expected_revision,
           ...(input.title !== undefined ? { title: input.title } : {}),
@@ -297,7 +323,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
           ...(input.blocker !== undefined ? { blocker: input.blocker } : {}),
           ...(input.type !== undefined ? { type: input.type } : {}),
         })
-        return ok({
+        return echo(project, input, {
           id: ticket.frontmatter.id,
           status: ticket.frontmatter.status,
           type: ticket.frontmatter.type ?? null,
@@ -316,6 +342,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
         'not the user decision and must not be reported as one. Set ' +
         'user_instructed_completion only when the user actually told you it is done.',
       inputSchema: z.object({
+        ...scope.shape,
         id: z.uuid(),
         expected_revision: z.string(),
         user_instructed_completion: z.boolean(),
@@ -328,14 +355,14 @@ export function registerTools(server: McpServer, rootPath: string): void {
     },
     async (input) =>
       await guard(async () => {
-        const project = await load()
+        const project = await scope.open(input)
         const ticket = await recordUserCompletion(project, input.id, {
           expectedRevision: input.expected_revision,
           recordedBy: 'agent',
           userInstructedCompletion: input.user_instructed_completion,
           instruction: input.instruction,
         })
-        return ok({
+        return echo(project, input, {
           id: ticket.frontmatter.id,
           status: ticket.frontmatter.status,
           completion: ticket.frontmatter.completion,
@@ -355,17 +382,18 @@ export function registerTools(server: McpServer, rootPath: string): void {
         'and changes no ticket. Ask the user what order they want; do not reprioritize ' +
         'their board on your own reading of it.',
       inputSchema: z.object({
+        ...scope.shape,
         ticket_ids: z
           .array(z.uuid())
           .min(1)
           .describe('Tickets in the order they should appear, first to last.'),
       }),
     },
-    async ({ ticket_ids }) =>
+    async (input) =>
       await guard(async () => {
-        const project = await load()
-        const { order, report } = await reorderBacklog(project, ticket_ids)
-        return ok({
+        const project = await scope.open(input)
+        const { order, report } = await reorderBacklog(project, input.ticket_ids)
+        return echo(project, input, {
           backlog_order: order,
           // Reported, never removed: a duplicate or an id with no ticket is left
           // in place for the user to resolve deliberately.
@@ -384,6 +412,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
         'suggested, but no status anywhere is changed: what to rework is the user to ' +
         'decide. A failing test or your own review is not the user saying it failed.',
       inputSchema: z.object({
+        ...scope.shape,
         id: z.uuid(),
         expected_revision: z.string(),
         user_reported_failure: z.boolean(),
@@ -396,14 +425,14 @@ export function registerTools(server: McpServer, rootPath: string): void {
     },
     async (input) =>
       await guard(async () => {
-        const project = await load()
+        const project = await scope.open(input)
         const ticket = await recordVerificationIssue(project, input.id, {
           expectedRevision: input.expected_revision,
           recordedBy: 'agent',
           userReportedFailure: input.user_reported_failure,
           reason: input.reason,
         })
-        return ok({
+        return echo(project, input, {
           id: ticket.frontmatter.id,
           status: ticket.frontmatter.status,
           verification_issue: ticket.frontmatter.verification_issue,
@@ -420,6 +449,7 @@ export function registerTools(server: McpServer, rootPath: string): void {
         'every dependent at once. Only the user can decide it is resolved; fixing the ' +
         'code and re-running checks is not the same thing.',
       inputSchema: z.object({
+        ...scope.shape,
         id: z.uuid(),
         expected_revision: z.string(),
         user_resolved_issue: z.boolean(),
@@ -427,13 +457,16 @@ export function registerTools(server: McpServer, rootPath: string): void {
     },
     async (input) =>
       await guard(async () => {
-        const project = await load()
+        const project = await scope.open(input)
         const ticket = await resolveVerificationIssue(project, input.id, {
           expectedRevision: input.expected_revision,
           recordedBy: 'agent',
           userResolvedIssue: input.user_resolved_issue,
         })
-        return ok({ id: ticket.frontmatter.id, status: ticket.frontmatter.status })
+        return echo(project, input, {
+          id: ticket.frontmatter.id,
+          status: ticket.frontmatter.status,
+        })
       }),
   )
 }

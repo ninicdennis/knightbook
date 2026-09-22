@@ -76,7 +76,14 @@ export function McpStatusFooter({ checkoutPath }: { checkoutPath: string }) {
         </Popover.Target>
 
         <Popover.Dropdown>
-          <McpStatusDetails status={shown} display={display} checkoutPath={checkoutPath} />
+          <McpStatusDetails
+            status={shown}
+            display={display}
+            checkoutPath={checkoutPath}
+            // The panel holds a frozen reading; the user's own change is a fact
+            // it should show at once rather than after the panel is reopened.
+            onAccessChange={(access) => setFrozen((reading) => reading && { ...reading, access })}
+          />
         </Popover.Dropdown>
       </Popover>
     </Group>

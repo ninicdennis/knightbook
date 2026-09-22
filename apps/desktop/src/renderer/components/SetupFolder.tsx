@@ -161,12 +161,13 @@ export function SetupFolder({ path, onSetUp, onChooseAnother }: Props) {
               Connecting an AI tool
             </Text>
             <Text size="xs" c="dimmed">
-              Optional, and you can do it any time. Copy this configuration into your AI client so
-              it can read and update this project. The client starts the server itself, so the app
-              does not need to be open.
+              Optional, and you can do it any time. Copy this configuration into your AI client
+              once; it covers every project you allow. After setup, turn on Allow AI access through
+              MCP in the status bar at the bottom to make this project reachable. The client starts
+              the server itself, so the app does not need to be open.
             </Text>
             <Group>
-              <CopyMcpConfig rootPath={path} label="Copy MCP configuration" />
+              <CopyMcpConfig label="Copy MCP configuration" />
             </Group>
           </Stack>
         )}

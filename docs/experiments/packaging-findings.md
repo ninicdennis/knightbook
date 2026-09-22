@@ -159,3 +159,23 @@ after upgrading. The server reports itself as `knightbook` now.
 `.projectspace/` inside each project is deliberately unchanged. It is written into
 every project anyone has already made, and renaming it would be a migration of the
 user's own files rather than of this product.
+
+## One shared connection for enabled projects (2026-09-22)
+
+`experiments/packaging/src/shared-connection.test.ts` launches the staged runtime and
+bundled server with `--registry <file>` the way a client would — no system Node, no
+Electron — and writes the access list the way the app does. It covers: two projects
+plus a clone with the same project id and name, listed separately by path; two
+concurrent client processes each writing to their own checkout; a missing, unknown, or
+path-shaped `checkout_id` refused rather than resolved to a project; a project enabled
+and then revoked while a client stays connected, with no reconnect or configuration
+change; a stale revision still refused after targeting; a fresh process reaching the
+same checkout by the same id; the shared heartbeat recorded beside the registry and
+activity recorded in the project used, with no per-project session record; a moved
+folder reported as unavailable and not rebound to its clone; a corrupt registry
+reaching nothing and left untouched; and a `--root` connection next to it staying
+bound to its own folder and ignoring a `checkout_id`.
+
+What this does not cover: a packaged installer build with the app's own user-data
+path (the test stages the runtime and writes the registry itself), and a real AI
+client driving the new configuration.

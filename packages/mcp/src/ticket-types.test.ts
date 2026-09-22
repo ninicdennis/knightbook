@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { z } from 'zod'
+import { createScope } from './scope.js'
 import { registerTools } from './tools.js'
 
 /**
@@ -18,7 +19,10 @@ function inputSchemaOf(tool: string): AnySchema {
     registerTool: (name: string, config: { inputSchema: AnySchema }) =>
       void schemas.set(name, config.inputSchema),
   }
-  registerTools(recorder as unknown as McpServer, 'unused')
+  registerTools(
+    recorder as unknown as McpServer,
+    createScope({ kind: 'single', root: 'unused' }, () => undefined),
+  )
 
   const schema = schemas.get(tool)
   if (!schema) throw new Error(`${tool} is not registered.`)
