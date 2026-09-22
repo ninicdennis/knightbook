@@ -57,7 +57,17 @@ export function contentFingerprint(source: string): string {
 
   // Frontmatter that only tracks lifecycle does not invalidate a review of the
   // work the ticket describes.
-  const bookkeeping = new Set(['status', 'updated_at', 'created_at', 'completion', 'blocker'])
+  // `archived` belongs here for the same reason as `status`: taking a ticket
+  // off the board says nothing about the work its text describes, so it must
+  // not raise "changed since review" and cost a real review its evidence.
+  const bookkeeping = new Set([
+    'status',
+    'updated_at',
+    'created_at',
+    'completion',
+    'blocker',
+    'archived',
+  ])
   const substantive: Record<string, unknown> = {}
   const data = record.data.toJS() as Record<string, unknown> | null
   for (const [key, value] of Object.entries(data ?? {})) {

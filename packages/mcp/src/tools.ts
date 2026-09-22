@@ -1,10 +1,12 @@
 import {
+  archiveTicket,
   backlogOrderReport,
   createTicket,
   describeReason,
   evaluateReadiness,
   failedPrerequisites,
   initializeProject,
+  isArchived,
   isUnattributedCompletion,
   listTicketRecords,
   openProject,
@@ -15,6 +17,7 @@ import {
   reorderBacklog,
   resolveProjectRoot,
   resolveVerificationIssue,
+  restoreTicket,
   selectNextTicket,
   ticketTypeSchema,
   updateTicket,
@@ -61,6 +64,12 @@ function summarize(ticket: Ticket, index: TicketIndex) {
     id: ticket.frontmatter.id,
     title: ticket.frontmatter.title,
     status: ticket.frontmatter.status,
+    /**
+     * Archiving takes a ticket off the working board without changing where the
+     * work stands, so `status` above is still its real status and is what
+     * restoring puts it back to. Null means active.
+     */
+    archived: ticket.frontmatter.archived?.archived_at ?? null,
     /** Optional work type. Null means untyped, which is not a kind of work. */
     type: ticket.frontmatter.type ?? null,
     revision: ticket.revision,
@@ -119,8 +128,18 @@ export function registerTools(server: McpServer, rootPath: string): void {
         }
         const project = await load()
         const { tickets, problems } = await listTicketRecords(project)
+        /*
+         * The counts describe the working board, so archived tickets are not
+         * added to the four statuses; they are reported on their own line.
+         * Folding them in would make a column look busier than it is, and
+         * leaving them out silently would make tickets look lost.
+         */
         const byStatus = { backlog: 0, in_progress: 0, verification: 0, done: 0 }
-        for (const t of tickets) byStatus[t.frontmatter.status] += 1
+        let archivedCount = 0
+        for (const t of tickets) {
+          if (isArchived(t)) archivedCount += 1
+          else byStatus[t.frontmatter.status] += 1
+        }
 
         const order = await backlogOrderReport(project)
         return ok({
@@ -130,6 +149,8 @@ export function registerTools(server: McpServer, rootPath: string): void {
           checkout_path: project.root.path,
           documents_include: project.frontmatter.documents_include,
           ticket_counts: byStatus,
+          /** Off the working board, still on disk. Not part of the four counts above. */
+          archived_ticket_count: archivedCount,
           // Counts cover only tickets that loaded; unreadable files are listed, never dropped.
           ticket_problems: problems,
           /**
@@ -172,18 +193,24 @@ export function registerTools(server: McpServer, rootPath: string): void {
         'Tickets in backlog order with dependency readiness, plus any ticket files that ' +
         'could not be read (problems). A prerequisite in Verification or Done satisfies a ' +
         'dependency; that does not mean it is accepted. Report problems to the user; do ' +
-        'not try to repair those files unless asked.',
+        'not try to repair those files unless asked. ' +
+        'Archived tickets are left out by default, because the default view is the working ' +
+        'board: pass archived "only" to browse them or "all" to see both. An archived ' +
+        'ticket keeps its status and stays readable by id through ticket_read either way.',
       inputSchema: z.object({
         status: z.enum(['backlog', 'in_progress', 'verification', 'done']).optional(),
+        archived: z.enum(['exclude', 'only', 'all']).optional(),
       }),
     },
-    async ({ status }) =>
+    async ({ status, archived = 'exclude' }) =>
       await guard(async () => {
         const project = await load()
         const index = await indexTickets(project)
-        const filtered = status
-          ? index.tickets.filter((t) => t.frontmatter.status === status)
-          : index.tickets
+        const filtered = index.tickets.filter((t) => {
+          if (status && t.frontmatter.status !== status) return false
+          if (archived === 'all') return true
+          return archived === 'only' ? isArchived(t) : !isArchived(t)
+        })
         return ok({ tickets: filtered.map((t) => summarize(t, index)), problems: index.problems })
       }),
   )
@@ -370,6 +397,61 @@ export function registerTools(server: McpServer, rootPath: string): void {
           // Reported, never removed: a duplicate or an id with no ticket is left
           // in place for the user to resolve deliberately.
           backlog_order_problems: { duplicates: report.duplicates, unknown: report.unknown },
+        })
+      }),
+  )
+
+  server.registerTool(
+    'ticket_archive',
+    {
+      title: 'Archive a ticket',
+      description:
+        'Takes a ticket off the working board while keeping its file, id, body, links, ' +
+        'dependencies, completion provenance and review snapshots exactly as they are. ' +
+        'Archiving is not deletion and not a completion decision: it says nothing about ' +
+        'whether the work was finished or accepted, and it cannot record either. The ' +
+        'ticket keeps its status, which is what restoring puts it back to. Archiving an ' +
+        'unfinished prerequisite does not satisfy anything that depends on it.',
+      inputSchema: z.object({
+        id: z.string(),
+        expected_revision: z.string(),
+      }),
+    },
+    async ({ id, expected_revision }) =>
+      await guard(async () => {
+        const project = await load()
+        const ticket = await archiveTicket(project, id, expected_revision)
+        return ok({
+          id: ticket.frontmatter.id,
+          status: ticket.frontmatter.status,
+          archived: ticket.frontmatter.archived?.archived_at ?? null,
+          revision: ticket.revision,
+        })
+      }),
+  )
+
+  server.registerTool(
+    'ticket_restore',
+    {
+      title: 'Restore an archived ticket',
+      description:
+        'Puts an archived ticket back on the board in the status it kept while archived. ' +
+        'Restoring a Done ticket does not reopen it and does not change its completion ' +
+        'provenance; restoring an unfinished one does not accept it.',
+      inputSchema: z.object({
+        id: z.string(),
+        expected_revision: z.string(),
+      }),
+    },
+    async ({ id, expected_revision }) =>
+      await guard(async () => {
+        const project = await load()
+        const ticket = await restoreTicket(project, id, expected_revision)
+        return ok({
+          id: ticket.frontmatter.id,
+          status: ticket.frontmatter.status,
+          archived: null,
+          revision: ticket.revision,
         })
       }),
   )

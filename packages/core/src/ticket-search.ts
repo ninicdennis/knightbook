@@ -36,7 +36,17 @@ export interface TicketSearchHit {
   readonly excerpt: string | null
   /** Offsets within `excerpt`, not within the body. */
   readonly excerptHighlights: Highlight[]
+  /** When it was archived, or null. `status` stays its real status either way. */
+  readonly archivedAt: string | null
 }
+
+/**
+ * Which tickets a search looks at. Archived tickets stay findable — the point of
+ * archiving is to keep the record — but they are not what someone searching the
+ * board usually means, so the caller says which it wants rather than getting a
+ * mix it did not ask for.
+ */
+export type SearchScope = 'active' | 'archived' | 'all'
 
 export interface TicketSearchResult {
   readonly hits: TicketSearchHit[]
@@ -88,7 +98,7 @@ function excerptAround(body: string, needle: string): string | null {
 export async function searchTickets(
   project: Project,
   query: string,
-  options: { limit?: number } = {},
+  options: { limit?: number; scope?: SearchScope } = {},
 ): Promise<TicketSearchResult> {
   const needle = collapse(query).toLowerCase()
   // An empty query means "nothing yet", not "everything".
@@ -103,7 +113,12 @@ export async function searchTickets(
   const titleMatches: TicketSearchHit[] = []
   const bodyMatches: TicketSearchHit[] = []
 
+  const scope = options.scope ?? 'active'
   for (const ticket of tickets) {
+    const archivedAt = ticket.frontmatter.archived?.archived_at ?? null
+    if (scope === 'active' && archivedAt) continue
+    if (scope === 'archived' && !archivedAt) continue
+
     const title = ticket.frontmatter.title
     const titleHighlights = occurrences(collapse(title), needle)
     const excerpt = excerptAround(collapse(ticket.body), needle)
@@ -117,6 +132,7 @@ export async function searchTickets(
       titleHighlights,
       excerpt,
       excerptHighlights: excerpt === null ? [] : occurrences(excerpt, needle),
+      archivedAt,
     }
     ;(titleHighlights.length > 0 ? titleMatches : bodyMatches).push(hit)
   }

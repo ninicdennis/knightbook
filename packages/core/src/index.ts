@@ -30,10 +30,13 @@ export {
   type ReorderResult,
 } from './backlog-order.js'
 export {
+  archiveTicket,
   createTicket,
+  isArchived,
   listTicketRecords,
   listTickets,
   readTicket,
+  restoreTicket,
   updateTicket,
   sortByBacklogOrder,
   type CreateTicketInput,
@@ -89,6 +92,7 @@ export {
   searchTickets,
   TICKET_SEARCH_LIMIT,
   type Highlight,
+  type SearchScope,
   type TicketSearchHit,
   type TicketSearchResult,
 } from './ticket-search.js'
