@@ -82,6 +82,13 @@ what a local design can prevent, and that is a fair position. The gap is narrowe
 docblock, which says completion recorded outside this path "is shown as unattributed" — true only
 when the block is missing. Either the check or the sentence needs to change. Ticket `02e8bb8a`.
 
+**Follow-up (2026-09-22, ticket `02e8bb8a`):** both changed. A block whose `decision_source` and
+`recorded_by` contradict each other now counts as unattributed, in the app and through MCP alike,
+and its claim is withheld (`completion: null`). A block hand-edited into one of the two producible
+shapes is still not detected, deliberately: a fingerprint over the fields could be recomputed by
+anything able to edit the file, so it would claim tamper evidence the design cannot back. The
+reasoning is in `isUnattributedCompletion`'s docblock.
+
 ## Not run here
 
 - **Step 10 — macOS and Linux.** Windows is covered by everything above. The other two are the

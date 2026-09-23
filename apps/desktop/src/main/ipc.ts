@@ -1,23 +1,16 @@
 import { dialog, ipcMain } from 'electron'
 import {
-  archiveTicket,
-  backlogOrderReport,
-  listTicketRecords,
   openProject,
   projectExists,
-  readTicket,
   recordTicketReview,
   recordUserCompletion,
   recordVerificationIssue,
   reorderBacklog,
   resolveProjectRoot,
   resolveVerificationIssue,
-  restoreTicket,
   searchTickets,
-  selectNextTicket,
   ticketTypeSchema,
   updateTicket,
-  type Project,
   type TicketType,
 } from '@knightbook/core'
 import { forgetProject, readAppState, rememberProject } from './app-state.js'
@@ -27,13 +20,10 @@ import { mcpLaunchCommand } from './mcp-resources.js'
 import { readMcpStatus } from './mcp-status.js'
 import { describeRememberedProjects } from './remembered-projects.js'
 import { allowSetupFor } from './setup-permit.js'
-import { buildLookup, toTicketDetail, toTicketView } from './ticket-view.js'
-import type {
-  ArchiveFailureView,
-  ArchiveOutcome,
-  ProjectView,
-  TicketSearchView,
-} from '../shared/contract.js'
+import { registerArchiveHandlers } from './archive-ipc.js'
+import { buildView } from './project-view.js'
+import { toTicketDetail } from './ticket-view.js'
+import type { ProjectView, TicketSearchView } from '../shared/contract.js'
 
 /**
  * The narrow operation surface the renderer is allowed to call. Each handler
@@ -42,51 +32,9 @@ import type {
  * this and the MCP server so the two cannot validate records differently.
  */
 
-async function buildView(project: Project): Promise<ProjectView> {
-  const listing = await listTicketRecords(project)
-  const lookup = buildLookup(listing)
-  const next = await selectNextTicket(project)
-
-  const views = []
-  const archived = []
-  for (const ticket of listing.tickets) {
-    const view = await toTicketView(project, ticket, lookup)
-    // Split once, here, so no column, count or suggestion downstream has to
-    // remember that archived tickets exist.
-    if (view.archivedAt) archived.push(view)
-    else views.push(view)
-  }
-  // Most recently archived first: the archive is read newest-first, unlike the
-  // board, whose order is the one the user arranged.
-  archived.sort((a, b) => (a.archivedAt! < b.archivedAt! ? 1 : -1))
-
-  const order = await backlogOrderReport(project)
-  return {
-    name: project.frontmatter.name,
-    checkoutPath: project.root.path,
-    tickets: views,
-    archivedTickets: archived,
-    problems: listing.problems.map(({ file, reason }) => ({ file, reason })),
-    nextTicketId: next.next?.frontmatter.id ?? null,
-    nextExplanation: next.explanation,
-    backlogOrderProblems: { duplicates: order.duplicates, unknown: order.unknown },
-  }
-}
-
-/**
- * The ticket's title for a message about it, falling back to its id when the
- * record cannot be read. A failure report is for a person, and an id alone does
- * not tell them which ticket did not move.
- */
-async function titleOf(project: Project, id: string): Promise<string> {
-  try {
-    return (await readTicket(project, id)).frontmatter.title
-  } catch {
-    return id
-  }
-}
-
 export function registerProjectHandlers(): void {
+  registerArchiveHandlers()
+
   ipcMain.handle(
     'app:rememberedProjects',
     async () => await describeRememberedProjects((await readAppState()).recentProjects),
@@ -139,66 +87,6 @@ export function registerProjectHandlers(): void {
 
         const project = await openProject(rootPath)
         await updateTicket(project, id, { expectedRevision: revision, status })
-        return await buildView(project)
-      }),
-  )
-
-  /**
-   * Bulk archive. Each ticket is its own file and its own write, so this is a
-   * sequence of independent operations, not a transaction: what succeeded stays
-   * succeeded and the rest are named. The caller supplies the revisions it was
-   * showing, so a ticket created or changed after the user opened the
-   * confirmation is either not in the list at all or is refused by name.
-   */
-  ipcMain.handle(
-    'ticket:archive',
-    async (_event, rootPath: unknown, targets: unknown) =>
-      await guard<ArchiveOutcome>(async () => {
-        if (typeof rootPath !== 'string' || !Array.isArray(targets)) {
-          throw new Error('A project and the tickets to archive are required.')
-        }
-        const wanted = targets.map((target) => {
-          const { id, revision } = (target ?? {}) as { id?: unknown; revision?: unknown }
-          if (typeof id !== 'string' || typeof revision !== 'string') {
-            throw new Error('Each ticket to archive needs an id and the revision you read.')
-          }
-          return { id, revision }
-        })
-
-        const project = await openProject(rootPath)
-        const failures: ArchiveFailureView[] = []
-        let archivedCount = 0
-        for (const target of wanted) {
-          try {
-            await archiveTicket(project, target.id, target.revision)
-            archivedCount += 1
-          } catch (error) {
-            failures.push({
-              id: target.id,
-              // Named, so a partial failure can be reported as something the
-              // user recognises rather than as a bare id.
-              title: await titleOf(project, target.id),
-              reason: error instanceof Error ? error.message : String(error),
-            })
-          }
-        }
-        return { archivedCount, failures, project: await buildView(project) }
-      }),
-  )
-
-  ipcMain.handle(
-    'ticket:restore',
-    async (_event, rootPath: unknown, id: unknown, revision: unknown) =>
-      await guard<ProjectView>(async () => {
-        if (
-          typeof rootPath !== 'string' ||
-          typeof id !== 'string' ||
-          typeof revision !== 'string'
-        ) {
-          throw new Error('A project, ticket, and revision are required.')
-        }
-        const project = await openProject(rootPath)
-        await restoreTicket(project, id, revision)
         return await buildView(project)
       }),
   )

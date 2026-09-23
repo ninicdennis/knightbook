@@ -3,6 +3,7 @@ import { parseRecord, serializeRecord } from './frontmatter.js'
 import { reservedPaths } from './paths.js'
 import type { Project } from './project.js'
 import type { Revision } from './revision.js'
+import type { TicketCompletion } from './schema.js'
 import { readTicket, type Ticket } from './tickets.js'
 import { readRecord, writeRecord } from './write.js'
 
@@ -18,8 +19,10 @@ import { readRecord, writeRecord } from './write.js'
  * What it cannot do: prove the conversation happened. A file-writing agent can
  * edit the Markdown directly, and a forged assertion is outside what a local
  * design can prevent. This is a cooperative rule backed by provenance, not a
- * tamper-proof approval system. Completion recorded outside this path is shown
- * as unattributed rather than silently accepted or rewritten.
+ * tamper-proof approval system. A Done ticket with no completion block, or with
+ * one no write path could have produced, is shown as unattributed rather than
+ * silently accepted or rewritten; `isUnattributedCompletion` says exactly which
+ * hand edits that catches and which it cannot.
  */
 
 export interface RecordCompletionInput {
@@ -85,10 +88,35 @@ export async function recordUserCompletion(
 }
 
 /**
- * A ticket that is Done without completion provenance was changed outside this
- * path — by an external editor, a direct file write, or a Git merge. The app
- * shows it as unattributed rather than inventing an approval or resetting it.
+ * The only source and writer pairs `recordUserCompletion` can produce. A direct
+ * in-app action is recorded by the user by definition, and an agent can only
+ * report an instruction; any other pairing was written by hand.
+ */
+const PRODUCIBLE: Record<TicketCompletion['decision_source'], TicketCompletion['recorded_by']> = {
+  direct_user_action: 'user',
+  reported_user_instruction: 'agent',
+}
+
+/**
+ * Whether a Done ticket's acceptance cannot be attributed to a recorded decision.
+ * Two cases are detected:
+ *
+ * - Done with no completion block at all: set by an external editor, a direct
+ *   file write, or a Git merge.
+ * - A block whose `decision_source` and `recorded_by` contradict each other, which
+ *   no write path produces — for example a direct user action recorded by an
+ *   agent, the obvious way to make an agent's write pass as the user's.
+ *
+ * What is deliberately not detected: a block edited by hand into one of the two
+ * producible shapes (say, an agent's completion rewritten as the user's own).
+ * Catching that would need a fingerprint over the fields, and anything that can
+ * edit the file can recompute a fingerprint, so it would add a claim of tamper
+ * evidence this local design cannot back. Provenance here stays cooperative, as
+ * the module docblock says. Decided 2026-09-22 on ticket 02e8bb8a.
  */
 export function isUnattributedCompletion(ticket: Ticket): boolean {
-  return ticket.frontmatter.status === 'done' && ticket.frontmatter.completion === undefined
+  if (ticket.frontmatter.status !== 'done') return false
+  const completion = ticket.frontmatter.completion
+  if (completion === undefined) return true
+  return PRODUCIBLE[completion.decision_source] !== completion.recorded_by
 }
