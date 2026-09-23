@@ -1,9 +1,10 @@
-import { access, mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises'
+import { mkdtemp, readFile, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { call, callExpectingError, connect } from './client.js'
-import { REPO_ROOT, type StagedResources } from './stage.js'
+import { packagedResources, requireWhenAsked } from './packaged.js'
+import { removeWorkspace } from './stage.js'
 
 /**
  * The same checks as packaging.test.ts, but against the output of a real
@@ -14,68 +15,11 @@ import { REPO_ROOT, type StagedResources } from './stage.js'
  * Skipped when the packaged build is absent, so the suite still runs on a
  * machine that has not built the app. Produce it with
  * `pnpm --filter @knightbook/desktop pack:dir`.
- *
- * CI sets REQUIRE_PACKAGED_APP=1, which turns "absent" into a failure: a check
- * that quietly skips is not a check.
  */
-
-const RELEASE_DIR = join(REPO_ROOT, 'apps', 'desktop', 'release')
-const NODE_BINARY = process.platform === 'win32' ? 'node.exe' : 'node'
-
-/**
- * Where electron-builder --dir leaves the resources folder on each platform.
- *
- * The Windows and Linux folders are named for the platform, but a macOS bundle
- * is named after the product, so it is discovered rather than written down here.
- * It used to be spelled out, and renaming the product to Knightbook made this
- * file look for an app that no longer existed: on a developer's machine the
- * suite would simply have skipped, and only CI's REQUIRE_PACKAGED_APP turned it
- * back into a failure. A check that quietly stops checking is the thing this
- * file exists to prevent.
- */
-async function resourceDirCandidates(): Promise<string[]> {
-  if (process.platform === 'win32') return [join('win-unpacked', 'resources')]
-  if (process.platform === 'linux') return [join('linux-unpacked', 'resources')]
-  if (process.platform !== 'darwin') return []
-
-  const candidates: string[] = []
-  for (const output of await readdir(RELEASE_DIR).catch(() => [])) {
-    if (!output.startsWith('mac')) continue
-    for (const entry of await readdir(join(RELEASE_DIR, output)).catch(() => [])) {
-      if (entry.endsWith('.app')) {
-        candidates.push(join(output, entry, 'Contents', 'Resources'))
-      }
-    }
-  }
-  return candidates
-}
-
-async function packagedResources(): Promise<StagedResources | null> {
-  for (const candidate of await resourceDirCandidates()) {
-    const resourcesDir = join(RELEASE_DIR, candidate)
-    const mcpDir = join(resourcesDir, 'mcp')
-    try {
-      await access(join(mcpDir, NODE_BINARY))
-      await access(join(mcpDir, 'server.mjs'))
-    } catch {
-      continue
-    }
-    return {
-      resourcesDir,
-      nodePath: join(mcpDir, NODE_BINARY),
-      serverPath: join(mcpDir, 'server.mjs'),
-    }
-  }
-  return null
-}
 
 const resources = await packagedResources()
-if (!resources && process.env['REQUIRE_PACKAGED_APP']) {
-  throw new Error(
-    'REQUIRE_PACKAGED_APP is set but no packaged app was found under apps/desktop/release. ' +
-      'Run pnpm pack:dir first.',
-  )
-}
+requireWhenAsked(resources, 'a packaged app')
+
 const describePackaged = resources ? describe : describe.skip
 
 let workspace: string
@@ -87,7 +31,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await rm(workspace, { recursive: true, force: true })
+  await removeWorkspace(workspace)
 })
 
 describePackaged('the installed application', () => {

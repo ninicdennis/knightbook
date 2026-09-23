@@ -64,7 +64,21 @@ jobs:
 
       # The first run skipped the packaged-app tests because the app did not exist
       # yet. Run them again now that it does, and fail if they are still skipped.
+      #
+      # One of these launches the real Electron window. The Linux runner has no
+      # display, so it gets a virtual one; without it the window test would fail
+      # on Linux alone. Windows and macOS runners already have a display session.
       - name: Test the packaged app
+        if: runner.os != 'Linux'
         run: pnpm --filter @knightbook/experiment-packaging test
+        env:
+          REQUIRE_PACKAGED_APP: '1'
+
+      - name: Test the packaged app under a virtual display
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y xvfb
+          xvfb-run --auto-servernum pnpm --filter @knightbook/experiment-packaging test
         env:
           REQUIRE_PACKAGED_APP: '1'
