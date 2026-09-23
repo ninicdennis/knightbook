@@ -87,6 +87,23 @@ export const ticketFrontmatterSchema = z.object({
     .optional(),
   completion: completionSchema.optional(),
   /**
+   * Archiving takes a ticket off the working board without changing where the
+   * work stands. It is kept apart from `status` deliberately: a fifth status
+   * would make every existing consumer of the four treat "archived" as a place
+   * in the workflow, and the ticket's own status is what restoring puts it back
+   * to. Leaving `status` untouched means the retained status cannot drift from
+   * the real one, because they are the same field.
+   *
+   * An object rather than a bare timestamp, so this can gain a field later
+   * without a migration. Its absence means active, which is what every ticket
+   * written before archiving existed already says.
+   */
+  archived: z
+    .object({
+      archived_at: z.iso.datetime(),
+    })
+    .optional(),
+  /**
    * Acceptances that were later reopened, oldest first. Moving a ticket out of
    * Done takes back what `completion` claims about where the work stands, but
    * the user did accept it once, and deleting that would leave the record

@@ -32,6 +32,7 @@ export function ticket(overrides: Partial<TicketView> = {}): TicketView {
     completion: null,
     completionUnattributed: false,
     review: { state: 'unreviewed', lastReviewedAt: null, changeSummary: null },
+    archivedAt: null,
     ...overrides,
   }
 }
@@ -41,6 +42,7 @@ export function project(overrides: Partial<ProjectView> = {}): ProjectView {
     name: 'Demo',
     checkoutPath: CHECKOUT,
     tickets: [ticket()],
+    archivedTickets: [],
     problems: [],
     nextTicketId: null,
     nextExplanation: '',
@@ -101,6 +103,8 @@ export function makeApi(): KnightbookApi {
     recordVerificationIssue: vi.fn(),
     resolveVerificationIssue: vi.fn(),
     recordTicketReview: vi.fn(),
+    archiveTickets: vi.fn(),
+    restoreTicket: vi.fn(),
     readTicket: vi.fn().mockResolvedValue({ ok: true, value: detail() }),
     reorderBacklog: vi.fn(),
     searchTickets: vi.fn().mockResolvedValue({

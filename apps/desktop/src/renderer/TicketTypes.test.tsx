@@ -100,6 +100,7 @@ describe('showing the type', () => {
           titleHighlights: [{ start: 2, length: 6 }],
           excerpt: null,
           excerptHighlights: [],
+          archivedAt: null,
         },
       ],
       totalMatches: 1,

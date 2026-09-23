@@ -52,6 +52,7 @@ export async function toTicketView(
     dependencyReady: readiness.ready,
     dependencyNotes: readiness.reasons.map(describeReason),
     blocker: frontmatter.blocker ?? null,
+    archivedAt: frontmatter.archived?.archived_at ?? null,
     verificationIssue: frontmatter.verification_issue
       ? {
           reason: frontmatter.verification_issue.reason,

@@ -23,13 +23,15 @@ import { SEARCH_SHORTCUT_LABEL } from '../shortcuts.js'
  * one place to look for "can my AI tool reach this project" rather than two.
  */
 
-export type View = 'board' | 'documents'
+export type View = 'board' | 'documents' | 'archive'
 
 interface Props {
   name: string
   checkoutPath: string
   view: View
   onViewChange: (view: View) => void
+  /** Shown on the Archive tab, so tickets taken off the board are not invisible. */
+  archivedCount: number
   refreshing: boolean
   onRefresh: () => void
   /** Why switching is unsafe right now, or null. */
@@ -44,6 +46,7 @@ export function ProjectHeader({
   checkoutPath,
   view,
   onViewChange,
+  archivedCount,
   refreshing,
   onRefresh,
   switchBlockedReason,
@@ -108,6 +111,12 @@ export function ProjectHeader({
           data={[
             { value: 'board', label: 'Board' },
             { value: 'documents', label: 'Documents' },
+            /*
+             * The count is on the tab because the archive is otherwise
+             * invisible: without it, a ticket that left the board looks lost
+             * rather than put away. It is kept out of the board's own counts.
+             */
+            { value: 'archive', label: archivedCount > 0 ? `Archive ${archivedCount}` : 'Archive' },
           ]}
         />
 

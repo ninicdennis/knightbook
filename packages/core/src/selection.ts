@@ -35,6 +35,13 @@ export async function selectNextTicket(project: Project): Promise<SelectionResul
   const ineligible: Candidate[] = []
   for (const ticket of tickets) {
     if (ticket.frontmatter.status !== 'backlog') continue
+    /*
+     * An archived ticket is off the board, so it is not work to pick up next.
+     * It is skipped rather than listed as ineligible: the ineligible list
+     * explains what is standing in the way of work the user can see, and
+     * filling it with tickets they have deliberately put away would bury that.
+     */
+    if (ticket.frontmatter.archived) continue
 
     const readiness = evaluateReadiness(ticket.frontmatter, byId, unreadable)
     if (readiness.ready) {

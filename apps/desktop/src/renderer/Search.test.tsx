@@ -26,6 +26,7 @@ function answer(overrides: Partial<TicketSearchView> = {}): TicketSearchView {
         titleHighlights: [{ start: 0, length: 6 }],
         excerpt: null,
         excerptHighlights: [],
+        archivedAt: null,
       },
       {
         id: REPORT,
@@ -35,6 +36,7 @@ function answer(overrides: Partial<TicketSearchView> = {}): TicketSearchView {
         titleHighlights: [],
         excerpt: 'Reads from the importer output.',
         excerptHighlights: [{ start: 15, length: 6 }],
+        archivedAt: null,
       },
     ],
     totalMatches: 2,
@@ -133,6 +135,7 @@ describe('results', () => {
             titleHighlights: [{ start: 29, length: 6 }],
             excerpt: null,
             excerptHighlights: [],
+            archivedAt: null,
           },
         ],
         totalMatches: 1,

@@ -25,8 +25,12 @@ const api: KnightbookApi = {
     ipcRenderer.invoke('ticket:resolveVerificationIssue', rootPath, id, revision),
   recordTicketReview: (rootPath, id, note) =>
     ipcRenderer.invoke('ticket:review', rootPath, id, note),
+  archiveTickets: (rootPath, targets) => ipcRenderer.invoke('ticket:archive', rootPath, targets),
+  restoreTicket: (rootPath, id, revision) =>
+    ipcRenderer.invoke('ticket:restore', rootPath, id, revision),
   readTicket: (rootPath, id) => ipcRenderer.invoke('ticket:read', rootPath, id),
-  searchTickets: (rootPath, query) => ipcRenderer.invoke('ticket:search', rootPath, query),
+  searchTickets: (rootPath, query, scope) =>
+    ipcRenderer.invoke('ticket:search', rootPath, query, scope),
   reorderBacklog: (rootPath, ticketIds) =>
     ipcRenderer.invoke('ticket:reorderBacklog', rootPath, ticketIds),
   mcpLaunchCommand: (rootPath) => ipcRenderer.invoke('mcp:launchCommand', rootPath),

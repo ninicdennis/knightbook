@@ -3,17 +3,21 @@ import { useDisclosure } from '@mantine/hooks'
 import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
 import type {
+  ArchiveOutcome,
   MovableStatus,
   ProjectView,
   RememberedProject,
   Result,
+  TicketStatus,
   TicketType,
 } from '../shared/contract.js'
+import { ArchiveColumnDialog } from './components/ArchiveColumnDialog.js'
+import { ArchiveView } from './components/ArchiveView.js'
 import { Board } from './components/Board.js'
 import { CompletionDialog } from './components/CompletionDialog.js'
 import { DocumentsView } from './components/DocumentsView.js'
 import { McpStatusFooter } from './components/McpStatusFooter.js'
-import { ProjectHeader } from './components/ProjectHeader.js'
+import { ProjectHeader, type View } from './components/ProjectHeader.js'
 import { SetupFolder } from './components/SetupFolder.js'
 import { TicketDetailModal } from './components/TicketDetailModal.js'
 import { TicketSearch } from './components/TicketSearch.js'
@@ -45,7 +49,16 @@ export function App() {
   const [pendingIssue, setPendingIssue] = useState<string | null>(null)
   const [issueOpen, issueDialog] = useDisclosure(false)
   const [searchOpen, search] = useDisclosure(false)
-  const [view, setView] = useState<'board' | 'documents'>('board')
+  /*
+   * Archiving a column touches many files in sequence, and `busyTicketId` names
+   * a single card, so it cannot stand for "a bulk operation is running". Without
+   * this the project switcher stays enabled through a bulk archive and could
+   * redirect it halfway.
+   */
+  const [archiving, setArchiving] = useState(false)
+  const [pendingArchiveColumn, setPendingArchiveColumn] = useState<TicketStatus | null>(null)
+  const [archiveOpen, archiveDialog] = useDisclosure(false)
+  const [view, setView] = useState<View>('board')
   const [detailId, setDetailId] = useState<string | null>(null)
   const [documentTarget, setDocumentTarget] = useState<{ path: string; nonce: number } | null>(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -118,6 +131,44 @@ export function App() {
       setBusyTicketId(null)
     },
     [screen, load],
+  )
+
+  /**
+   * Archiving reports per-ticket outcomes rather than a single success, because
+   * each ticket is its own file and its own write. A partial result is a real
+   * answer, not an error: what was archived stays archived, and the rest are
+   * named so the user can see which ones to look at.
+   */
+  const applyArchive = useCallback(
+    async (ticketId: string | null, run: () => Promise<Result<ArchiveOutcome>>) => {
+      if (screen.kind !== 'open') return
+      setBusyTicketId(ticketId)
+      setArchiving(true)
+      setActionError(null)
+
+      const result = await run()
+      if (!result.ok) {
+        setActionError(result.message)
+        setBusyTicketId(null)
+        setArchiving(false)
+        return
+      }
+
+      const { archivedCount, failures, project } = result.value
+      setScreen({ kind: 'open', path: screen.path, project })
+      if (failures.length > 0) {
+        const names = failures.map((failure) => `"${failure.title}"`).join(', ')
+        setActionError(
+          `Archived ${archivedCount} of ${archivedCount + failures.length}. ` +
+            `${failures.length === 1 ? 'This one was' : 'These were'} left alone because ${
+              failures.length === 1 ? 'it' : 'they'
+            } changed while you were deciding: ${names}. Nothing was lost; try again.`,
+        )
+      }
+      setBusyTicketId(null)
+      setArchiving(false)
+    },
+    [screen],
   )
 
   const move = useCallback(
@@ -221,6 +272,77 @@ export function App() {
       : undefined
 
   /**
+   * Archiving one ticket. Unlike accepting it as done, this records no decision
+   * about the work, so it does not need a confirmation of its own: the Archive
+   * tab shows exactly what happened and Restore undoes it.
+   */
+  const archiveOne = useCallback(
+    (ticketId: string) => {
+      if (screen.kind !== 'open') return
+      const ticket = screen.project.tickets.find((t) => t.id === ticketId)
+      if (!ticket) return
+
+      void applyArchive(ticketId, async () => {
+        const result = await window.knightbook.archiveTickets(screen.path, [
+          { id: ticket.id, revision: ticket.revision },
+        ])
+        return result
+      })
+    },
+    [screen, applyArchive],
+  )
+
+  const restore = useCallback(
+    (ticketId: string) => {
+      if (screen.kind !== 'open') return
+      const ticket = screen.project.archivedTickets.find((t) => t.id === ticketId)
+      if (!ticket) return
+
+      void apply(ticketId, () =>
+        window.knightbook.restoreTicket(screen.path, ticket.id, ticket.revision),
+      )
+    },
+    [screen, apply],
+  )
+
+  /**
+   * Archiving a column moves work the user is not inspecting one item at a
+   * time, so it always goes through a confirmation that names the column and
+   * the exact count.
+   */
+  const askToArchiveColumn = useCallback(
+    (status: TicketStatus) => {
+      setPendingArchiveColumn(status)
+      archiveDialog.open()
+    },
+    [archiveDialog],
+  )
+
+  const archiveColumnTickets =
+    screen.kind === 'open' && pendingArchiveColumn
+      ? screen.project.tickets.filter((t) => t.status === pendingArchiveColumn)
+      : []
+
+  const archiveColumnConfirmed = useCallback(() => {
+    if (screen.kind !== 'open' || !pendingArchiveColumn) return
+    /*
+     * The set is captured here, from what the board was showing when the user
+     * confirmed. A ticket created or changed after that is either absent from
+     * this list or refused by revision, so a bulk action can never quietly take
+     * something the user never saw.
+     */
+    const targets = screen.project.tickets
+      .filter((t) => t.status === pendingArchiveColumn)
+      .map((t) => ({ id: t.id, revision: t.revision }))
+
+    archiveDialog.close()
+    setPendingArchiveColumn(null)
+    if (targets.length === 0) return
+
+    void applyArchive(null, () => window.knightbook.archiveTickets(screen.path, targets))
+  }, [screen, pendingArchiveColumn, archiveDialog, applyArchive])
+
+  /**
    * D-017: recording a failed verification needs the reason, so it always goes
    * through the dialog. Nothing downstream changes; dependents are flagged from
    * this ticket's own record when the board is read back.
@@ -318,9 +440,15 @@ export function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [screen.kind, detailId, confirmOpen, issueOpen, search])
 
+  /*
+   * Both lists: an archived ticket is still a readable record, and the Archive
+   * tab opens it. Looking only at the board would make a row there open nothing
+   * at all, because the effect below would immediately close it again.
+   */
   const detailTicket =
     screen.kind === 'open' && detailId
-      ? screen.project.tickets.find((t) => t.id === detailId)
+      ? (screen.project.tickets.find((t) => t.id === detailId) ??
+        screen.project.archivedTickets.find((t) => t.id === detailId))
       : undefined
 
   // A ticket can vanish between refreshes; close its dialog rather than leave it
@@ -358,12 +486,15 @@ export function App() {
             checkoutPath={screen.project.checkoutPath}
             view={view}
             onViewChange={setView}
+            archivedCount={screen.project.archivedTickets.length}
             refreshing={refreshing}
             onRefresh={() => void refresh()}
             switchBlockedReason={
-              busyTicketId !== null
-                ? 'A ticket is being updated. Switching is available once that finishes.'
-                : null
+              archiving
+                ? 'Tickets are being archived. Switching is available once that finishes.'
+                : busyTicketId !== null
+                  ? 'A ticket is being updated. Switching is available once that finishes.'
+                  : null
             }
             onSwitchProject={switchProject}
             onOpenFolder={() => void choose()}
@@ -455,6 +586,13 @@ export function App() {
                 openTarget={documentTarget}
                 refreshToken={refreshToken}
               />
+            ) : view === 'archive' ? (
+              <ArchiveView
+                tickets={screen.project.archivedTickets}
+                busyTicketId={busyTicketId}
+                onOpen={setDetailId}
+                onRestore={restore}
+              />
             ) : (
               <Board
                 project={screen.project}
@@ -466,6 +604,8 @@ export function App() {
                 onResolveIssue={resolveIssue}
                 onReview={review}
                 onOpen={setDetailId}
+                onArchive={archiveOne}
+                onArchiveColumn={askToArchiveColumn}
               />
             )}
           </Stack>
@@ -505,6 +645,14 @@ export function App() {
         />
       )}
 
+      <ArchiveColumnDialog
+        opened={archiveOpen}
+        status={pendingArchiveColumn}
+        tickets={archiveColumnTickets}
+        onClose={archiveDialog.close}
+        onConfirm={archiveColumnConfirmed}
+      />
+
       <CompletionDialog
         opened={confirmOpen}
         ticket={pendingTicket}
@@ -525,6 +673,9 @@ export function App() {
           rootPath={screen.path}
           refreshToken={refreshToken}
           onClose={search.close}
+          // Searching from the Archive looks in the archive. Anywhere else, the
+          // board is what the user is looking at and so what they mean.
+          defaultScope={view === 'archive' ? 'archived' : 'active'}
           // Opening a result shows the ticket wherever the user was, because
           // the detail view is not part of either the board or the documents.
           onOpenTicket={setDetailId}

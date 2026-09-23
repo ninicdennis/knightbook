@@ -1,4 +1,5 @@
-import { Box, Group, ScrollArea, Stack, Text } from '@mantine/core'
+import { Box, Group, Menu, ScrollArea, Stack, Text, UnstyledButton } from '@mantine/core'
+import { IconArchive, IconDotsVertical } from '@tabler/icons-react'
 import { useDroppable } from '@dnd-kit/react'
 import type { ReactNode } from 'react'
 import type { ProjectView, TicketStatus } from '../../shared/contract.js'
@@ -17,10 +18,18 @@ interface ColumnProps {
   count: number
   /** Done is not active work, so it is drawn a step further back. */
   quiet?: boolean
+  /** Opens the confirmation for archiving this column. Null hides the menu. */
+  onArchiveColumn: (() => void) | null
   children: ReactNode
 }
 
-export function BoardColumn({ status, count, quiet = false, children }: ColumnProps) {
+export function BoardColumn({
+  status,
+  count,
+  quiet = false,
+  onArchiveColumn,
+  children,
+}: ColumnProps) {
   const { ref, isDropTarget } = useDroppable({ id: status })
 
   return (
@@ -58,9 +67,34 @@ export function BoardColumn({ status, count, quiet = false, children }: ColumnPr
             {STATUS_LABEL[status]}
           </Text>
         </Group>
-        <Text size="sm" c="dimmed" fw={500} aria-label={`${count} in ${STATUS_LABEL[status]}`}>
-          {count}
-        </Text>
+        <Group gap={4} wrap="nowrap">
+          <Text size="sm" c="dimmed" fw={500} aria-label={`${count} in ${STATUS_LABEL[status]}`}>
+            {count}
+          </Text>
+          {/* Offered even when the column is empty would be a dead control, so
+              the menu appears only when there is something it could act on. */}
+          {onArchiveColumn && count > 0 && (
+            <Menu position="bottom-end" withinPortal>
+              <Menu.Target>
+                <UnstyledButton
+                  aria-label={`Actions for the ${STATUS_LABEL[status]} column`}
+                  style={{ lineHeight: 1 }}
+                >
+                  <IconDotsVertical size={14} opacity={0.5} />
+                </UnstyledButton>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<IconArchive size={14} />}
+                  onClick={onArchiveColumn}
+                  color="orange"
+                >
+                  Archive all in this column…
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          )}
+        </Group>
       </Group>
 
       {/*

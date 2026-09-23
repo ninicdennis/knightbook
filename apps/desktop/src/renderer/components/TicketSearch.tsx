@@ -4,6 +4,7 @@ import {
   Group,
   Loader,
   Modal,
+  SegmentedControl,
   Stack,
   Text,
   TextInput,
@@ -11,7 +12,7 @@ import {
 } from '@mantine/core'
 import { IconAlertTriangle, IconSearch } from '@tabler/icons-react'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
-import type { SearchHighlight, TicketSearchView } from '../../shared/contract.js'
+import type { SearchHighlight, SearchScope, TicketSearchView } from '../../shared/contract.js'
 import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
 import { TicketTypeBadge } from './TicketTypeBadge.js'
 
@@ -38,14 +39,24 @@ interface Props {
   refreshToken: number
   onClose: () => void
   onOpenTicket: (id: string) => void
+  /** The scope the Archive tab wants when search is opened from there. */
+  defaultScope?: SearchScope
 }
 
-export function TicketSearch({ opened, rootPath, refreshToken, onClose, onOpenTicket }: Props) {
+export function TicketSearch({
+  opened,
+  rootPath,
+  refreshToken,
+  onClose,
+  onOpenTicket,
+  defaultScope = 'active',
+}: Props) {
   const [query, setQuery] = useState('')
   const [result, setResult] = useState<TicketSearchView | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [active, setActive] = useState(0)
+  const [scope, setScope] = useState<SearchScope>(defaultScope)
 
   // Every request carries a number. Only the newest one is allowed to land, so
   // a slow reply for an earlier query cannot overwrite a later answer.
@@ -61,7 +72,10 @@ export function TicketSearch({ opened, rootPath, refreshToken, onClose, onOpenTi
     setError(null)
     setLoading(false)
     setActive(0)
-  }, [])
+    // Back to the scope this was opened for, so searching from the Archive tab
+    // starts in the archive again rather than remembering the last search.
+    setScope(defaultScope)
+  }, [defaultScope])
 
   // Opening is a fresh question, and so is switching project underneath it.
   useEffect(() => {
@@ -101,7 +115,7 @@ export function TicketSearch({ opened, rootPath, refreshToken, onClose, onOpenTi
     const sequence = (latest.current += 1)
     setLoading(true)
     const timer = setTimeout(() => {
-      void window.knightbook.searchTickets(rootPath, trimmed).then((answer) => {
+      void window.knightbook.searchTickets(rootPath, trimmed, scope).then((answer) => {
         if (sequence !== latest.current) return
         setLoading(false)
         if (!answer.ok) {
@@ -119,7 +133,9 @@ export function TicketSearch({ opened, rootPath, refreshToken, onClose, onOpenTi
     }, DEBOUNCE_MS)
 
     return () => clearTimeout(timer)
-  }, [opened, query, rootPath, refreshToken])
+    // `scope` is a dependency: changing it asks a different question of the
+    // same text, so the results have to be fetched again rather than filtered.
+  }, [opened, query, rootPath, refreshToken, scope])
 
   const hits = result?.hits ?? []
 
@@ -175,6 +191,20 @@ export function TicketSearch({ opened, rootPath, refreshToken, onClose, onOpenTi
               open(hits[active].id)
             }
           }}
+        />
+
+        {/* Archived tickets stay findable, but they are not usually what someone
+            searching the board means, so the scope is explicit rather than a
+            silent default the reader has to infer from the results. */}
+        <SegmentedControl
+          size="xs"
+          value={scope}
+          onChange={(next) => setScope(next as SearchScope)}
+          data={[
+            { value: 'active', label: 'Active' },
+            { value: 'archived', label: 'Archived' },
+            { value: 'all', label: 'All' },
+          ]}
         />
 
         {error && (
@@ -273,6 +303,13 @@ function Hit({
           {STATUS_LABEL[hit.status]}
         </Badge>
         <TicketTypeBadge type={hit.type} size="xs" />
+        {/* Labelled, never hidden: a result that is no longer on the board must
+            say so, or the reader goes looking for a card that is not there. */}
+        {hit.archivedAt && (
+          <Badge size="xs" variant="outline" color="gray" style={{ flexShrink: 0 }}>
+            Archived
+          </Badge>
+        )}
         <Text size="sm" fw={600} lineClamp={1}>
           <Marked text={hit.title} highlights={hit.titleHighlights} />
         </Text>
