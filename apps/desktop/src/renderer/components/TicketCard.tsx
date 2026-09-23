@@ -1,5 +1,6 @@
 import { Card, Group, Menu, Stack, Text, UnstyledButton } from '@mantine/core'
 import {
+  IconArchive,
   IconArrowBarToUp,
   IconArrowDown,
   IconArrowUp,
@@ -43,6 +44,8 @@ interface Props {
   onResolveIssue: () => void
   onReview: () => void
   onOpen: () => void
+  /** Takes this ticket off the board. Not a completion, and not a deletion. */
+  onArchive: () => void
 }
 
 export function TicketCard({
@@ -58,6 +61,7 @@ export function TicketCard({
   onResolveIssue,
   onReview,
   onOpen,
+  onArchive,
 }: Props) {
   const isDone = ticket.status === 'done'
 
@@ -198,6 +202,12 @@ export function TicketCard({
                   </Menu.Item>
                 </>
               )}
+              {/* Last, and separated: archiving is housekeeping, not a step in
+                  the work, and it should not sit among the moves. */}
+              <Menu.Divider />
+              <Menu.Item leftSection={<IconArchive size={14} />} onClick={onArchive}>
+                Archive
+              </Menu.Item>
             </Menu.Dropdown>
           </Menu>
         </Group>

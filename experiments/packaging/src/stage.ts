@@ -27,6 +27,20 @@ export interface StagedResources {
 
 const NODE_BINARY = process.platform === 'win32' ? 'node.exe' : 'node'
 
+/**
+ * Removes a staged workspace, tolerating Windows' brief hold on an executable
+ * that has only just exited.
+ *
+ * These suites spawn the staged Node runtime dozens of times. The transport
+ * waits for the child's `close` event, but Windows can keep the image locked
+ * for a moment after that and refuses to unlink a file in that state, so a
+ * plain `rm` fails with EBUSY. Node's retry options exist for exactly this;
+ * without them the cleanup is a race that only surfaces on CI.
+ */
+export async function removeWorkspace(path: string): Promise<void> {
+  await rm(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })
+}
+
 export async function stageResources(destination: string): Promise<StagedResources> {
   const mcpDir = join(destination, 'mcp')
   await rm(destination, { recursive: true, force: true })

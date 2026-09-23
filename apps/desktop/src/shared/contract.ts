@@ -83,6 +83,12 @@ export interface TicketView {
   /** Done with no recorded decision: changed outside the app, shown as-is. */
   completionUnattributed: boolean
   review: ReviewView
+  /**
+   * When this ticket was archived, or null when it is on the board. `status`
+   * above stays its real status while archived, and is what restoring returns
+   * it to, so the retained status cannot drift from the actual one.
+   */
+  archivedAt: string | null
 }
 
 export interface DependencyView {
@@ -106,6 +112,13 @@ export interface TicketDetailView extends TicketView {
   previousCompletions: ReopenedCompletionView[]
 }
 
+/**
+ * Which tickets a search looks at. Archived work stays findable, because keeping
+ * the record is the point of archiving; it is just not what someone searching
+ * the board usually means, so the scope is theirs to choose.
+ */
+export type SearchScope = 'active' | 'archived' | 'all'
+
 /** Where a match sits in a string, so the view can mark it up without building markup. */
 export interface SearchHighlight {
   start: number
@@ -123,6 +136,8 @@ export interface TicketSearchHitView {
   excerpt: string | null
   /** Offsets within `excerpt`, not within the ticket body. */
   excerptHighlights: SearchHighlight[]
+  /** When it was archived, or null. Archived hits are labelled, never hidden. */
+  archivedAt: string | null
 }
 
 export interface TicketSearchView {
@@ -150,7 +165,14 @@ export interface RecordProblemView {
 export interface ProjectView {
   name: string
   checkoutPath: string
+  /**
+   * The working board. Archived tickets are not here: every consumer of this
+   * list draws columns, counts, and the next-up suggestion from it, and each
+   * one would otherwise have to remember to exclude them.
+   */
   tickets: TicketView[]
+  /** Off the board and still on disk, most recently archived first. */
+  archivedTickets: TicketView[]
   problems: RecordProblemView[]
   nextTicketId: string | null
   nextExplanation: string
@@ -159,6 +181,31 @@ export interface ProjectView {
    * id with no ticket. Reported and never removed, so the user decides.
    */
   backlogOrderProblems: { duplicates: string[]; unknown: string[] }
+}
+
+/** One ticket to archive, at the revision the user was shown. */
+export interface ArchiveTarget {
+  id: string
+  revision: string
+}
+
+/** One ticket a bulk archive could not take, and why, in the user's terms. */
+export interface ArchiveFailureView {
+  id: string
+  title: string
+  reason: string
+}
+
+/**
+ * What a bulk archive actually did. Partial success is a real outcome here
+ * rather than an error: each ticket is its own file and its own write, so some
+ * can succeed while another was changed underneath the user. The ones that
+ * succeeded stay archived, and the rest are named so they can be retried.
+ */
+export interface ArchiveOutcome {
+  archivedCount: number
+  failures: ArchiveFailureView[]
+  project: ProjectView
 }
 
 export type Result<T> =
@@ -297,10 +344,26 @@ export interface KnightbookApi extends DocumentsApi {
   ): Promise<Result<ProjectView>>
   /** Records the user's own review. There is no agent equivalent (D-003). */
   recordTicketReview(rootPath: string, id: string, note: string): Promise<Result<ProjectView>>
+  /**
+   * Takes tickets off the board, keeping their files and everything on them.
+   * Archiving records nothing about whether work was finished or accepted.
+   *
+   * Takes the exact tickets and revisions the user was looking at, so a ticket
+   * created or changed after they opened the confirmation is not swept up. Each
+   * one is a separate write: this is not a transaction across files, and the
+   * outcome says exactly which ones did not happen and why.
+   */
+  archiveTickets(rootPath: string, targets: ArchiveTarget[]): Promise<Result<ArchiveOutcome>>
+  /** Puts one archived ticket back in the status it kept. Never reopens Done. */
+  restoreTicket(rootPath: string, id: string, revision: string): Promise<Result<ProjectView>>
   /** Everything written on one ticket, for the detail view. */
   readTicket(rootPath: string, id: string): Promise<Result<TicketDetailView>>
   /** Bounded text search over ticket titles and bodies in one checkout. */
-  searchTickets(rootPath: string, query: string): Promise<Result<TicketSearchView>>
+  searchTickets(
+    rootPath: string,
+    query: string,
+    scope: SearchScope,
+  ): Promise<Result<TicketSearchView>>
   /**
    * Sets the manual backlog order, which is what "next up" follows. This edits
    * only the order in the project manifest and changes no ticket.

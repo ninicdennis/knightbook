@@ -321,6 +321,42 @@ merged from a branch that carries an acceptance beside a contradicting status is
 not repeated as a claim. The app shows the archived decisions in the ticket
 detail, worded in the past, and never on a card.
 
+### Archiving
+
+Archiving keeps the working board manageable without losing the record. It is
+housekeeping, not a step in the workflow, and it decides nothing about the work.
+
+The metadata is an optional `archived: { archived_at }` on the ticket, and
+nothing else. Deliberately **not** a fifth status: every existing consumer of the
+four treats status as where the work stands, and a fifth value would make each of
+them answer "archived" to a question about progress. Keeping `status` untouched
+also means the retained status and the real status are the same field, so they
+cannot drift, and restoring is removing the metadata rather than replaying a
+remembered value. Its absence means active, which is what every ticket written
+before archiving existed already says, so no migration is needed.
+
+Archiving changes nothing else on the record: the file stays where it is under
+its own id, with its body, links, dependencies, completion provenance and review
+snapshots intact. Restoring a Done ticket therefore does not reopen it — the
+acceptance is neither re-asserted nor withdrawn — and restoring an unfinished one
+does not accept it. `archived` joins `status` in the review fingerprint's
+bookkeeping set, so filing a ticket away cannot cost a real review its evidence
+while a substantive edit made while archived is still detected.
+
+What archived tickets stop doing is being offered as work: they leave the board's
+columns and counts, are counted separately, and are never proposed by
+`ticket_next`. They remain readable by id, and searchable under an explicit
+scope. An archived prerequisite keeps whatever meaning its status already had —
+Verification or Done still satisfies a dependency, because archiving did not undo
+it, while an unfinished one still blocks and says it was archived, because
+archiving did not finish it.
+
+Bulk archiving a column is a sequence of independent writes, each with the
+revision the user was shown, not a transaction across files. The set is captured
+when the confirmation is accepted, so tickets created afterwards are not swept
+up, and the result reports how many were archived and names the ones that were
+not. Partial success is a real outcome and is reported as one.
+
 ## 6. Human completion through the existing AI tool
 
 Keep completion separate from ordinary status mutation. A dedicated `ticket_record_user_completion` operation requires the current ticket revision, an assertion that the user explicitly instructed completion, and a brief description of that instruction. It is valid from Verification. The app can also record completion through a direct user action.

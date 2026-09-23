@@ -109,6 +109,17 @@ its `checkout_id`.
   Say it was accepted earlier and reopened, and when, if it matters.
 - `project_get` reports `backlog_order_problems`: entries listed twice, or ids with no
   ticket. They are reported and never removed. Mention them; do not tidy them away.
+- **Archived tickets are off the working board, not gone.** `ticket_list` leaves them
+  out by default; pass `archived: "only"` to browse them or `"all"` to see both. Each
+  ticket carries `archived`, the date it was archived, or `null` when it is active.
+  `project_get` counts them in `archived_ticket_count`, separately from the four
+  statuses. `ticket_read` always works on an archived ticket, and `ticket_next` never
+  proposes one.
+- An archived ticket **keeps its status**. Archiving says nothing about whether the
+  work was finished or accepted, so an archived Backlog ticket is still unfinished
+  and does not satisfy anything that depends on it — `dependency_notes` says it was
+  archived while still in that status. An archived Verification or Done prerequisite
+  goes on satisfying its dependents, because archiving did not undo it.
 - `verification_issue` is a ticket the user did not accept, with their reason.
   `affected_by` lists the prerequisites, direct or further up the chain, whose
   failure this ticket's work rests on. A ticket with entries there is affected work:
@@ -181,6 +192,23 @@ Constraints, decisions already made, links to the relevant documents.
   ticket has, and `null` clears it back to untyped. Changing it counts as a content
   change, so it can make a recorded review stale — say so rather than letting a
   reclassification quietly look like new work.
+
+## Archiving
+
+Archiving keeps the working board manageable without losing the record. It is the
+user's housekeeping decision, not a workflow step.
+
+- `ticket_archive` takes a ticket off the board. `ticket_restore` puts it back in the
+  status it kept. Both need the ticket's current `expected_revision`.
+- **Archiving is neither deletion nor acceptance.** The file, id, body, links,
+  dependencies, completion provenance and review snapshots are all untouched, and
+  nothing about it can record that work was finished or accepted. Restoring a Done
+  ticket does not reopen it; restoring an unfinished one does not accept it.
+- **Ask first.** Archiving is not part of doing the work, so do not tidy a board you
+  were asked to work on. Archive when the user asks, and say how many tickets you
+  archived and from where.
+- Restore before resuming work on an archived ticket, rather than editing it in
+  place, so it is back where people can see it while you change it.
 
 ## Documents
 

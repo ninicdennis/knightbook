@@ -1,9 +1,9 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { call, callExpectingError, connect } from './client.js'
-import { stageResources, type StagedResources } from './stage.js'
+import { removeWorkspace, stageResources, type StagedResources } from './stage.js'
 
 /**
  * One malformed ticket used to make every ticket tool fail, so an AI could see
@@ -43,7 +43,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await rm(workspace, { recursive: true, force: true })
+  await removeWorkspace(workspace)
 })
 
 describe('a project with one unreadable ticket', () => {

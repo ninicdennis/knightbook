@@ -33,6 +33,9 @@ interface BoardProps {
   onResolveIssue: (ticketId: string) => void
   onReview: (ticketId: string) => void
   onOpen: (ticketId: string) => void
+  onArchive: (ticketId: string) => void
+  /** Opens the confirmation for archiving every ticket in one column. */
+  onArchiveColumn: (status: TicketStatus) => void
 }
 
 export function Board({
@@ -45,6 +48,8 @@ export function Board({
   onResolveIssue,
   onReview,
   onOpen,
+  onArchive,
+  onArchiveColumn,
 }: BoardProps) {
   const [doneExpanded, setDoneExpanded] = useState(false)
 
@@ -85,6 +90,7 @@ export function Board({
         onResolveIssue={() => onResolveIssue(ticket.id)}
         onReview={() => onReview(ticket.id)}
         onOpen={() => onOpen(ticket.id)}
+        onArchive={() => onArchive(ticket.id)}
       />
     </DraggableTicket>
   )
@@ -106,6 +112,7 @@ export function Board({
                 // The total always shows, whether or not every card is on screen.
                 count={tickets.length}
                 quiet={status === 'done'}
+                onArchiveColumn={() => onArchiveColumn(status)}
               >
                 {tickets.length === 0 ? (
                   <EmptyColumn status={status} project={project} />

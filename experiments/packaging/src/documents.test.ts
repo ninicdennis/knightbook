@@ -1,9 +1,9 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { call, callExpectingError, connect } from './client.js'
-import { stageResources, type StagedResources } from './stage.js'
+import { removeWorkspace, stageResources, type StagedResources } from './stage.js'
 
 /**
  * Validation scenarios 14 and 15: a project with its own document hierarchy,
@@ -31,7 +31,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await rm(workspace, { recursive: true, force: true })
+  await removeWorkspace(workspace)
 })
 
 describe('onboarding an application that already exists', () => {

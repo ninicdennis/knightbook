@@ -10,6 +10,7 @@ const SATISFYING_STATUSES = new Set(['verification', 'done'])
 
 export type IneligibilityReason =
   | { kind: 'prerequisite_not_ready'; ticketId: string; title: string; status: string }
+  | { kind: 'prerequisite_archived'; ticketId: string; title: string; status: string }
   | { kind: 'prerequisite_missing'; ticketId: string }
   | { kind: 'prerequisite_unreadable'; ticketId: string }
   | { kind: 'self_dependency' }
@@ -65,8 +66,16 @@ export function evaluateReadiness(
       continue
     }
     if (!SATISFYING_STATUSES.has(prerequisite.status)) {
+      /*
+       * Archiving takes a ticket off the board; it does not finish it. An
+       * unfinished prerequisite that disappears from view must not quietly
+       * start satisfying its dependents, or archiving a column would unblock
+       * work that nobody did. It is named separately from an ordinary
+       * not-ready prerequisite because the reader cannot see it on the board
+       * and would otherwise go looking for it.
+       */
       reasons.push({
-        kind: 'prerequisite_not_ready',
+        kind: prerequisite.archived ? 'prerequisite_archived' : 'prerequisite_not_ready',
         ticketId: id,
         title: prerequisite.title,
         status: prerequisite.status,
@@ -164,6 +173,11 @@ export function describeReason(reason: IneligibilityReason): string {
   switch (reason.kind) {
     case 'prerequisite_not_ready':
       return `waiting on "${reason.title}" (${reason.ticketId}), which is ${reason.status}`
+    case 'prerequisite_archived':
+      return (
+        `waiting on "${reason.title}" (${reason.ticketId}), which was archived while still ` +
+        `${reason.status}; archiving did not finish it, so restore it or drop the dependency`
+      )
     case 'prerequisite_missing':
       return `depends on ${reason.ticketId}, which does not exist in this project`
     case 'prerequisite_unreadable':
