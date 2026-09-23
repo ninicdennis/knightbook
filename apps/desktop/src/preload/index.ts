@@ -33,7 +33,8 @@ const api: KnightbookApi = {
     ipcRenderer.invoke('ticket:search', rootPath, query, scope),
   reorderBacklog: (rootPath, ticketIds) =>
     ipcRenderer.invoke('ticket:reorderBacklog', rootPath, ticketIds),
-  mcpLaunchCommand: (rootPath) => ipcRenderer.invoke('mcp:launchCommand', rootPath),
+  mcpLaunchCommand: () => ipcRenderer.invoke('mcp:launchCommand'),
+  setMcpAccess: (rootPath, enabled) => ipcRenderer.invoke('mcp:setAccess', rootPath, enabled),
   mcpStatus: (rootPath) => ipcRenderer.invoke('mcp:status', rootPath),
   readSettings: () => ipcRenderer.invoke('app:readSettings'),
   saveSettings: (patch) => ipcRenderer.invoke('app:saveSettings', patch),

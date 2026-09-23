@@ -35,8 +35,19 @@ function lockPath(root: ProjectRoot): string {
   return join(root.path, RESERVED_DIR, '.write-lock')
 }
 
-async function acquireLock(root: ProjectRoot): Promise<() => Promise<void>> {
-  const path = lockPath(root)
+function acquireLock(root: ProjectRoot): Promise<() => Promise<void>> {
+  return acquireFileLock(lockPath(root))
+}
+
+/**
+ * An exclusive-create lock file with stale-lock recovery. Exported so the MCP
+ * access registry, which lives outside any project, coordinates its writers the
+ * same way project records do.
+ */
+export async function acquireFileLock(
+  path: string,
+  busyMessage = 'Another Knightbook process is writing to this project. Try again.',
+): Promise<() => Promise<void>> {
   await mkdir(dirname(path), { recursive: true })
   const deadline = Date.now() + LOCK_TIMEOUT_MS
   const token = `${process.pid}:${randomUUID()}`
@@ -58,10 +69,7 @@ async function acquireLock(root: ProjectRoot): Promise<() => Promise<void>> {
         continue
       }
       if (Date.now() > deadline) {
-        throw new ProjectError(
-          'locked',
-          'Another Knightbook process is writing to this project. Try again.',
-        )
+        throw new ProjectError('locked', busyMessage)
       }
       await new Promise((r) => setTimeout(r, LOCK_RETRY_MS))
     }

@@ -76,6 +76,9 @@ export function mcpStatus(overrides: Partial<McpStatusView> = {}): McpStatusView
     runtimeAvailable: true,
     live: [],
     stale: [],
+    access: { checkoutPath: CHECKOUT, enabled: false, checkoutId: null, problem: null },
+    shared: [],
+    lastActivityAt: null,
     ...overrides,
   }
 }
@@ -111,9 +114,11 @@ export function makeApi(): KnightbookApi {
       ok: true,
       value: { checkoutPath: CHECKOUT, query: '', hits: [], totalMatches: 0, unsearchable: [] },
     }),
-    mcpLaunchCommand: vi
-      .fn()
-      .mockResolvedValue({ command: 'node.exe', args: ['server.mjs', '--root', 'demo'] }),
+    mcpLaunchCommand: vi.fn().mockResolvedValue({
+      command: 'node.exe',
+      args: ['server.mjs', '--registry', 'access.json'],
+    }),
+    setMcpAccess: vi.fn(),
     mcpStatus: vi.fn().mockResolvedValue(mcpStatus()),
     readSettings: vi.fn().mockResolvedValue({ colorScheme: 'auto' }),
     saveSettings: vi.fn().mockResolvedValue({ ok: true, value: { colorScheme: 'auto' } }),

@@ -22,6 +22,7 @@ import {
 } from '@knightbook/core'
 import { forgetProject, readAppState, rememberProject } from './app-state.js'
 import { guard } from './guard.js'
+import { accessRegistryPath } from './mcp-access.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
 import { readMcpStatus } from './mcp-status.js'
 import { describeRememberedProjects } from './remembered-projects.js'
@@ -399,12 +400,10 @@ export function registerProjectHandlers(): void {
       }),
   )
 
-  ipcMain.handle('mcp:launchCommand', (_event, rootPath: unknown) =>
-    typeof rootPath === 'string' ? mcpLaunchCommand(rootPath) : null,
-  )
+  ipcMain.handle('mcp:launchCommand', () => mcpLaunchCommand())
 
   ipcMain.handle('mcp:status', async (_event, rootPath: unknown) => {
     if (typeof rootPath !== 'string') throw new Error('A project path is required.')
-    return await readMcpStatus(rootPath)
+    return await readMcpStatus(rootPath, accessRegistryPath())
   })
 }

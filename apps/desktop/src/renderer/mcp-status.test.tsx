@@ -26,6 +26,9 @@ function status(overrides: Partial<McpStatusView> = {}): McpStatusView {
     runtimeAvailable: true,
     live: [],
     stale: [],
+    access: { checkoutPath: 'C:\\projects\\demo', enabled: false, checkoutId: null, problem: null },
+    shared: [],
+    lastActivityAt: null,
     ...overrides,
   }
 }
@@ -93,6 +96,69 @@ describe('describing MCP status', () => {
       NOW,
     )
     expect(display.state).toBe('connected')
+  })
+})
+
+describe('describing the shared connection', () => {
+  const allowed = {
+    checkoutPath: 'C:\\projects\\demo',
+    enabled: true,
+    checkoutId: 'c1',
+    problem: null,
+  }
+
+  it('calls a shared client available here, never connected to this project', () => {
+    const display = describeMcpStatus(
+      status({ access: allowed, shared: [session({ connectedAt: at(30_000) })] }),
+      NOW,
+    )
+    expect(display.state).toBe('available')
+    expect(display.label).toBe('MCP available')
+    expect(display.summary).toMatch(/No call to this project has been observed/)
+  })
+
+  it('reports observed use of this project separately', () => {
+    const display = describeMcpStatus(
+      status({
+        access: allowed,
+        shared: [session({ connectedAt: at(30_000) })],
+        lastActivityAt: at(120_000),
+      }),
+      NOW,
+    )
+    expect(display.summary).toMatch(/last worked on this project 2 minutes ago/)
+  })
+
+  it('says a connected shared client cannot reach a project that is not allowed', () => {
+    const display = describeMcpStatus(
+      status({ shared: [session({ connectedAt: at(30_000) })] }),
+      NOW,
+    )
+    expect(display.state).toBe('not_enabled')
+    expect(display.guidance.join(' ')).toMatch(/Allow AI access through MCP/)
+  })
+
+  it('does not read an unreadable access list as "not allowed"', () => {
+    const display = describeMcpStatus(
+      status({
+        access: { ...allowed, enabled: false, problem: 'Unexpected token' },
+        shared: [session({ connectedAt: at(30_000) })],
+      }),
+      NOW,
+    )
+    expect(display.state).toBe('unknown')
+    expect(display.summary).toMatch(/could not be read/)
+  })
+
+  it('asks for the setting before the configuration when neither is done', () => {
+    const display = describeMcpStatus(status(), NOW)
+    expect(display.state).toBe('not_connected')
+    expect(display.guidance[0]).toMatch(/Allow AI access through MCP/)
+  })
+
+  it('does not repeat the setting step once it is on', () => {
+    const display = describeMcpStatus(status({ access: allowed }), NOW)
+    expect(display.guidance.join(' ')).not.toMatch(/Allow AI access/)
   })
 })
 

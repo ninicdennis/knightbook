@@ -33,7 +33,7 @@ verified path.
 | Editor preservation experiment | Complete — [findings](docs/experiments/editor-preservation-findings.md) |
 | Packaging smoke test | Complete on Windows — [findings](docs/experiments/packaging-findings.md) |
 | Shared core library | Safe writes, records, dependencies, completion, documents, search, review |
-| MCP surface | Fourteen tools: the ten section 9 operations plus ticket_next, ticket_read, documents_list and review_status; packaged and validated |
+| MCP surface | Fourteen project tools (the ten section 9 operations plus ticket_next, ticket_read, documents_list and review_status) and projects_list. One shared configuration reaches every project the user allows; the older one-project-per-entry form still works. Packaged and validated |
 | Desktop board | Four columns, drag and menu moves, a ticket detail dialog, a project switcher, one-click setup for a folder with no project yet, completion and review with provenance, refresh (button, and whenever the window regains focus); a malformed ticket or merge conflict is listed instead of blocking the board |
 | Document viewer | Read-only rendering of included documents, in-app review, external-editor handoff |
 | AI workflow guidance | A portable skill file plus rules sent by the server on connect; not yet exercised in a real AI session |
@@ -92,6 +92,14 @@ Builds the MCP server and produces an unpacked desktop application under
 themselves when it is absent.
 
 ```bash
+pnpm start:packaged
+```
+
+Opens that packaged app, so there is no need to find the executable in the output
+folder. It starts whatever was last packaged and rebuilds nothing, so it prints the
+path and when it was packaged; run `pnpm pack:dir` first after a change.
+
+```bash
 pnpm experiment:editor
 ```
 
@@ -122,21 +130,46 @@ it has no filesystem or shell access.
 
 ## Connecting an AI tool
 
-The status bar along the bottom of the window shows whether an AI client can
-reach this project, and opens the connection details. **Copy MCP configuration**
-is in there. In a packaged install it points at the runtime shipped beside the
-application:
+You add Knightbook to your AI client **once**, and then choose in the app which
+projects it may reach.
+
+1. Open a project, and click the MCP indicator in the status bar along the bottom.
+2. Turn on **Allow AI access through MCP** for that project. Do the same in every
+   project you want the AI to reach. Opening a project, or its appearing in recent
+   projects, never turns this on by itself.
+3. Use **Copy MCP configuration** and add it to your AI client. In a packaged install
+   it points at the runtime shipped beside the application and at the app's list of
+   allowed projects:
 
 ```json
 {
   "command": "<installed-resources>/mcp/node.exe",
-  "args": ["<installed-resources>/mcp/server.mjs", "--root", "<your-project-folder>"]
+  "args": ["<installed-resources>/mcp/server.mjs", "--registry", "<app-data>/Knightbook/mcp-access.json"]
 }
 ```
 
-The AI client starts that process itself, so project access does not depend on
-the desktop window being open. The root is bound at launch rather than supplied
-per call, so a connection reaches exactly one checkout.
+**This broadens what the client can reach.** Any AI client using that configuration
+can read and change every project you have allowed, not only the one on screen. Turn
+the setting off for a project to take it back; running clients lose it on their next
+call, without restarting. Allowing a new project later needs no change in the client.
+
+The AI client starts the server itself, so access does not depend on the desktop
+window being open. The AI picks a project with `projects_list`, passes its
+`checkout_id` on every call, and each answer names the project it acted on. Clones and
+worktrees of one project are listed separately by path. A folder that moved is reported
+as unavailable, never quietly swapped for another copy; allow it again at its new
+location. Technical design section 4 has the full model.
+
+### Moving from one entry per project
+
+Older setups added one client entry per project, each with `--root <folder>`. Those
+keep working exactly as before, and each still reaches only its own folder. To move
+to the single connection:
+
+1. In the app, allow AI access for each project those entries pointed at.
+2. Add the configuration from **Copy MCP configuration** as one new client entry.
+3. Remove the old per-project entries from your client yourself, once the new one
+   works. The app never edits your client's configuration.
 
 **After the Knightbook rename, re-copy that configuration.** The installed folder
 is named after the product, so a command saved while this was Projectspace points
@@ -149,13 +182,18 @@ itself as `knightbook`.
 ### What the status bar can and cannot tell you
 
 The client starts and stops the server, so the app has no Start or Stop to offer
-and does not pretend otherwise. What it does have is evidence: a running server
-writes a heartbeat into `.projectspace/runtime/` (coordination state, ignored by
-Git), and the window reads it.
+and does not pretend otherwise. What it does have is evidence: a server started for
+one project writes a heartbeat into that project's `.projectspace/runtime/`
+(coordination state, ignored by Git); a shared server writes its heartbeat beside
+the app's list of allowed projects, and leaves a small "last used" record in each
+project it actually works on. The window reads both.
 
 | Indicator | What was observed |
 | --- | --- |
-| **MCP connected** | A server is running for this project and a client has opened a connection to it |
+| **MCP connected** | A server started for this project alone (`--root`) is running, and a client has opened a connection to it |
+| **MCP available** | A client is connected through the shared configuration and this project is allowed. That is not proof it is working on this project; the details say when it last did |
+| **MCP not allowed here** | A client is connected through the shared configuration, but this project is not allowed, so it cannot reach it |
+| **MCP access unknown** | The list of allowed projects could not be read, so the shared connection reaches nothing. The file is left untouched |
 | **MCP server running** | A server process is up, but no client has connected to it yet |
 | **MCP not connected** | No running server was observed — not the same as one being stopped |
 | **MCP runtime missing** | The bundled server is not where it should be, so the copied configuration would start nothing |

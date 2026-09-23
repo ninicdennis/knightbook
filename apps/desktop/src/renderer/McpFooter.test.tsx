@@ -84,6 +84,46 @@ describe('the MCP status footer', () => {
     expect(await screen.findByRole('button', { name: /copy mcp configuration/i })).toBeTruthy()
   })
 
+  it('turns AI access on for this project from the panel and shows it at once', async () => {
+    api.mcpStatus = vi.fn().mockResolvedValue(
+      mcpStatus({
+        shared: [
+          { pid: 1, startedAt: 'x', connectedAt: new Date().toISOString(), lastSeenAt: 'x' },
+        ],
+      }),
+    )
+    api.setMcpAccess = vi.fn().mockResolvedValue({
+      ok: true,
+      value: { checkoutPath: CHECKOUT, enabled: true, checkoutId: 'c1', problem: null },
+    })
+    renderApp()
+    await user.click(await screen.findByRole('button', { name: /MCP not allowed here/i }))
+
+    const toggle = await screen.findByRole('switch', { name: /allow ai access through mcp/i })
+    expect(screen.getByText(/every project with this on, not only this one/i)).toBeTruthy()
+    await user.click(toggle)
+
+    expect(api.setMcpAccess).toHaveBeenCalledWith(CHECKOUT, true)
+    await waitFor(() => expect((toggle as HTMLInputElement).checked).toBe(true))
+    expect(await screen.findByText(/Allowed through the shared connection/)).toBeTruthy()
+  })
+
+  it('keeps the setting as it was and says why when saving fails', async () => {
+    api.setMcpAccess = vi.fn().mockResolvedValue({
+      ok: false,
+      code: 'registry_write_failed',
+      message: 'The MCP project access list could not be saved.',
+    })
+    renderApp()
+    await user.click(await screen.findByRole('button', { name: /MCP not connected/i }))
+
+    const toggle = await screen.findByRole('switch', { name: /allow ai access through mcp/i })
+    await user.click(toggle)
+
+    expect(await screen.findByRole('alert')).toBeTruthy()
+    expect((toggle as HTMLInputElement).checked).toBe(false)
+  })
+
   it('reports unknown when the folder could not be read', async () => {
     api.mcpStatus = vi.fn().mockResolvedValue(mcpStatus({ unobservable: 'EPERM' }))
     renderApp()

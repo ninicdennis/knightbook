@@ -112,8 +112,33 @@ export {
   type ReviewStatus,
 } from './review.js'
 export {
+  ACCESS_REGISTRY_SCHEMA_VERSION,
+  grantCheckoutAccess,
+  readAccessRegistry,
+  registrySessionsDir,
+  revokeCheckoutAccess,
+  type AccessEntry,
+  type AccessRegistry,
+  type GrantInput,
+} from './access-registry.js'
+export {
+  describeEnabledCheckouts,
+  findEnabledCheckout,
+  resolveEnabledCheckout,
+  type EnabledCheckout,
+  type ResolvedCheckout,
+} from './checkout-access.js'
+export {
+  clearMcpActivitySync,
+  readMcpActivity,
+  recordMcpActivity,
+  type McpActivityRecord,
+} from './mcp-activity.js'
+export {
   readMcpSessions,
+  readSharedMcpSessions,
   startMcpSession,
+  startSharedMcpSession,
   SESSION_HEARTBEAT_MS,
   SESSION_STALE_MS,
   type McpSessionHandle,

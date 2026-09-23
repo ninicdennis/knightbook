@@ -268,6 +268,25 @@ export interface McpStatusView {
   live: McpSessionView[]
   /** Sessions left behind by a process that stopped without cleaning up. */
   stale: McpSessionView[]
+  /** Whether the user has allowed AI access to this checkout through the shared connection. */
+  access: McpAccessView
+  /**
+   * Live servers started with the shared configuration. Their being connected
+   * means a client can reach every enabled project, not that it is using this one.
+   */
+  shared: McpSessionView[]
+  /** The last call a live shared server made against this project, or null if none was observed. */
+  lastActivityAt: string | null
+}
+
+/** The per-checkout "Allow AI access through MCP" setting as stored. */
+export interface McpAccessView {
+  checkoutPath: string
+  enabled: boolean
+  /** The id an AI passes to reach this checkout, while it is enabled. */
+  checkoutId: string | null
+  /** Set when the access list could not be read: nothing is reachable, which is not "off". */
+  problem: string | null
 }
 
 /** How the window picks its appearance. `auto` follows the operating system. */
@@ -350,7 +369,13 @@ export interface KnightbookApi extends DocumentsApi {
    * only the order in the project manifest and changes no ticket.
    */
   reorderBacklog(rootPath: string, ticketIds: string[]): Promise<Result<ProjectView>>
-  mcpLaunchCommand(rootPath: string): Promise<McpLaunchCommand | null>
+  /**
+   * The one shared configuration for every project the user enables. It names
+   * the access list, not a project, so it never changes when projects do.
+   */
+  mcpLaunchCommand(): Promise<McpLaunchCommand>
+  /** Turns "Allow AI access through MCP" on or off for one checkout. */
+  setMcpAccess(rootPath: string, enabled: boolean): Promise<Result<McpAccessView>>
   /** Observes MCP status for one checkout. Reads only; it never writes to the project. */
   mcpStatus(rootPath: string): Promise<McpStatusView>
   /** This installation's preferences. Missing or unreadable state reads as the defaults. */

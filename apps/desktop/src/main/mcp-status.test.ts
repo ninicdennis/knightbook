@@ -1,6 +1,14 @@
 // @vitest-environment node
-import { initializeProject, startMcpSession } from '@knightbook/core'
-import { mkdtemp, rm } from 'node:fs/promises'
+import {
+  grantCheckoutAccess,
+  initializeProject,
+  openProject,
+  recordMcpActivity,
+  resolveProjectRoot,
+  startMcpSession,
+  startSharedMcpSession,
+} from '@knightbook/core'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -21,12 +29,14 @@ const { readMcpStatus } = await import('./mcp-status.js')
 let sandbox: string
 let projectDir: string
 let runtimeDir: string
+let registryPath: string
 
 beforeEach(async () => {
   sandbox = await mkdtemp(join(tmpdir(), 'knightbook-mcp-status-'))
   projectDir = join(sandbox, 'project')
   // Deliberately absent: a source checkout that has not been staged yet.
   runtimeDir = join(sandbox, 'no-runtime-here')
+  registryPath = join(sandbox, 'app-data', 'mcp-access.json')
   await initializeProject(projectDir, { name: 'Fixture' })
 })
 
@@ -36,7 +46,7 @@ afterEach(async () => {
 
 describe('observing MCP status', () => {
   it('reports nothing running for a project no server has served', async () => {
-    const status = await readMcpStatus(projectDir)
+    const status = await readMcpStatus(projectDir, registryPath)
 
     expect(status.live).toHaveLength(0)
     expect(status.stale).toHaveLength(0)
@@ -48,7 +58,7 @@ describe('observing MCP status', () => {
     const session = await startMcpSession(await resolveProjectRoot(projectDir), 4321)
     await session.markConnected()
 
-    const status = await readMcpStatus(projectDir)
+    const status = await readMcpStatus(projectDir, registryPath)
 
     expect(status.live).toHaveLength(1)
     expect(status.live[0]!.pid).toBe(4321)
@@ -61,17 +71,60 @@ describe('observing MCP status', () => {
     await initializeProject(other, { name: 'Other' })
     await startMcpSession(await resolveProjectRoot(other), 4321)
 
-    expect((await readMcpStatus(projectDir)).live).toHaveLength(0)
+    expect((await readMcpStatus(projectDir, registryPath)).live).toHaveLength(0)
   })
 
   it('reports a missing bundled runtime without guessing about connections', async () => {
-    const status = await readMcpStatus(projectDir)
+    const status = await readMcpStatus(projectDir, registryPath)
 
     expect(status.runtimeAvailable).toBe(false)
     expect(status.unobservable).toBeNull()
   })
 
   it('names the checkout it describes, so a late reply can be discarded', async () => {
-    expect((await readMcpStatus(projectDir)).checkoutPath).toBe(projectDir)
+    expect((await readMcpStatus(projectDir, registryPath)).checkoutPath).toBe(projectDir)
+  })
+})
+
+describe('observing the shared connection', () => {
+  it('reads whether this checkout is allowed, without touching anything', async () => {
+    expect((await readMcpStatus(projectDir, registryPath)).access.enabled).toBe(false)
+
+    const project = await openProject(projectDir)
+    await grantCheckoutAccess(registryPath, {
+      path: project.root.path,
+      projectId: project.frontmatter.id,
+      name: 'Fixture',
+    })
+
+    const status = await readMcpStatus(project.root.path, registryPath)
+    expect(status.access.enabled).toBe(true)
+    expect(status.access.checkoutId).not.toBeNull()
+  })
+
+  it('reports an unreadable access list as a problem, not as "not allowed"', async () => {
+    await mkdir(join(sandbox, 'app-data'), { recursive: true })
+    await writeFile(registryPath, 'not json', 'utf8')
+
+    const status = await readMcpStatus(projectDir, registryPath)
+    expect(status.access.problem).toMatch(/could not be read/)
+  })
+
+  it('counts activity only from a shared session that is still alive', async () => {
+    const root = await resolveProjectRoot(projectDir)
+    const session = await startSharedMcpSession(registryPath, 99)
+    await session.markConnected()
+    await recordMcpActivity(root, session.sessionId)
+    // Left by a session that has gone: not current use.
+    await recordMcpActivity(root, 'gone-session')
+
+    const status = await readMcpStatus(projectDir, registryPath)
+    expect(status.shared).toHaveLength(1)
+    expect(status.lastActivityAt).not.toBeNull()
+    // The shared server never shows up as a server for this project.
+    expect(status.live).toHaveLength(0)
+
+    await session.end()
+    expect((await readMcpStatus(projectDir, registryPath)).lastActivityAt).toBeNull()
   })
 })

@@ -12,6 +12,16 @@ export type ProjectErrorCode =
   | 'unsupported_schema_version'
   | 'invalid_transition'
   | 'locked'
+  /** The MCP access registry exists but cannot be read or understood. */
+  | 'registry_unreadable'
+  /** A change to the MCP access registry could not be saved; nothing changed. */
+  | 'registry_write_failed'
+  /** No enabled checkout has this id: never granted, or since disabled. */
+  | 'checkout_not_enabled'
+  /** The enabled folder is missing, moved, or no longer holds project records. */
+  | 'checkout_unavailable'
+  /** The enabled folder now holds a different project than the one enabled. */
+  | 'checkout_mismatch'
 
 export class ProjectError extends Error {
   readonly code: ProjectErrorCode

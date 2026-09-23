@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { rmSync } from 'node:fs'
 import { access, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { registrySessionsDir } from './access-registry.js'
 import { RESERVED_DIR, reservedPaths, type ProjectRoot } from './paths.js'
 
 /**
@@ -80,8 +81,22 @@ export async function readMcpSessions(
   root: ProjectRoot,
   now: number = Date.now(),
 ): Promise<McpSessionReading> {
-  const dir = sessionsDir(root)
+  return await readSessionRecords(sessionsDir(root), now)
+}
 
+/**
+ * Sessions of servers started with the shared multi-project configuration. They
+ * record themselves beside the access registry rather than in any project,
+ * because a shared server is not working on any one project merely by running.
+ */
+export async function readSharedMcpSessions(
+  registryPath: string,
+  now: number = Date.now(),
+): Promise<McpSessionReading> {
+  return await readSessionRecords(registrySessionsDir(registryPath), now)
+}
+
+async function readSessionRecords(dir: string, now: number): Promise<McpSessionReading> {
   let names: string[]
   try {
     names = await readdir(dir)
@@ -150,8 +165,42 @@ export async function startMcpSession(
   root: ProjectRoot,
   pid: number = process.pid,
 ): Promise<McpSessionHandle> {
+  /**
+   * A folder with no project in it is not ours to write into. Creating the
+   * heartbeat directory there would leave `.projectspace/` non-empty and
+   * make `project_initialize` refuse the folder, so a server bound to a
+   * folder the user has not set up yet records nothing. Checking on every
+   * beat rather than once means a project created through MCP starts being
+   * observable within one heartbeat, without a separate retry path.
+   */
+  const projectFileExists = async (): Promise<boolean> => {
+    try {
+      await access(reservedPaths.projectFile(root))
+      return true
+    } catch {
+      return false
+    }
+  }
+  return await startSessionRecorder(sessionsDir(root), projectFileExists, pid)
+}
+
+/**
+ * The same record for a shared multi-project server, kept beside the access
+ * registry. That folder belongs to the app, so there is no precondition.
+ */
+export async function startSharedMcpSession(
+  registryPath: string,
+  pid: number = process.pid,
+): Promise<McpSessionHandle> {
+  return await startSessionRecorder(registrySessionsDir(registryPath), async () => true, pid)
+}
+
+async function startSessionRecorder(
+  dir: string,
+  mayRecord: () => Promise<boolean>,
+  pid: number,
+): Promise<McpSessionHandle> {
   const sessionId = randomUUID()
-  const dir = sessionsDir(root)
   const path = join(dir, `${sessionId}.json`)
   const startedAt = new Date().toISOString()
   let connectedAt: string | null = null
@@ -160,15 +209,7 @@ export async function startMcpSession(
   const save = async (): Promise<void> => {
     if (ended) return
     try {
-      /**
-       * A folder with no project in it is not ours to write into. Creating the
-       * heartbeat directory there would leave `.projectspace/` non-empty and
-       * make `project_initialize` refuse the folder, so a server bound to a
-       * folder the user has not set up yet records nothing. Checking on every
-       * beat rather than once means a project created through MCP starts being
-       * observable within one heartbeat, without a separate retry path.
-       */
-      if (!(await projectFileExists())) return
+      if (!(await mayRecord())) return
 
       await mkdir(dir, { recursive: true })
       const record: McpSessionRecord = {
@@ -181,15 +222,6 @@ export async function startMcpSession(
       await writeFile(path, `${JSON.stringify(record, null, 2)}\n`, 'utf8')
     } catch {
       // Unobservable, not broken. The server keeps serving.
-    }
-  }
-
-  const projectFileExists = async (): Promise<boolean> => {
-    try {
-      await access(reservedPaths.projectFile(root))
-      return true
-    } catch {
-      return false
     }
   }
 

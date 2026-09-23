@@ -6,6 +6,7 @@ import { registerProjectHandlers } from './ipc.js'
 import { adoptStateFromPreviousName } from './app-state.js'
 import { applyStoredColorScheme, registerSettingsHandlers } from './settings-ipc.js'
 import { registerSetupHandlers } from './setup-ipc.js'
+import { registerMcpAccessHandlers } from './mcp-access.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
 import { applicationMenuTemplate, menuBarIsVisible } from './app-menu.js'
 import { followSystemChanges, windowBackground } from './window-theme.js'
@@ -103,7 +104,8 @@ void app.whenReady().then(async () => {
   registerDocumentHandlers()
   registerSetupHandlers()
   registerSettingsHandlers()
-  process.stdout.write(`MCP launch command: ${JSON.stringify(mcpLaunchCommand('<project>'))}\n`)
+  registerMcpAccessHandlers()
+  process.stdout.write(`MCP launch command: ${JSON.stringify(mcpLaunchCommand())}\n`)
 
   /*
    * Before anything reads settings or the recent-project list: renaming the
