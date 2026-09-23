@@ -92,6 +92,14 @@ Builds the MCP server and produces an unpacked desktop application under
 themselves when it is absent.
 
 ```bash
+pnpm start:packaged
+```
+
+Opens that packaged app, so there is no need to find the executable in the output
+folder. It starts whatever was last packaged and rebuilds nothing, so it prints the
+path and when it was packaged; run `pnpm pack:dir` first after a change.
+
+```bash
 pnpm experiment:editor
 ```
 
