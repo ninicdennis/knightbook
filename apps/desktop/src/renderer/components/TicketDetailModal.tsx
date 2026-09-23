@@ -193,8 +193,8 @@ export function TicketDetailModal({
                 variant="light"
                 title="Unattributed"
               >
-                This was set to Done outside the app, with no recorded decision. Nothing here shows
-                who accepted it.
+                This was set to Done outside the app, with no recorded decision from the app or an
+                AI tool. Nothing here shows who accepted it.
               </Alert>
             )}
 

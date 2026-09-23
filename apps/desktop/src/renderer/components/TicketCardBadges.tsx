@@ -155,7 +155,7 @@ export function TicketCardBadges({ ticket, isNext }: Props) {
           multiline
           w={280}
           withArrow
-          label="This was set to Done outside the app, with no recorded decision. Nothing here shows who accepted it."
+          label="This was set to Done outside the app, with no recorded decision from the app or an AI tool. Nothing here shows who accepted it."
         >
           <Badge
             size="sm"

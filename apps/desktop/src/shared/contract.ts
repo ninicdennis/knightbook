@@ -3,6 +3,16 @@
  * the renderer so a change to one side cannot silently desynchronize the other.
  */
 
+// The MCP status and access types live in their own module; re-exported so
+// every existing import from this file keeps working.
+export type {
+  McpAccessView,
+  McpLaunchCommand,
+  McpSessionView,
+  McpStatusView,
+} from './mcp-contract.js'
+import type { McpAccessView, McpLaunchCommand, McpStatusView } from './mcp-contract.js'
+
 export type TicketStatus = 'backlog' | 'in_progress' | 'verification' | 'done'
 
 /** The statuses a user may move a card into directly. Done is not one of them. */
@@ -234,59 +244,6 @@ export interface SetupOutcome {
   path: string
   /** Set when the project exists but something asked for could not be done. */
   warning: string | null
-}
-
-export interface McpLaunchCommand {
-  command: string
-  args: string[]
-}
-
-/** One MCP server process that recorded itself against this project. */
-export interface McpSessionView {
-  pid: number
-  startedAt: string
-  /** When a client completed an opening handshake, or null if none has. */
-  connectedAt: string | null
-  lastSeenAt: string
-}
-
-/**
- * What the app could actually observe about MCP for one checkout. These are
- * three separate facts and the UI must not collapse them: the bundled runtime
- * existing says nothing about a server running, and a server running says
- * nothing about a client having connected to it.
- */
-export interface McpStatusView {
-  /** The checkout this describes, so a reply that arrives late can be discarded. */
-  checkoutPath: string
-  observedAt: string
-  /** Set when nothing could be observed. Not the same as observing nothing. */
-  unobservable: string | null
-  /** Whether the bundled server the copied configuration points at is present. */
-  runtimeAvailable: boolean
-  /** Sessions whose heartbeat is current. */
-  live: McpSessionView[]
-  /** Sessions left behind by a process that stopped without cleaning up. */
-  stale: McpSessionView[]
-  /** Whether the user has allowed AI access to this checkout through the shared connection. */
-  access: McpAccessView
-  /**
-   * Live servers started with the shared configuration. Their being connected
-   * means a client can reach every enabled project, not that it is using this one.
-   */
-  shared: McpSessionView[]
-  /** The last call a live shared server made against this project, or null if none was observed. */
-  lastActivityAt: string | null
-}
-
-/** The per-checkout "Allow AI access through MCP" setting as stored. */
-export interface McpAccessView {
-  checkoutPath: string
-  enabled: boolean
-  /** The id an AI passes to reach this checkout, while it is enabled. */
-  checkoutId: string | null
-  /** Set when the access list could not be read: nothing is reachable, which is not "off". */
-  problem: string | null
 }
 
 /** How the window picks its appearance. `auto` follows the operating system. */

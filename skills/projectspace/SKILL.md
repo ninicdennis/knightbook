@@ -101,8 +101,10 @@ its `checkout_id`.
   released. Most existing tickets are untyped, and that is not a gap to fill.
   The words are borrowed from Conventional Commits only loosely — a breaking change
   can be any of the three, so never derive a version bump or a release from a type.
-- A Done ticket with `completion_unattributed: true` has no recorded decision (its
-  file was edited by hand). Do not describe it as accepted by the user.
+- A Done ticket with `completion_unattributed: true` has no decision the app or MCP
+  recorded: its completion block is missing, or was edited into a combination no
+  write path produces, and `completion` is then `null`. Do not describe it as
+  accepted by the user.
 - `previous_completions` are acceptances that were taken back by moving the ticket
   out of Done. They are history, not state: a ticket with entries here and no
   `completion` is **not** accepted work, and saying so would misread its own record.

@@ -92,6 +92,17 @@ export function connectedSession(overrides: Partial<McpStatusView> = {}): McpSta
   })
 }
 
+/**
+ * What a board mutation answers by default: it succeeded and the board is as it
+ * was. The app replaces the board with whatever comes back, so a bare `vi.fn()`
+ * here (resolving to undefined) made it read `.ok` off nothing — an unhandled
+ * error that left every test looking green. A test that cares about the board
+ * after a mutation, or about a failure, still overrides it.
+ */
+function boardUnchanged() {
+  return vi.fn().mockImplementation(async () => ({ ok: true, value: project() }))
+}
+
 export function makeApi(): KnightbookApi {
   return {
     rememberedProjects: vi.fn().mockResolvedValue([REMEMBERED]),
@@ -100,16 +111,16 @@ export function makeApi(): KnightbookApi {
     inspectFolder: vi.fn().mockResolvedValue({ ok: true, value: { name: 'app', suggestions: [] } }),
     setUpFolder: vi.fn(),
     readProject: vi.fn().mockResolvedValue({ ok: true, value: project() }),
-    setTicketStatus: vi.fn(),
-    setTicketType: vi.fn(),
-    completeTicket: vi.fn(),
-    recordVerificationIssue: vi.fn(),
-    resolveVerificationIssue: vi.fn(),
-    recordTicketReview: vi.fn(),
+    setTicketStatus: boardUnchanged(),
+    setTicketType: boardUnchanged(),
+    completeTicket: boardUnchanged(),
+    recordVerificationIssue: boardUnchanged(),
+    resolveVerificationIssue: boardUnchanged(),
+    recordTicketReview: boardUnchanged(),
     archiveTickets: vi.fn(),
-    restoreTicket: vi.fn(),
+    restoreTicket: boardUnchanged(),
     readTicket: vi.fn().mockResolvedValue({ ok: true, value: detail() }),
-    reorderBacklog: vi.fn(),
+    reorderBacklog: boardUnchanged(),
     searchTickets: vi.fn().mockResolvedValue({
       ok: true,
       value: { checkoutPath: CHECKOUT, query: '', hits: [], totalMatches: 0, unsearchable: [] },

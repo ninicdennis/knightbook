@@ -1,10 +1,10 @@
 import type {
-  McpStatusView,
   ProjectView,
   KnightbookApi,
   RememberedProject,
   TicketView,
 } from '../src/shared/contract.js'
+import { setStubAllowed, stubMcpStatus } from './mcp-status-stub.js'
 import { SAMPLE_DOCUMENT } from './sample-document.js'
 import { stubTicketDetail } from './ticket-detail-stub.js'
 import { stubTicketSearch } from './ticket-search-stub.js'
@@ -30,6 +30,7 @@ function ticket(
     completion: null,
     completionUnattributed: false,
     review: { state: 'unreviewed', lastReviewedAt: null, changeSummary: null },
+    archivedAt: null,
     ...partial,
   }
 }
@@ -50,68 +51,16 @@ const UNREADABLE = new URLSearchParams(window.location.search).has('problems')
     ]
   : []
 
-/**
- * The footer has five states and only one of them is reachable by luck, so the
- * preview picks between them from the URL the same way `?problems` does.
- */
-/** Whether this preview's project is allowed; the panel's switch changes it for the session. */
-let stubAllowed = true
-
-function stubMcpStatus(root: string): McpStatusView {
-  const want = new URLSearchParams(window.location.search).get('mcp') ?? 'connected'
-  const now = Date.now()
-  const at = (msAgo: number) => new Date(now - msAgo).toISOString()
-  const access = { checkoutPath: root, enabled: stubAllowed, checkoutId: 'c-1', problem: null }
-  const base: McpStatusView = {
-    checkoutPath: root,
-    observedAt: at(0),
-    unobservable: null,
-    runtimeAvailable: true,
-    live: [],
-    stale: [],
-    access,
-    shared: [],
-    lastActivityAt: null,
-  }
-  const sharedClient = {
-    pid: 9100,
-    startedAt: at(900_000),
-    connectedAt: at(880_000),
-    lastSeenAt: at(2_000),
-  }
-
-  if (want === 'none') return base
-  if (want === 'shared') return { ...base, shared: [sharedClient], lastActivityAt: at(120_000) }
-  if (want === 'shared-idle') return { ...base, shared: [sharedClient] }
-  if (want === 'access-broken') {
-    return {
-      ...base,
-      shared: [sharedClient],
-      access: { ...access, enabled: false, problem: 'Unexpected end of JSON input' },
-    }
-  }
-  if (want === 'missing') return { ...base, runtimeAvailable: false }
-  if (want === 'unknown') return { ...base, unobservable: 'EPERM: permission denied' }
-  if (want === 'stale') {
-    const startedAt = at(3_600_000)
-    return {
-      ...base,
-      stale: [{ pid: 8120, startedAt, connectedAt: startedAt, lastSeenAt: at(600_000) }],
-    }
-  }
-  if (want === 'running') {
-    return {
-      ...base,
-      live: [{ pid: 8120, startedAt: at(4_000), connectedAt: null, lastSeenAt: at(1_000) }],
-    }
-  }
-  return {
-    ...base,
-    live: [{ pid: 8120, startedAt: at(900_000), connectedAt: at(880_000), lastSeenAt: at(2_000) }],
-  }
-}
-
 const PROJECT: ProjectView = {
+  /** One archived card, so the Archive tab has something to show. */
+  archivedTickets: [
+    ticket({
+      id: '5e0a7c21-9d4b-4f3e-8a61-2b7c9e1d0f34',
+      title: 'Explore a hosted sync service',
+      status: 'backlog',
+      archivedAt: '2026-09-21T16:30:00Z',
+    }),
+  ],
   name: 'Knightbook',
   problems: UNREADABLE,
   checkoutPath: String.raw`C:\Users\Denny\Projects\knightbook-demo`,
@@ -311,6 +260,14 @@ export const stubApi: KnightbookApi = {
     record('recordTicketReview', id)
     return { ok: true, value: PROJECT }
   },
+  archiveTickets: async (_root, targets) => {
+    record('archiveTickets', targets)
+    return { ok: true, value: { archivedCount: targets.length, failures: [], project: PROJECT } }
+  },
+  restoreTicket: async (_root, id) => {
+    record('restoreTicket', id)
+    return { ok: true, value: PROJECT }
+  },
   readTicket: async (_root, id) => {
     record('readTicket', id)
     return stubTicketDetail(PROJECT, id)
@@ -347,7 +304,7 @@ export const stubApi: KnightbookApi = {
    */
   mcpStatus: async (root) => stubMcpStatus(root),
   setMcpAccess: async (root, enabled) => {
-    stubAllowed = enabled
+    setStubAllowed(enabled)
     return {
       ok: true,
       value: { checkoutPath: root, enabled, checkoutId: enabled ? 'c-1' : null, problem: null },

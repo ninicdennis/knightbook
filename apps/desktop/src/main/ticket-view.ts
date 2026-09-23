@@ -1,4 +1,5 @@
 import {
+  isUnattributedCompletion,
   describeReason,
   evaluateReadiness,
   failedPrerequisites,
@@ -39,6 +40,7 @@ export async function toTicketView(
   lookup: TicketLookup,
 ): Promise<TicketView> {
   const { frontmatter } = ticket
+  const unattributed = isUnattributedCompletion(ticket)
   const readiness = evaluateReadiness(frontmatter, lookup.byId, lookup.unreadable)
   const review = await ticketReviewStatus(project, frontmatter.id)
 
@@ -71,10 +73,11 @@ export async function toTicketView(
      * Only a Done ticket has a current acceptance. Reopening clears the record,
      * so this is about the other way in: a file edited by hand or merged from a
      * branch can carry an acceptance next to a status that contradicts it, and
-     * the board must not repeat that claim.
+     * the board must not repeat that claim. Nor may it repeat one no write path
+     * could have produced; the same core check MCP uses decides both.
      */
     completion:
-      frontmatter.status === 'done' && frontmatter.completion
+      frontmatter.status === 'done' && frontmatter.completion && !unattributed
         ? {
             decisionSource: frontmatter.completion.decision_source,
             recordedBy: frontmatter.completion.recorded_by,
@@ -82,7 +85,7 @@ export async function toTicketView(
             instruction: frontmatter.completion.instruction,
           }
         : null,
-    completionUnattributed: frontmatter.status === 'done' && frontmatter.completion === undefined,
+    completionUnattributed: unattributed,
     review: {
       state: review.state,
       lastReviewedAt: review.lastReview?.reviewedAt ?? null,
