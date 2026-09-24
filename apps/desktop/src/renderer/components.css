@@ -86,3 +86,13 @@
   color: var(--mantine-color-text);
   font-weight: 600;
 }
+
+/* The search dialog's column: only the results list gives way when the window
+   is short; the field, scope and messages above and below it keep their size. */
+.ps-search-column > * {
+  flex-shrink: 0;
+}
+
+.ps-search-column > [role='listbox'] {
+  flex-shrink: 1;
+}
