@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { registerDocumentHandlers } from './documents-ipc.js'
 import { registerProjectHandlers } from './ipc.js'
+import { registerReviewChangesHandlers } from './review-changes-ipc.js'
 import { adoptStateFromPreviousName } from './app-state.js'
 import { applyStoredColorScheme, registerSettingsHandlers } from './settings-ipc.js'
 import { registerSetupHandlers } from './setup-ipc.js'
@@ -102,6 +103,7 @@ void app.whenReady().then(async () => {
 
   registerProjectHandlers()
   registerDocumentHandlers()
+  registerReviewChangesHandlers()
   registerSetupHandlers()
   registerSettingsHandlers()
   registerMcpAccessHandlers()

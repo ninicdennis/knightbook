@@ -3,6 +3,7 @@ import { useMediaQuery } from '@mantine/hooks'
 import { IconAlertTriangle, IconFileText } from '@tabler/icons-react'
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import type { DocumentListView, DocumentReadView, Result } from '../../shared/contract.js'
+import type { LinkRequest, ScrollTarget } from '../hooks/useLinkNavigation.js'
 import { DocumentNav } from './DocumentNav.js'
 import { DocumentReader, type ReaderState } from './DocumentReader.js'
 import { IncludedEntries } from './IncludedEntries.js'
@@ -20,15 +21,25 @@ import { IncludedEntries } from './IncludedEntries.js'
 interface Props {
   rootPath: string
   /** Asks the view to show one document. The nonce lets the same path be asked for twice. */
-  openTarget?: { path: string; nonce: number } | null
+  openTarget?: { path: string; nonce: number; scrollTo: ScrollTarget | null } | null
   /** Changes whenever the project is refreshed, so the view re-reads from disk. */
   refreshToken?: number
+  /** Follows a link found in the document at `fromPath`; resolves to a failure message. */
+  onFollowLink: (fromPath: string, request: LinkRequest) => Promise<string | null>
+  /** The way back to where a link to `path` was followed from, if any. */
+  backFor: (path: string) => { label: string; onBack: () => void } | null
 }
 
 /** Matches Mantine's `sm` breakpoint (48em), below which the panels take turns. */
 const NARROW_QUERY = '(max-width: 47.99em)'
 
-export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }: Props) {
+export function DocumentsView({
+  rootPath,
+  openTarget = null,
+  refreshToken = 0,
+  onFollowLink,
+  backFor,
+}: Props) {
   const [listing, setListing] = useState<DocumentListView | null>(null)
   const [listError, setListError] = useState<string | null>(null)
   const [listAttempt, setListAttempt] = useState(0)
@@ -124,15 +135,26 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
     setBusy(false)
   }, [])
 
-  const review = useCallback(async () => {
-    if (!document) return
-    const result = await window.knightbook.reviewDocument(rootPath, document.path)
-    if (result.ok) {
-      setDocument(result.value)
-      const refreshed = await window.knightbook.listDocuments(rootPath)
-      if (refreshed.ok) setListing(refreshed.value)
-    } else setActionError(result.message)
-  }, [rootPath, document])
+  /**
+   * Reviews exactly the revision the reader showed. If the file moved on, the
+   * host refuses; the reader is refreshed first so the explanation sits above
+   * the version the user now has to read.
+   */
+  const review = useCallback(
+    async (revision: string) => {
+      if (!document) return
+      const result = await window.knightbook.reviewDocument(rootPath, document.path, revision)
+      if (result.ok) {
+        setDocument(result.value)
+        const refreshed = await window.knightbook.listDocuments(rootPath)
+        if (refreshed.ok) setListing(refreshed.value)
+      } else if (result.code === 'revision_conflict') {
+        await read(document.path)
+        setActionError(result.message)
+      } else setActionError(result.message)
+    },
+    [rootPath, document, read],
+  )
 
   if (!listing) {
     return listError ? (
@@ -186,7 +208,7 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
   const showReader = readerState && (!narrow || pane === 'reader')
 
   return (
-    <div className="ps-docs" data-narrow={narrow || undefined}>
+    <div className="ps-docs ps-reading" data-narrow={narrow || undefined}>
       {showNav && (
         <div ref={navRef} style={{ display: 'contents' }}>
           <DocumentNav
@@ -200,6 +222,7 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
 
       {showReader && selected && (
         <DocumentReader
+          rootPath={rootPath}
           state={readerState}
           title={listing.documents.find((item) => item.path === selected)?.title ?? selected}
           headingRef={headingRef}
@@ -230,9 +253,12 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
             )
           }
           onRetry={() => void read(selected)}
-          onReview={() => void review()}
+          onReview={(revision) => void review(revision)}
           onOpenExternally={() => void window.knightbook.openDocumentExternally(rootPath, selected)}
-          onFollowLink={(path) => setSelected(path)}
+          onFollowLink={(request) => onFollowLink(selected, request)}
+          // Only the document a link asked for scrolls to the link's heading.
+          scrollTo={openTarget?.path === selected ? openTarget.scrollTo : null}
+          back={backFor(selected)}
         />
       )}
     </div>

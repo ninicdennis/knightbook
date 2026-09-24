@@ -12,6 +12,25 @@ export type {
   McpStatusView,
 } from './mcp-contract.js'
 import type { McpAccessView, McpLaunchCommand, McpStatusView } from './mcp-contract.js'
+// Review state and the changes-since-review comparison, re-exported the same way.
+export type {
+  ChangedLineView,
+  ChangeSectionView,
+  ReviewChangesView,
+  ReviewState,
+  ReviewView,
+} from './review-contract.js'
+import type { ReviewChangesApi, ReviewView } from './review-contract.js'
+// The documents types and operations, re-exported the same way.
+export type {
+  DocumentListView,
+  DocumentProblem,
+  DocumentReadView,
+  DocumentSummary,
+  DocumentsApi,
+  LinkDestinationView,
+} from './documents-contract.js'
+import type { DocumentsApi } from './documents-contract.js'
 
 export type TicketStatus = 'backlog' | 'in_progress' | 'verification' | 'done'
 
@@ -60,15 +79,6 @@ export interface AffectedByView {
   issue: string
   /** False when the failure is further up the chain than this ticket's own prerequisites. */
   direct: boolean
-}
-
-export type ReviewState = 'unreviewed' | 'reviewed' | 'changed_since_review'
-
-export interface ReviewView {
-  state: ReviewState
-  lastReviewedAt: string | null
-  /** Present only when review is stale; says what the comparison established. */
-  changeSummary: string | null
 }
 
 export interface TicketView {
@@ -258,7 +268,7 @@ export interface AppSettings {
   colorScheme: ColorSchemeChoice
 }
 
-export interface KnightbookApi extends DocumentsApi {
+export interface KnightbookApi extends DocumentsApi, ReviewChangesApi {
   /** Projects this machine has opened, most recent first, each checked for availability. */
   rememberedProjects(): Promise<RememberedProject[]>
   /** Forgets one entry and returns the updated list. Deletes nothing on disk. */
@@ -299,8 +309,16 @@ export interface KnightbookApi extends DocumentsApi {
     id: string,
     revision: string,
   ): Promise<Result<ProjectView>>
-  /** Records the user's own review. There is no agent equivalent (D-003). */
-  recordTicketReview(rootPath: string, id: string, note: string): Promise<Result<ProjectView>>
+  /**
+   * Records the user's own review. There is no agent equivalent (D-003). With a
+   * revision, a ticket that changed since the user was shown it is refused.
+   */
+  recordTicketReview(
+    rootPath: string,
+    id: string,
+    note: string,
+    revision?: string,
+  ): Promise<Result<ProjectView>>
   /**
    * Takes tickets off the board, keeping their files and everything on them.
    * Archiving records nothing about whether work was finished or accepted.
@@ -339,53 +357,4 @@ export interface KnightbookApi extends DocumentsApi {
   readSettings(): Promise<AppSettings>
   /** Merges the given fields into the stored settings and returns the stored result. */
   saveSettings(patch: Partial<AppSettings>): Promise<Result<AppSettings>>
-}
-
-export interface DocumentSummary {
-  path: string
-  title: string
-  /** The manifest entry this came from: the file itself, or a folder above it. */
-  includedVia: string
-  review: ReviewView
-}
-
-export interface DocumentProblem {
-  path: string
-  reason: 'missing' | 'not_readable'
-}
-
-export interface DocumentListView {
-  documents: DocumentSummary[]
-  /** Manifest entries that no longer resolve. Reported, never hidden. */
-  problems: DocumentProblem[]
-}
-
-export interface DocumentReadView {
-  path: string
-  content: string
-  revision: string
-  review: ReviewView
-}
-
-export interface DocumentsApi {
-  listDocuments(rootPath: string): Promise<Result<DocumentListView>>
-  /**
-   * Opens a picker for Markdown files inside the project and includes them
-   * where they are (D-011). Nothing is copied or moved. Cancelling returns the
-   * list unchanged.
-   *
-   * Files and folders are separate actions because Windows and Linux cannot show
-   * one dialog that selects both.
-   */
-  includeDocumentFiles(rootPath: string): Promise<Result<DocumentListView>>
-  includeDocumentFolder(rootPath: string): Promise<Result<DocumentListView>>
-  /** Drops one manifest entry. The file or folder itself is left on disk. */
-  removeDocumentEntry(rootPath: string, entry: string): Promise<Result<DocumentListView>>
-  readDocument(rootPath: string, path: string): Promise<Result<DocumentReadView>>
-  /** Records the user's own review of a document. No agent equivalent (D-003). */
-  reviewDocument(rootPath: string, path: string): Promise<Result<DocumentReadView>>
-  /** Hands the file to the user's registered editor. */
-  openDocumentExternally(rootPath: string, path: string): Promise<Result<null>>
-  /** Opens an http(s) link from a document, on an explicit user click. */
-  openExternalLink(url: string): Promise<Result<null>>
 }

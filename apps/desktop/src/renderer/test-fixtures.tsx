@@ -7,6 +7,7 @@ import type {
   ProjectView,
   KnightbookApi,
   RememberedProject,
+  ReviewChangesView,
   TicketDetailView,
   TicketView,
 } from '../shared/contract.js'
@@ -103,6 +104,20 @@ function boardUnchanged() {
   return vi.fn().mockImplementation(async () => ({ ok: true, value: project() }))
 }
 
+/** A record nobody has reviewed: there is nothing to compare against. */
+export function noBaseline(): ReviewChangesView {
+  return {
+    state: 'no_baseline',
+    reviewedAt: null,
+    currentRevision: 'rev-current',
+    unreadableSnapshots: 0,
+    substantive: null,
+    sections: [],
+    notes: [],
+    tooLarge: null,
+  }
+}
+
 export function makeApi(): KnightbookApi {
   return {
     rememberedProjects: vi.fn().mockResolvedValue([REMEMBERED]),
@@ -145,8 +160,15 @@ export function makeApi(): KnightbookApi {
       .mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
     readDocument: vi.fn(),
     reviewDocument: vi.fn(),
+    documentChanges: vi.fn().mockResolvedValue({ ok: true, value: noBaseline() }),
+    ticketChanges: vi.fn().mockResolvedValue({ ok: true, value: noBaseline() }),
     openDocumentExternally: vi.fn(),
-    openExternalLink: vi.fn(),
+    // Every link reaches the document it names unless a test says otherwise.
+    resolveLink: vi.fn().mockImplementation(async (_root: string, path: string) => ({
+      ok: true,
+      value: { kind: 'document', path },
+    })),
+    openExternalLink: vi.fn().mockResolvedValue({ ok: true, value: null }),
   }
 }
 

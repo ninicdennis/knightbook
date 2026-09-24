@@ -1,6 +1,7 @@
 import '@mantine/core/styles.css'
 import '../src/renderer/markdown.css'
 import '../src/renderer/surfaces.css'
+import '../src/renderer/review-changes.css'
 import '../src/renderer/shell.css'
 import '../src/renderer/documents.css'
 import '../src/renderer/components.css'

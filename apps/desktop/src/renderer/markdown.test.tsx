@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyLink, renderMarkdown, splitFrontmatter } from './markdown.js'
+import { classifyLink, headingIdFor, renderMarkdown, splitFrontmatter } from './markdown.js'
 
 /**
  * Technical design section 1: document content is untrusted. These cover the
@@ -8,18 +8,62 @@ import { classifyLink, renderMarkdown, splitFrontmatter } from './markdown.js'
  */
 
 describe('link classification', () => {
-  it('treats a relative Markdown link as an in-project document', () => {
+  it('resolves a relative link from the file it appears in', () => {
     expect(classifyLink('architecture.md', 'docs/overview.md')).toEqual({
-      kind: 'document',
+      kind: 'internal',
       path: 'docs/architecture.md',
+      fragment: null,
     })
   })
 
   it('resolves a parent-relative link within the project', () => {
     expect(classifyLink('../README.md', 'docs/overview.md')).toEqual({
-      kind: 'document',
+      kind: 'internal',
       path: 'README.md',
+      fragment: null,
     })
+  })
+
+  it('resolves links from a ticket file to documents and to a sibling ticket', () => {
+    const ticket = '.projectspace/tickets/5be60610.md'
+    expect(classifyLink('../../docs/ui-ux-design-direction.md', ticket)).toEqual({
+      kind: 'internal',
+      path: 'docs/ui-ux-design-direction.md',
+      fragment: null,
+    })
+    expect(classifyLink('db7cff48.md', ticket)).toEqual({
+      kind: 'internal',
+      path: '.projectspace/tickets/db7cff48.md',
+      fragment: null,
+    })
+  })
+
+  it('keeps a fragment on a cross-file link and treats a bare one as this file', () => {
+    expect(classifyLink('spec.md#Next-decisions', 'docs/overview.md')).toEqual({
+      kind: 'internal',
+      path: 'docs/spec.md',
+      fragment: 'Next-decisions',
+    })
+    expect(classifyLink('#acceptance-criteria', 'README.md')).toEqual({
+      kind: 'anchor',
+      fragment: 'acceptance-criteria',
+    })
+  })
+
+  it('decodes spaces and escapes exactly once', () => {
+    expect(classifyLink('design%20notes.md', 'docs/a.md')).toMatchObject({
+      path: 'docs/design notes.md',
+    })
+    // %2520 is a literal "%20" in the file name, not a space.
+    expect(classifyLink('odd%2520name.md', 'docs/a.md')).toMatchObject({
+      path: 'docs/odd%20name.md',
+    })
+  })
+
+  it('refuses escaped separators, malformed escapes, and Windows paths', () => {
+    for (const href of ['..%2F..%2Fsecret.md', 'bad%zz.md', 'docs\\x.md', 'C:/x.md']) {
+      expect(classifyLink(href, 'docs/a.md').kind, href).toBe('blocked')
+    }
   })
 
   it('blocks a link that climbs out of the project', () => {
@@ -49,8 +93,8 @@ describe('link classification', () => {
     }
   })
 
-  it('blocks an anchor-only or empty link rather than guessing', () => {
-    expect(classifyLink('#section', 'README.md').kind).toBe('blocked')
+  it('blocks an empty link or an empty fragment rather than guessing', () => {
+    expect(classifyLink('#', 'README.md').kind).toBe('blocked')
     expect(classifyLink('   ', 'README.md').kind).toBe('blocked')
   })
 })
@@ -67,7 +111,7 @@ describe('rendering', () => {
       '# Title\n\n- one\n- two\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n```ts\nconst x = 1\n```\n',
       'README.md',
     )
-    expect(html).toContain('<h1>Title</h1>')
+    expect(html).toContain('<h1 id="user-content-title">Title</h1>')
     expect(html).toContain('<li>one</li>')
     expect(html).toContain('<table>')
     expect(html).toContain('const x = 1')
@@ -89,11 +133,29 @@ describe('rendering', () => {
       '[docs](docs/architecture.md) and [site](https://example.com)',
       'README.md',
     )
-    expect(html).toContain('data-document="docs/architecture.md"')
+    expect(html).toContain('data-link="docs/architecture.md"')
     expect(html).toContain('data-external="https://example.com"')
     // No href can navigate on its own.
     expect(html).not.toContain('href="https://example.com"')
     expect(html).not.toContain('href="docs/architecture.md"')
+  })
+
+  it('gives headings GitHub-style ids, numbering repeats', () => {
+    const { html } = renderMarkdown(
+      '## Acceptance criteria\n\n## Notes\n\n## Notes\n\n## What’s **next**?\n',
+      'README.md',
+    )
+    expect(html).toContain('id="user-content-acceptance-criteria"')
+    expect(html).toContain('id="user-content-notes"')
+    expect(html).toContain('id="user-content-notes-1"')
+    expect(html).toContain('id="user-content-whats-next"')
+    expect(headingIdFor('Acceptance Criteria')).toBe('user-content-acceptance-criteria')
+  })
+
+  it('carries a fragment as data, never as a live href', () => {
+    const { html } = renderMarkdown('[a](spec.md#notes) and [b](#notes)', 'docs/x.md')
+    expect(html).toContain('data-link="docs/spec.md" data-fragment="notes"')
+    expect(html).toContain('<a href="#" data-fragment="notes">b</a>')
   })
 
   it('shows a refused link as visible text rather than dropping it', () => {

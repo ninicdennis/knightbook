@@ -178,6 +178,12 @@ One or two sentences: what will be true when this is done.
 Constraints, decisions already made, links to the relevant documents.
 ```
 
+Links in a ticket body are ordinary Markdown, relative to the ticket file in
+`.projectspace/tickets/`: `[direction](../../docs/ui-ux-design-direction.md)` for a
+document, `[other](<ticket id>.md)` for another ticket, and `#heading-slug` for a
+heading. `related_documents` is different: those are project-relative paths
+(`docs/ui-ux-design-direction.md`), not relative to the ticket.
+
 - One ticket, one verifiable outcome. If it has two, split it.
 - Put prerequisites in `depends_on` (ticket ids) and the documents that explain it in
   `related_documents` (project-relative paths).

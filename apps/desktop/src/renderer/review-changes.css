@@ -1,0 +1,97 @@
+/*
+ * The changes-since-review line table. Colour is a second signal only: every
+ * changed line also carries a sign and a text label for assistive technology.
+ * Mantine's `light` colour variables already switch with the colour scheme, so
+ * nothing here needs a separate dark rule.
+ */
+.ps-diff-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--ps-hairline);
+  border-radius: var(--mantine-radius-sm);
+  background: var(--ps-card-bg);
+}
+
+.ps-diff {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--mantine-font-size-xs);
+  line-height: 1.55;
+}
+
+.ps-diff td {
+  padding: 0 var(--mantine-spacing-xs);
+  vertical-align: top;
+}
+
+.ps-diff-number {
+  width: 1%;
+  min-width: 2.5em;
+  text-align: right;
+  color: var(--mantine-color-dimmed);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.ps-diff-sign {
+  width: 1%;
+  text-align: center;
+  user-select: none;
+  font-weight: 600;
+}
+
+/* Long lines wrap rather than widen the dialog, so narrow windows still work. */
+.ps-diff-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ps-diff-added {
+  background: var(--mantine-color-teal-light);
+}
+
+.ps-diff-added .ps-diff-sign {
+  color: var(--mantine-color-teal-light-color);
+}
+
+.ps-diff-removed {
+  background: var(--mantine-color-red-light);
+}
+
+.ps-diff-removed .ps-diff-sign {
+  color: var(--mantine-color-red-light-color);
+}
+
+/*
+ * Lifecycle fields review ignores stay visible but read as secondary. One note
+ * above the section explains the dimming, rather than a label on every line.
+ */
+.ps-diff tr[data-bookkeeping] .ps-diff-text {
+  opacity: 0.55;
+}
+
+.ps-diff-fold td {
+  padding: 0;
+  background: var(--ps-card-bg-quiet);
+}
+
+.ps-diff-fold button {
+  width: 100%;
+  padding: 2px var(--mantine-spacing-xs);
+  border: 0;
+  background: none;
+  color: var(--mantine-color-anchor);
+  font: inherit;
+  font-family: var(--mantine-font-family);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ps-diff-fold button:hover {
+  text-decoration: underline;
+}
+
+.ps-diff-fold button:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -2px;
+}

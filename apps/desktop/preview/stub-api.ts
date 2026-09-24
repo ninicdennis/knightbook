@@ -4,9 +4,10 @@ import type {
   RememberedProject,
   TicketView,
 } from '../src/shared/contract.js'
-import { stubListDocuments, stubReadDocument } from './documents-stub.js'
+import { documentsStub } from './documents-stub.js'
 import { setStubAllowed, stubMcpStatus } from './mcp-status-stub.js'
-import { SAMPLE_DOCUMENT } from './sample-document.js'
+import { record } from './record.js'
+import { stubReviewChanges } from './review-changes-stub.js'
 import { stubTicketDetail } from './ticket-detail-stub.js'
 import { stubTicketSearch } from './ticket-search-stub.js'
 
@@ -198,12 +199,6 @@ const PROJECT: ProjectView = {
   ],
 }
 
-/** Lets a browser session see which host operations actually fired. */
-function record(name: string, ...args: unknown[]): void {
-  const log = ((window as unknown as { __calls?: unknown[] }).__calls ??= [])
-  log.push([name, ...args])
-}
-
 const REMEMBERED: RememberedProject[] = [
   { path: PROJECT.checkoutPath, name: PROJECT.name, unavailable: null },
   { path: 'C:\\projects\\second-app', name: 'Second app', unavailable: null },
@@ -312,29 +307,9 @@ export const stubApi: KnightbookApi = {
     }
   },
 
-  includeDocumentFiles: async (root) => {
-    record('includeDocumentFiles', root)
-    return await stubApi.listDocuments(root)
+  ...documentsStub,
+  ticketChanges: async (_root, id) => {
+    record('ticketChanges', id)
+    return stubReviewChanges(PROJECT.tickets.find((t) => t.id === id)?.revision ?? 'rev-unknown')
   },
-  includeDocumentFolder: async (root) => {
-    record('includeDocumentFolder', root)
-    return await stubApi.listDocuments(root)
-  },
-  removeDocumentEntry: async (root, entry) => {
-    record('removeDocumentEntry', entry)
-    return await stubApi.listDocuments(root)
-  },
-  listDocuments: async () => await stubListDocuments(),
-  readDocument: async (_root, path) => await stubReadDocument(path),
-  reviewDocument: async (_root, path) => ({
-    ok: true,
-    value: {
-      path,
-      content: SAMPLE_DOCUMENT,
-      revision: 'rev-doc',
-      review: { state: 'reviewed', lastReviewedAt: '2026-09-19T12:00:00Z', changeSummary: null },
-    },
-  }),
-  openDocumentExternally: async () => ({ ok: true, value: null }),
-  openExternalLink: async () => ({ ok: true, value: null }),
 }
