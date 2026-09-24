@@ -96,8 +96,19 @@ export {
   type TicketSearchHit,
   type TicketSearchResult,
 } from './ticket-search.js'
+export { resolveLinkDestination, type LinkDestination } from './links.js'
+export {
+  compareSources,
+  reviewChanges,
+  type ChangedLine,
+  type ChangeSection,
+  type ChangesState,
+  type ReviewChanges,
+  type SourceComparison,
+} from './review-changes.js'
 export {
   assertHumanReviewer,
+  BOOKKEEPING_FIELDS,
   contentFingerprint,
   documentRecordId,
   lastReview,

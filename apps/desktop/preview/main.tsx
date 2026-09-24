@@ -1,6 +1,7 @@
 import '@mantine/core/styles.css'
 import '../src/renderer/markdown.css'
 import '../src/renderer/surfaces.css'
+import '../src/renderer/review-changes.css'
 import { MantineProvider } from '@mantine/core'
 import { createRoot } from 'react-dom/client'
 import { App } from '../src/renderer/App.js'

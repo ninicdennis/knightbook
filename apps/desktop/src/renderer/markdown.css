@@ -1,13 +1,36 @@
 /*
- * Reading styles for rendered project documents. Scoped to .markdown-body so
- * nothing here can affect the application shell, and built on Mantine's CSS
- * variables so light and dark follow the theme.
+ * Reading styles for rendered Markdown, in tickets and documents alike. Scoped
+ * to .markdown-body so nothing here can reach the board, its cards, or the
+ * application shell.
+ *
+ * The --md-* properties below are the content styling contract: the reading
+ * scale, measure, and surfaces that the future formatted editor must reproduce,
+ * so a document looks the same being read and being edited. Change them here,
+ * not per component. docs/ui-ux-design-direction.md records the same contract.
  */
 .markdown-body {
-  color: var(--mantine-color-text);
-  font-size: var(--mantine-font-size-sm);
-  line-height: 1.65;
-  max-width: 78ch;
+  /* Scale: prose, then headings from largest to smallest. */
+  --md-text-size: 0.9375rem; /* 15px */
+  --md-line-height: 1.6;
+  --md-measure: 72ch;
+  --md-h1-size: 1.375rem; /* 22px */
+  --md-h2-size: 1.125rem; /* 18px */
+  --md-h3-size: 1rem; /* 16px */
+  --md-h4-size: var(--md-text-size);
+  --md-heading-line-height: 1.3;
+
+  /* Colours: text, quieter supporting text, links, and the blue-gray surfaces. */
+  --md-text: var(--mantine-color-text);
+  --md-muted: #4a5263;
+  --md-link: #3a588f;
+  --md-surface: #eceff4;
+  --md-surface-strong: #e1e5ed;
+  --md-rule: rgba(16, 24, 40, 0.16);
+
+  color: var(--md-text);
+  font-size: var(--md-text-size);
+  line-height: var(--md-line-height);
+  max-width: var(--md-measure);
   /*
    * A file path, a UUID, or a URL has no spaces to break at. Without this it
    * would set the width of whatever contains it and push the reading text off
@@ -16,97 +39,206 @@
   overflow-wrap: anywhere;
 }
 
+:root[data-mantine-color-scheme='dark'] .markdown-body {
+  --md-muted: #b4bac6;
+  --md-link: #9fb3dc;
+  --md-surface: #1c1f26;
+  --md-surface-strong: #2c313c;
+  --md-rule: rgba(255, 255, 255, 0.16);
+}
+
+/*
+ * Reading surfaces: the ticket dialog and the Documents view. Mantine's dimmed
+ * grey measures about 3.3:1 on white and 3.5:1 on the dark card, under the 4.5:1
+ * the design direction asks for. Quiet metadata there (paths, dates, related
+ * documents) uses these instead. Scoped to the reading surfaces, so the board's
+ * approved look is unchanged.
+ */
+.ps-reading {
+  --mantine-color-dimmed: #5f6673;
+}
+
+:root[data-mantine-color-scheme='dark'] .ps-reading {
+  --mantine-color-dimmed: #a3a9b4;
+}
+
+/*
+ * Inside a dialog the ticket title is the largest text, so authored headings
+ * step down below it (20px title, 17px at most here). Every heading is still
+ * shown; only its size changes.
+ */
+.markdown-body.compact {
+  --md-h1-size: 1.0625rem; /* 17px */
+  --md-h2-size: 1rem;
+  --md-h3-size: var(--md-text-size);
+}
+
+/* ---- Headings ---------------------------------------------------------- */
+
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
-.markdown-body h4 {
-  margin: 1.6em 0 0.5em;
-  line-height: 1.25;
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  font-weight: 600;
+  line-height: var(--md-heading-line-height);
+  margin: 1.75em 0 0.5em;
+  /* Room above a heading reached by a link, so it is not flush with the edge. */
+  scroll-margin-top: 12px;
 }
 
 .markdown-body h1 {
-  font-size: 1.5rem;
+  font-size: var(--md-h1-size);
 }
 .markdown-body h2 {
-  font-size: 1.2rem;
+  font-size: var(--md-h2-size);
 }
 .markdown-body h3 {
-  font-size: 1.02rem;
+  font-size: var(--md-h3-size);
+}
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  font-size: var(--md-h4-size);
+  color: var(--md-muted);
+}
+
+/* A heading reached by a link is focused for keyboard users, without a box. */
+.markdown-body :is(h1, h2, h3, h4, h5, h6):focus {
+  outline: none;
+}
+.markdown-body :is(h1, h2, h3, h4, h5, h6):focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 4px;
+  border-radius: 2px;
 }
 
 .markdown-body > :first-child {
   margin-top: 0;
 }
 
+/* ---- Prose, lists, quotations ------------------------------------------ */
+
 .markdown-body p,
 .markdown-body ul,
 .markdown-body ol,
-.markdown-body blockquote {
-  margin: 0 0 0.9em;
+.markdown-body blockquote,
+.markdown-body pre,
+.markdown-body table {
+  margin: 0 0 1em;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.5em;
 }
 
 .markdown-body li {
-  margin-bottom: 0.25em;
+  margin-bottom: 0.35em;
 }
 
-.markdown-body a {
-  color: var(--mantine-color-anchor);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+.markdown-body li > ul,
+.markdown-body li > ol {
+  margin: 0.35em 0 0;
 }
+
+.markdown-body li > p {
+  margin-bottom: 0.4em;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--md-rule);
+  color: var(--md-muted);
+  padding: 0.1em 0 0.1em 1em;
+}
+
+.markdown-body blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--md-rule);
+  margin: 2em 0;
+}
+
+/* ---- Links ------------------------------------------------------------- */
+
+/* Underlined as well as coloured, so a link never relies on colour alone. */
+.markdown-body a {
+  color: var(--md-link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.markdown-body a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.markdown-body a:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ---- Code and tables: shared blue-gray surfaces ------------------------ */
 
 .markdown-body code {
-  background: var(--mantine-color-default);
-  border: 1px solid var(--mantine-color-default-border);
-  border-radius: 3px;
-  font-size: 0.87em;
+  background: var(--md-surface);
+  border-radius: 4px;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.875em;
   padding: 0.1em 0.35em;
 }
 
+/*
+ * Code keeps its own lines and scrolls sideways inside its block, so a long
+ * line never widens the dialog or the document pane.
+ */
 .markdown-body pre {
-  background: var(--mantine-color-default);
-  border: 1px solid var(--mantine-color-default-border);
+  background: var(--md-surface);
+  border: 1px solid var(--md-rule);
   border-radius: var(--mantine-radius-md);
+  line-height: 1.5;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-wrap: normal;
   padding: 12px 14px;
 }
 
 .markdown-body pre code {
   background: none;
-  border: none;
+  border-radius: 0;
+  font-size: 0.8125rem;
   padding: 0;
+  white-space: pre;
 }
 
-.markdown-body blockquote {
-  border-left: 3px solid var(--mantine-color-default-border);
-  color: var(--mantine-color-dimmed);
-  padding-left: 12px;
-}
-
+/* A wide table scrolls within itself for the same reason. */
 .markdown-body table {
   border-collapse: collapse;
   display: block;
-  margin-bottom: 1em;
+  max-width: 100%;
   overflow-x: auto;
 }
 
 .markdown-body th,
 .markdown-body td {
-  border: 1px solid var(--mantine-color-default-border);
-  padding: 6px 10px;
+  border: 1px solid var(--md-rule);
+  padding: 6px 12px;
   text-align: left;
   vertical-align: top;
 }
 
 .markdown-body th {
-  background: var(--mantine-color-default);
+  background: var(--md-surface-strong);
   font-weight: 600;
 }
 
-.markdown-body hr {
-  border: none;
-  border-top: 1px solid var(--mantine-color-default-border);
-  margin: 1.6em 0;
+.markdown-body tr:nth-child(even) td {
+  background: var(--md-surface);
 }
 
 /*
@@ -114,25 +246,18 @@
  * visible: section 10 requires unsupported content to be shown, never dropped.
  */
 .markdown-body .blocked-link {
-  border-bottom: 1px dotted var(--mantine-color-orange-5);
-  color: var(--mantine-color-orange-4);
+  border-bottom: 1px dotted currentColor;
+  /* Darker than Mantine's orange so it reads at 4.5:1 on white. */
+  color: #a4430b;
   cursor: help;
 }
 
-.markdown-body .blocked-image {
-  color: var(--mantine-color-dimmed);
-  font-size: 0.85em;
-  font-style: italic;
+:root[data-mantine-color-scheme='dark'] .markdown-body .blocked-link {
+  color: var(--mantine-color-orange-4);
 }
 
-/* Prose inside a dialog: the page-sized headings would dwarf the dialog title. */
-.markdown-body.compact h1 {
-  font-size: 1.15rem;
-  margin-top: 0.4em;
-}
-.markdown-body.compact h2 {
-  font-size: 1.02rem;
-}
-.markdown-body.compact h3 {
-  font-size: 0.95rem;
+.markdown-body .blocked-image {
+  color: var(--md-muted);
+  font-size: 0.875em;
+  font-style: italic;
 }

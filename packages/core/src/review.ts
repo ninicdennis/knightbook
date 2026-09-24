@@ -47,6 +47,24 @@ export interface ReviewStatus {
 }
 
 /**
+ * Frontmatter that only tracks lifecycle does not invalidate a review of the
+ * work the ticket describes. The changes view uses the same list to label those
+ * lines, so what it calls bookkeeping is exactly what review ignores.
+ *
+ * `archived` belongs here for the same reason as `status`: taking a ticket off
+ * the board says nothing about the work its text describes, so it must not raise
+ * "changed since review" and cost a real review its evidence.
+ */
+export const BOOKKEEPING_FIELDS: ReadonlySet<string> = new Set([
+  'status',
+  'updated_at',
+  'created_at',
+  'completion',
+  'blocker',
+  'archived',
+])
+
+/**
  * Reduces Markdown to the parts whose change is meaningful, dropping the parts
  * that are only representation. Section 7 is explicit that this can identify
  * formatting equivalence but cannot reliably tell a typo fix from a change of
@@ -55,23 +73,10 @@ export interface ReviewStatus {
 export function contentFingerprint(source: string): string {
   const record = parseRecord(source)
 
-  // Frontmatter that only tracks lifecycle does not invalidate a review of the
-  // work the ticket describes.
-  // `archived` belongs here for the same reason as `status`: taking a ticket
-  // off the board says nothing about the work its text describes, so it must
-  // not raise "changed since review" and cost a real review its evidence.
-  const bookkeeping = new Set([
-    'status',
-    'updated_at',
-    'created_at',
-    'completion',
-    'blocker',
-    'archived',
-  ])
   const substantive: Record<string, unknown> = {}
   const data = record.data.toJS() as Record<string, unknown> | null
   for (const [key, value] of Object.entries(data ?? {})) {
-    if (!bookkeeping.has(key)) substantive[key] = value
+    if (!BOOKKEEPING_FIELDS.has(key)) substantive[key] = value
   }
 
   const normalizedBody = record.body
@@ -101,8 +106,9 @@ export async function recordReview(
   project: Project,
   recordId: string,
   source: string,
-  options: { note?: string } = {},
+  options: { note?: string; expectedRevision?: Revision } = {},
 ): Promise<ReviewRecord> {
+  assertShownRevision(source, options.expectedRevision)
   const now = new Date().toISOString()
   const review: ReviewRecord = {
     reviewedAt: now,
@@ -130,6 +136,24 @@ export async function recordReview(
 
   await writeRecord(project.root, path, snapshot, { mustNotExist: true })
   return review
+}
+
+/**
+ * A review records the content as it is on disk when the user confirms. When
+ * the caller says which revision the user was looking at, content that changed
+ * since then is refused, so a review can never approve edits nobody saw.
+ */
+function assertShownRevision(source: string, expectedRevision: Revision | undefined): void {
+  if (expectedRevision === undefined) return
+  const current = revisionOf(source)
+  if (current !== expectedRevision) {
+    throw new ProjectError(
+      'revision_conflict',
+      'The content changed after it was shown to you, so the review was not recorded. ' +
+        'Reload it and review what is there now.',
+      current,
+    )
+  }
 }
 
 /**
@@ -223,8 +247,12 @@ export async function recordTicketReview(
   ticketId: string,
   reviewer: 'user' | 'agent',
   note = '',
+  expectedRevision?: Revision,
 ): Promise<ReviewRecord> {
   assertHumanReviewer(reviewer)
   const source = await readFile(reservedPaths.ticketFile(project.root, ticketId), 'utf8')
-  return await recordReview(project, ticketRecordId(ticketId), source, { note })
+  return await recordReview(project, ticketRecordId(ticketId), source, {
+    note,
+    ...(expectedRevision === undefined ? {} : { expectedRevision }),
+  })
 }

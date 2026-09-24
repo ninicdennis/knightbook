@@ -99,14 +99,25 @@ export interface Snapshot {
   readonly file: string
 }
 
-async function readFrom(directory: string, into: Snapshot[]): Promise<void> {
+/**
+ * Snapshots read for one record, plus how many snapshot files could not be. The
+ * count is kept so a comparison can say history exists but is unreadable,
+ * rather than presenting that record as if it had never been reviewed.
+ */
+export interface SnapshotHistory {
+  readonly snapshots: Snapshot[]
+  readonly unreadable: number
+}
+
+async function readFrom(directory: string, into: Snapshot[]): Promise<number> {
   let files: string[]
   try {
     files = await readdir(directory)
   } catch {
-    return
+    return 0
   }
 
+  let unreadable = 0
   for (const file of files.filter((name) => name.endsWith('.md')).sort()) {
     try {
       const record = parseRecord(await readFile(join(directory, file), 'utf8'))
@@ -114,7 +125,10 @@ async function readFrom(directory: string, into: Snapshot[]): Promise<void> {
       const reviewedRevision = record.data.get('reviewed_revision')
       const fingerprint = record.data.get('content_fingerprint')
       const note = record.data.get('note')
-      if (typeof reviewedAt !== 'string' || typeof reviewedRevision !== 'string') continue
+      if (typeof reviewedAt !== 'string' || typeof reviewedRevision !== 'string') {
+        unreadable += 1
+        continue
+      }
 
       into.push({
         review: {
@@ -128,9 +142,10 @@ async function readFrom(directory: string, into: Snapshot[]): Promise<void> {
       })
     } catch {
       // An unreadable snapshot is skipped, never deleted or repaired.
-      continue
+      unreadable += 1
     }
   }
+  return unreadable
 }
 
 /**
@@ -139,16 +154,26 @@ async function readFrom(directory: string, into: Snapshot[]): Promise<void> {
  * this change and one taken after it compare correctly.
  */
 export async function readSnapshots(root: ProjectRoot, recordId: string): Promise<Snapshot[]> {
-  const snapshots: Snapshot[] = []
-  await readFrom(snapshotWriteDir(root, recordId), snapshots)
-  await readFrom(legacyDir(root, recordId), snapshots)
+  return (await readSnapshotHistory(root, recordId)).snapshots
+}
 
-  return snapshots.sort((a, b) => {
+/** As readSnapshots, also counting the snapshot files that could not be read. */
+export async function readSnapshotHistory(
+  root: ProjectRoot,
+  recordId: string,
+): Promise<SnapshotHistory> {
+  const snapshots: Snapshot[] = []
+  const unreadable =
+    (await readFrom(snapshotWriteDir(root, recordId), snapshots)) +
+    (await readFrom(legacyDir(root, recordId), snapshots))
+
+  snapshots.sort((a, b) => {
     if (a.review.reviewedAt !== b.review.reviewedAt) {
       return a.review.reviewedAt < b.review.reviewedAt ? -1 : 1
     }
     return a.file < b.file ? -1 : a.file > b.file ? 1 : 0
   })
+  return { snapshots, unreadable }
 }
 
 /** Project-relative, for messages and tests. Always uses forward slashes. */

@@ -254,7 +254,13 @@ describe('acting from the detail view', () => {
     await user.click(within(dialog).getByRole('button', { name: /mark content reviewed/i }))
 
     await waitFor(() =>
-      expect(api.recordTicketReview).toHaveBeenCalledWith(CHECKOUT, TICKET_ID, ''),
+      // The dialog names the revision whose body it displayed.
+      expect(api.recordTicketReview).toHaveBeenCalledWith(
+        CHECKOUT,
+        TICKET_ID,
+        '',
+        detail().revision,
+      ),
     )
     expect(screen.getByRole('dialog')).toBeTruthy()
     await waitFor(() =>
@@ -333,15 +339,18 @@ describe('following a document from a ticket', () => {
 
   it('opens a document linked from inside the ticket body', async () => {
     documentApi()
+    // Relative to where the ticket file really is, .projectspace/tickets/, the
+    // way any Markdown editor reads the same link.
     api.readTicket = vi.fn().mockResolvedValue({
       ok: true,
-      value: detail({ body: 'See [the spec](docs/spec.md) first.' }),
+      value: detail({ body: 'See [the spec](../../docs/spec.md) first.' }),
     })
     renderApp()
     const dialog = await openDetail()
 
     await user.click(await within(dialog).findByRole('link', { name: 'the spec' }))
 
+    expect(api.resolveLink).toHaveBeenCalledWith(CHECKOUT, SPEC)
     await waitFor(() => expect(api.readDocument).toHaveBeenCalledWith(CHECKOUT, SPEC))
   })
 })

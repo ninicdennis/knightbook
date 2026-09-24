@@ -43,6 +43,8 @@ interface Props {
   onReportIssue: () => void
   onResolveIssue: () => void
   onReview: () => void
+  /** False while the content to be reviewed is still loading, so it cannot be approved unseen. */
+  canReview?: boolean
 }
 
 export function TicketDetailActions({
@@ -53,6 +55,7 @@ export function TicketDetailActions({
   onReportIssue,
   onResolveIssue,
   onReview,
+  canReview = true,
 }: Props) {
   const inVerification = ticket.status === 'verification'
   /*
@@ -119,6 +122,7 @@ export function TicketDetailActions({
             }
             icon={<IconEye size={18} />}
             onClick={onReview}
+            disabled={!canReview}
           />
         )}
 
@@ -169,14 +173,22 @@ function IconAction({
   label,
   icon,
   onClick,
+  disabled = false,
 }: {
   label: string
   icon: ReactNode
   onClick: () => void
+  disabled?: boolean
 }) {
   return (
     <Tooltip label={label} withArrow>
-      <ActionIcon variant="default" size={ICON_SIZE} aria-label={label} onClick={onClick}>
+      <ActionIcon
+        variant="default"
+        size={ICON_SIZE}
+        aria-label={label}
+        onClick={onClick}
+        disabled={disabled}
+      >
         {icon}
       </ActionIcon>
     </Tooltip>

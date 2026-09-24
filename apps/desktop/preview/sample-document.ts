@@ -33,7 +33,7 @@ export function isReady(ticket: Ticket, all: Map<string, Ticket>): boolean {
 
 ## Links
 
-An [internal link](README.md) opens in the app. An
+An [internal link](../README.md) opens in the app. An
 [external link](https://modelcontextprotocol.io) opens in your browser on click.
 A [file link](file:///C:/Windows/System32/config) is refused, and so is a
 [script link](javascript:alert(1)).

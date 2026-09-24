@@ -25,7 +25,12 @@ export function useTicketActions({
 
   /** Applies a mutation, then replaces the whole view with what the files now say. */
   const apply = useCallback(
-    async (ticketId: string, run: () => Promise<Result<ProjectView>>) => {
+    async (
+      ticketId: string,
+      run: () => Promise<Result<ProjectView>>,
+      conflictMessage = 'That ticket changed somewhere else, so your move was not applied. ' +
+        'This is the current version.',
+    ) => {
       if (screen.kind !== 'open') return
       setBusyTicketId(ticketId)
       setActionError(null)
@@ -37,10 +42,7 @@ export function useTicketActions({
         // Reload first: load() clears any standing message, so the explanation
         // has to be set afterwards or the board would refresh silently.
         await load(screen.path)
-        setActionError(
-          'That ticket changed somewhere else, so your move was not applied. ' +
-            'This is the current version.',
-        )
+        setActionError(conflictMessage)
       } else {
         setActionError(result.message)
       }
@@ -110,11 +112,20 @@ export function useTicketActions({
    * Recording a review is the user confirming they have read the content. It is
    * informational and reversible in effect — a later meaningful edit sets it
    * back — so unlike completion it needs no confirmation step.
+   *
+   * It names the revision the user was shown: the detail view passes the one it
+   * displayed, and a card falls back to the board's. Anything newer is refused.
    */
   const review = useCallback(
-    (ticketId: string) => {
+    (ticketId: string, revision?: string) => {
       if (screen.kind !== 'open') return
-      void apply(ticketId, () => window.knightbook.recordTicketReview(screen.path, ticketId, ''))
+      const shown = revision ?? screen.project.tickets.find((t) => t.id === ticketId)?.revision
+      void apply(
+        ticketId,
+        () => window.knightbook.recordTicketReview(screen.path, ticketId, '', shown),
+        'That ticket changed after you opened it, so the review was not recorded. ' +
+          'This is the current version; review it again.',
+      )
     },
     [screen, apply],
   )
