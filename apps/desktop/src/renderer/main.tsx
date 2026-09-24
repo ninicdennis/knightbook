@@ -1,6 +1,7 @@
 import '@mantine/core/styles.css'
 import './markdown.css'
 import './surfaces.css'
+import './review-changes.css'
 import { MantineProvider } from '@mantine/core'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'

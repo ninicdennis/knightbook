@@ -274,12 +274,32 @@ Document content is untrusted input, per technical design section 1:
 - Markdown is parsed, then sanitized with DOMPurify. Scripts, event handlers,
   `iframe`/`object`/`embed`/`form`, and inline styles are stripped before
   anything reaches the DOM.
-- Every link is classified before rendering. A relative link to another
-  included document becomes an in-app navigation; an `http(s)` link becomes an
+- Every link is classified before rendering. An `http(s)` link becomes an
   external-open action gated on an explicit click. Every other scheme —
   `file:`, `javascript:`, `data:`, protocol-relative, or an absolute path — is
   shown as inert text with a visible note, never as a clickable `href`.
   `markdown.test.tsx` asserts each of these cases directly.
+- A relative link opens in the app. It is read the way any Markdown editor reads
+  it, relative to the file it is written in, and the host then checks what it
+  reaches: an included document opens under Documents, a ticket file opens that
+  ticket, and anything else (outside the project, not included, not Markdown,
+  missing) says why instead of doing nothing. Following a link includes nothing
+  and changes no status or review. After following one, **Back to …** returns to
+  where you were.
+- Link to a heading with a GitHub-style fragment: lowercase, punctuation dropped,
+  spaces as hyphens, and `-1`, `-2` for a repeated heading. `#acceptance-criteria`
+  reaches `## Acceptance criteria`, in the same file or another one.
+
+  | From | To | Write |
+  | --- | --- | --- |
+  | `docs/overview.md` | `docs/spec.md` | `[spec](spec.md)` |
+  | a ticket | `docs/ui-ux-design-direction.md` | `[direction](../../docs/ui-ux-design-direction.md)` |
+  | a ticket | another ticket | `[other](<other ticket id>.md)` |
+  | `README.md` | a ticket | `[ticket](.projectspace/tickets/<id>.md)` |
+
+  Ticket files live in `.projectspace/tickets/`, which is why a ticket reaches
+  the repository root with `../../`. A bare ticket id in prose stays prose; it is
+  not turned into a link.
 - Images are not fetched. A document cannot cause a network request just by
   being opened.
 - Frontmatter is shown separately from the rendered body, never treated as

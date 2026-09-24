@@ -238,7 +238,13 @@ describe('human review (D-003, D-004)', () => {
     await user.click(await screen.findByText(/mark content reviewed/i))
 
     await waitFor(() =>
-      expect(api.recordTicketReview).toHaveBeenCalledWith(project().checkoutPath, ticket().id, ''),
+      // The card names the revision the board holds, so a newer edit is refused.
+      expect(api.recordTicketReview).toHaveBeenCalledWith(
+        project().checkoutPath,
+        ticket().id,
+        '',
+        ticket().revision,
+      ),
     )
     await waitFor(() => expect(screen.queryByText(/^unreviewed$/i)).toBeNull())
   })

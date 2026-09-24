@@ -1,4 +1,4 @@
-import { Alert, Badge, Box, Group, Loader, Modal, Stack, Text } from '@mantine/core'
+import { Alert, Box, Group, Loader, Modal, Stack, Text } from '@mantine/core'
 import { IconAlertTriangle } from '@tabler/icons-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type {
@@ -7,12 +7,14 @@ import type {
   TicketType,
   TicketView,
 } from '../../shared/contract.js'
+import type { LinkRequest, ScrollTarget } from '../hooks/useLinkNavigation.js'
+import { useReviewChanges } from '../hooks/useReviewChanges.js'
 import { renderMarkdown } from '../markdown.js'
-import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
 import { MarkdownBody } from './MarkdownBody.js'
-import { ReviewBadge } from './ReviewBadge.js'
+import type { BackTarget } from './BackToSource.js'
+import { ReadingModeSwitch, ReviewChanges, type ReadingMode } from './ReviewChanges.js'
 import { TicketDetailActions } from './TicketDetailActions.js'
-import { TicketTypeBadge } from './TicketTypeBadge.js'
+import { TicketDetailHeader } from './TicketDetailHeader.js'
 import {
   AuditDetails,
   CompletionRecord,
@@ -51,8 +53,14 @@ interface Props {
   /** D-017: the user says this did not pass verification, and why. */
   onReportIssue: () => void
   onResolveIssue: () => void
-  onReview: () => void
-  onOpenDocument: (path: string) => void
+  /** Records the user's review of exactly the revision this dialog showed them. */
+  onReview: (revision: string) => void
+  /** Follows a link or related document; resolves to a failure message, or null. */
+  onFollowLink: (request: LinkRequest) => Promise<string | null>
+  /** A heading to show, when a link to this ticket named one. */
+  scrollTo?: ScrollTarget | null
+  /** Back to where the link that opened this ticket was followed from. */
+  back?: BackTarget | null
 }
 
 export function TicketDetailModal({
@@ -66,10 +74,18 @@ export function TicketDetailModal({
   onReportIssue,
   onResolveIssue,
   onReview,
-  onOpenDocument,
+  onFollowLink,
+  scrollTo = null,
+  back = null,
 }: Props) {
   const [detail, setDetail] = useState<TicketDetailView | null>(null)
   const [error, setError] = useState<string | null>(null)
+  /** Why a related-document button did not open anything. */
+  const [relatedNotice, setRelatedNotice] = useState<string | null>(null)
+  const [chosenMode, setMode] = useState<ReadingMode>('read')
+  // Never-reviewed content has nothing to compare against, so it only reads.
+  const canCompare = ticket.review.state !== 'unreviewed'
+  const mode: ReadingMode = canCompare ? chosenMode : 'read'
   /** Whatever had focus when the dialog opened, as a fallback for closing. */
   const returnTo = useRef<HTMLElement | null>(null)
 
@@ -113,9 +129,25 @@ export function TicketDetailModal({
   }, [ticket.id])
 
   const rendered = useMemo(
-    () => (detail ? renderMarkdown(detail.body, 'ticket.md') : null),
+    // Links resolve from where the ticket file really is, so `../../docs/x.md`
+    // written in a ticket reaches docs/x.md as it would in any editor.
+    () => (detail ? renderMarkdown(detail.body, `.projectspace/tickets/${detail.id}.md`) : null),
     [detail],
   )
+
+  // Changes compares the whole ticket file, frontmatter included, against the
+  // last review; it is reloaded whenever the board sees a new revision.
+  const changes = useReviewChanges(
+    rootPath,
+    mode === 'changes' ? { kind: 'ticket', id: ticket.id } : null,
+    ticket.revision,
+  )
+  const shownRevision =
+    mode === 'read'
+      ? (detail?.revision ?? null)
+      : changes.load.status === 'ready'
+        ? changes.load.view.currentRevision
+        : null
 
   return (
     /* `lg` padding rather than the default: the reading text, the badges and the
@@ -128,36 +160,10 @@ export function TicketDetailModal({
        * path or identifier inside would widen the whole dialog rather than wrap.
        */}
       <Modal.Content
+        className="ps-reading"
         style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}
       >
-        <Modal.Header
-          style={{
-            alignItems: 'flex-start',
-            borderBottom: '1px solid var(--ps-hairline)',
-          }}
-        >
-          <Stack gap={8} style={{ flex: 1, minWidth: 0 }}>
-            <Modal.Title
-              style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 600, lineHeight: 1.3 }}
-            >
-              {ticket.title}
-            </Modal.Title>
-            {/* Secondary to the title, and never allowed to push Close aside. */}
-            <Group gap="xs" wrap="wrap">
-              <Badge size="sm" variant="light" color={STATUS_COLOR[ticket.status]}>
-                {STATUS_LABEL[ticket.status]}
-              </Badge>
-              <TicketTypeBadge type={ticket.type} />
-              {isNext && (
-                <Badge size="sm" variant="light" color="accent">
-                  Next up
-                </Badge>
-              )}
-              <ReviewBadge review={ticket.review} />
-            </Group>
-          </Stack>
-          <Modal.CloseButton aria-label="Close" style={{ flexShrink: 0 }} />
-        </Modal.Header>
+        <TicketDetailHeader ticket={ticket} isNext={isNext} back={back} />
 
         {/*
          * Mantine drops the body's top padding when a header sits above it, which
@@ -223,15 +229,51 @@ export function TicketDetailModal({
             {detail && rendered && (
               <>
                 <Dependencies ticket={ticket} detail={detail} />
+                {canCompare && (
+                  <Group justify="flex-end">
+                    <ReadingModeSwitch mode={mode} onChange={setMode} />
+                  </Group>
+                )}
                 {/*
                  * The reading region. It is deliberately one element holding only
                  * the ticket's own prose, so a formatted editor and its toolbar
                  * can take this space later without touching the header, the
                  * action bar, or how the dialog scrolls.
                  */}
-                <MarkdownBody compact html={rendered.html} onFollowLink={onOpenDocument} />
+                {mode === 'read' ? (
+                  <MarkdownBody
+                    compact
+                    html={rendered.html}
+                    onFollowLink={onFollowLink}
+                    scrollTo={scrollTo}
+                  />
+                ) : (
+                  <ReviewChanges
+                    load={changes.load}
+                    heldRevision={ticket.revision}
+                    onReload={changes.reload}
+                  />
+                )}
 
-                <RelatedDocuments paths={detail.relatedDocuments} onOpen={onOpenDocument} />
+                {relatedNotice && (
+                  <Alert
+                    icon={<IconAlertTriangle size={16} />}
+                    color="orange"
+                    variant="light"
+                    withCloseButton
+                    closeButtonLabel="Dismiss"
+                    onClose={() => setRelatedNotice(null)}
+                  >
+                    {relatedNotice}
+                  </Alert>
+                )}
+                {/* Structured related documents are project-relative, not body-relative. */}
+                <RelatedDocuments
+                  paths={detail.relatedDocuments}
+                  onOpen={(path) =>
+                    void onFollowLink({ path, fragment: null }).then(setRelatedNotice)
+                  }
+                />
                 <ReopenedRecord previous={detail.previousCompletions} />
                 <AuditDetails detail={detail} lastReviewedAt={ticket.review.lastReviewedAt} />
               </>
@@ -252,7 +294,8 @@ export function TicketDetailModal({
             onComplete={onComplete}
             onReportIssue={onReportIssue}
             onResolveIssue={onResolveIssue}
-            onReview={onReview}
+            onReview={() => shownRevision && onReview(shownRevision)}
+            canReview={shownRevision !== null}
           />
         </Box>
       </Modal.Content>

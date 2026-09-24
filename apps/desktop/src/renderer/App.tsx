@@ -16,6 +16,7 @@ import { TicketSearch } from './components/TicketSearch.js'
 import { VerificationIssueDialog } from './components/VerificationIssueDialog.js'
 import { Welcome } from './components/Welcome.js'
 import { useArchiveActions } from './hooks/useArchiveActions.js'
+import { useLinkNavigation, type LinkPlace, type ScrollTarget } from './hooks/useLinkNavigation.js'
 import { useProjectScreen } from './hooks/useProjectScreen.js'
 import { useRefreshOnFocus } from './hooks/useRefreshOnFocus.js'
 import { useSearchShortcut } from './hooks/useSearchShortcut.js'
@@ -45,7 +46,13 @@ export function App() {
   const [searchOpen, search] = useDisclosure(false)
   const [view, setView] = useState<View>('board')
   const [detailId, setDetailId] = useState<string | null>(null)
-  const [documentTarget, setDocumentTarget] = useState<{ path: string; nonce: number } | null>(null)
+  /** A heading the open ticket should show, when a link named one. */
+  const [detailScroll, setDetailScroll] = useState<ScrollTarget | null>(null)
+  const [documentTarget, setDocumentTarget] = useState<{
+    path: string
+    nonce: number
+    scrollTo: ScrollTarget | null
+  } | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshToken, setRefreshToken] = useState(0)
 
@@ -112,11 +119,27 @@ export function App() {
     [screen, load],
   )
 
-  const openDocument = useCallback((path: string) => {
+  const openDocument = useCallback((path: string, scrollTo: ScrollTarget | null = null) => {
     setDetailId(null)
     setView('documents')
-    setDocumentTarget({ path, nonce: Date.now() })
+    setDocumentTarget({ path, nonce: Date.now(), scrollTo })
   }, [])
+
+  const openTicket = useCallback((id: string, scrollTo: ScrollTarget | null = null) => {
+    setDetailId(id)
+    setDetailScroll(scrollTo)
+  }, [])
+
+  const links = useLinkNavigation({
+    rootPath: screen.kind === 'open' ? screen.path : null,
+    openDocument,
+    openTicket,
+  })
+  const backAction = (place: LinkPlace | null) =>
+    place && {
+      label: place.kind === 'ticket' ? place.title : place.path,
+      onBack: () => links.goBack(place),
+    }
 
   return (
     <AppShell
@@ -193,12 +216,14 @@ export function App() {
                 rootPath={screen.path}
                 openTarget={documentTarget}
                 refreshToken={refreshToken}
+                onFollowLink={(path, request) => links.follow({ kind: 'document', path }, request)}
+                backFor={(path) => backAction(links.backFrom({ kind: 'document', path }))}
               />
             ) : view === 'archive' ? (
               <ArchiveView
                 tickets={screen.project.archivedTickets}
                 busyTicketId={busyTicketId}
-                onOpen={setDetailId}
+                onOpen={openTicket}
                 onRestore={actions.restore}
               />
             ) : (
@@ -211,7 +236,7 @@ export function App() {
                 onReportIssue={actions.askAboutIssue}
                 onResolveIssue={actions.resolveIssue}
                 onReview={actions.review}
-                onOpen={setDetailId}
+                onOpen={openTicket}
                 onArchive={archive.archiveOne}
                 onArchiveColumn={archive.askToArchiveColumn}
               />
@@ -228,6 +253,8 @@ export function App() {
 
       {screen.kind === 'open' && detailTicket && (
         <TicketDetailModal
+          // A link from one ticket to another starts the dialog afresh.
+          key={detailTicket.id}
           rootPath={screen.path}
           ticket={detailTicket}
           isNext={screen.project.nextTicketId === detailTicket.id}
@@ -248,8 +275,15 @@ export function App() {
             actions.askAboutIssue(detailTicket.id)
           }}
           onResolveIssue={() => actions.resolveIssue(detailTicket.id)}
-          onReview={() => actions.review(detailTicket.id)}
-          onOpenDocument={openDocument}
+          onReview={(revision) => actions.review(detailTicket.id, revision)}
+          onFollowLink={(request) =>
+            links.follow(
+              { kind: 'ticket', id: detailTicket.id, title: detailTicket.title },
+              request,
+            )
+          }
+          scrollTo={detailScroll}
+          back={backAction(links.backFrom({ kind: 'ticket', id: detailTicket.id }))}
         />
       )}
 
@@ -286,7 +320,7 @@ export function App() {
           defaultScope={view === 'archive' ? 'archived' : 'active'}
           // Opening a result shows the ticket wherever the user was, because
           // the detail view is not part of either the board or the documents.
-          onOpenTicket={setDetailId}
+          onOpenTicket={openTicket}
         />
       )}
     </AppShell>

@@ -64,6 +64,27 @@ running some other build against the same folder is invisible and reads as no
 connection, which is why the wording is "no running server was observed" rather
 than a claim about the world.
 
+### Following links as built (2026-09-24)
+
+Ticket db7cff48. A relative Markdown link is resolved in the renderer against the
+file it is written in, which for a ticket is its real location,
+`.projectspace/tickets/<id>.md`, not a placeholder. Percent-escapes are decoded
+once; an escaped separator, a malformed escape, a backslash or a drive letter is
+refused. The resolved path is then sent to the host (`resolveLinkDestination` in
+core, `link:resolve` over IPC), which answers from disk: an included Markdown
+document, a ticket file whose ticket exists, or `unavailable` with a reason
+(outside the project, including through a symlink; another app record; not
+Markdown; exists but not included; missing). The renderer never opens a path the
+host did not confirm, and following a link reads only.
+
+Headings carry GitHub-style ids with a `user-content-` prefix so a heading cannot
+shadow a page property; fragments name the unprefixed slug, in the same file or
+another. The destination heading is scrolled to and focused; a missing one leaves
+the target readable from the top with a notice. A reply that arrives after the
+user followed another link or switched project is dropped. One step back is kept
+for the place the last link was followed from, offered only on that link's
+destination; it is not browser history.
+
 ## 2. Accepted stack and supporting packages
 
 The user accepted **Electron + TypeScript + React**, with a separately launched Node-based MCP host sharing the project logic. Milkdown remains the selected editor candidate, subject to the Markdown-preservation check. Desktop framework selection is settled; packaging is routine implementation and release-validation work.
@@ -379,6 +400,43 @@ No-op opens never save. Ticket status, ordering, and bookkeeping timestamps do n
 Deterministic parsing can identify some formatting equivalence; it cannot reliably distinguish every typo correction, rephrasing, or change of intent. Proposed handling: ignore known formatting-only changes, show unclassified changes against the previous reviewed version, and allow the user or cooperating external AI to explain their significance. Meaningful changes set content to Unreviewed while preserving the prior snapshot. Do not show unclassified current content as fully human-validated merely because an older revision was reviewed.
 
 This classification behavior needs a short prototype review: it is the main unresolved product-sensitive detail. Do not add an embedded model, paid classification service, or assume an AI-provided label is infallible. The source diff remains available for inspection.
+
+### Changes since review as built (2026-09-24)
+
+Ticket 5be60610. Documents and tickets have a read-only **Changes since review**
+view beside the rendered one. It compares the current file with the source kept
+in the most recent readable snapshot, never with Git HEAD or the previous save,
+and opening it records nothing.
+
+The comparison lives in core (`review-changes.ts`) and runs in the desktop host;
+the renderer receives numbered lines and draws them as text, so markup in a
+document is shown exactly as written and never rendered. Frontmatter and body are
+compared as two sections, so a metadata edit cannot hide among prose. A changed
+frontmatter line under one of the fields review already ignores (`status`,
+`updated_at`, `created_at`, `completion`, `blocker`, `archived`) is labelled
+bookkeeping. That list is now one exported constant used by both the fingerprint
+and the view, so the two cannot disagree. The view also reports whether review
+status counts the edits, using review status's own rule; the fingerprint
+semantics did not change.
+
+Each outcome is explicit. No readable snapshot is "no review to compare against",
+not a comparison with an empty document. Snapshot files that exist but cannot be
+read are counted and reported, and left on disk. Line-ending and final-newline
+changes, which a line view cannot draw, are listed as notes. Inputs over 20,000
+lines or 1,000,000 characters, or two versions needing more than 5,000 edits or
+1.5 seconds to compare, get an explanation instead of a line comparison.
+
+**Reviews now name the revision that was shown.** `recordReview` and the app's
+two review operations take an optional expected revision, and the app always
+sends one: the rendered revision in Read, the compared revision in Changes, the
+board's revision from a card. Content that changed since is refused with
+`revision_conflict` and the view reloads, so a review cannot approve an edit that
+landed while the user was reading. The MCP surface is unchanged; it cannot record
+reviews at all.
+
+The line comparison uses the `diff` package (jsdiff) for its array diff with an
+edit-length and time bound, as the 2026-09-21 research recommended. Per D-019 it
+is a supporting package added for this feature, not a user-approved dependency.
 
 ## 8. Saving without losing work
 

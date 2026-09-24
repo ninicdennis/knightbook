@@ -1,10 +1,7 @@
 import {
   Alert,
-  Badge,
-  Button,
   Card,
   Center,
-  Code,
   Divider,
   Group,
   Loader,
@@ -12,21 +9,13 @@ import {
   ScrollArea,
   Stack,
   Text,
-  Tooltip,
 } from '@mantine/core'
-import {
-  IconAlertTriangle,
-  IconExternalLink,
-  IconEye,
-  IconEyeOff,
-  IconFileText,
-} from '@tabler/icons-react'
+import { IconAlertTriangle, IconEyeOff, IconFileText } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
 import type { DocumentListView, DocumentReadView, Result } from '../../shared/contract.js'
-import { renderMarkdown } from '../markdown.js'
+import type { LinkRequest, ScrollTarget } from '../hooks/useLinkNavigation.js'
+import { DocumentReader } from './DocumentReader.js'
 import { IncludedEntries } from './IncludedEntries.js'
-import { MarkdownBody } from './MarkdownBody.js'
-import { ReviewBadge } from './ReviewBadge.js'
 
 /**
  * Reading project documentation. Editing stays in the user's own editor until
@@ -37,12 +26,22 @@ import { ReviewBadge } from './ReviewBadge.js'
 interface Props {
   rootPath: string
   /** Asks the view to show one document. The nonce lets the same path be asked for twice. */
-  openTarget?: { path: string; nonce: number } | null
+  openTarget?: { path: string; nonce: number; scrollTo: ScrollTarget | null } | null
   /** Changes whenever the project is refreshed, so the view re-reads from disk. */
   refreshToken?: number
+  /** Follows a link found in the document at `fromPath`; resolves to a failure message. */
+  onFollowLink: (fromPath: string, request: LinkRequest) => Promise<string | null>
+  /** The way back to where a link to `path` was followed from, if any. */
+  backFor: (path: string) => { label: string; onBack: () => void } | null
 }
 
-export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }: Props) {
+export function DocumentsView({
+  rootPath,
+  openTarget = null,
+  refreshToken = 0,
+  onFollowLink,
+  backFor,
+}: Props) {
   const [listing, setListing] = useState<DocumentListView | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [document, setDocument] = useState<DocumentReadView | null>(null)
@@ -111,15 +110,26 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
     setBusy(false)
   }, [])
 
-  const review = useCallback(async () => {
-    if (!document) return
-    const result = await window.knightbook.reviewDocument(rootPath, document.path)
-    if (result.ok) {
-      setDocument(result.value)
-      const refreshed = await window.knightbook.listDocuments(rootPath)
-      if (refreshed.ok) setListing(refreshed.value)
-    } else setError(result.message)
-  }, [rootPath, document])
+  /**
+   * Reviews exactly the revision the reader showed. If the file moved on, the
+   * host refuses; the reader is refreshed first so the explanation sits above
+   * the version the user now has to read.
+   */
+  const review = useCallback(
+    async (revision: string) => {
+      if (!document) return
+      const result = await window.knightbook.reviewDocument(rootPath, document.path, revision)
+      if (result.ok) {
+        setDocument(result.value)
+        const refreshed = await window.knightbook.listDocuments(rootPath)
+        if (refreshed.ok) setListing(refreshed.value)
+      } else if (result.code === 'revision_conflict') {
+        await open(document.path)
+        setError(result.message)
+      } else setError(result.message)
+    },
+    [rootPath, document, open],
+  )
 
   if (loading) {
     return (
@@ -183,7 +193,7 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
   }
 
   return (
-    <Group align="stretch" gap="md" wrap="nowrap" style={{ height: '100%' }}>
+    <Group className="ps-reading" align="stretch" gap="md" wrap="nowrap" style={{ height: '100%' }}>
       <Card withBorder padding="xs" radius="md" w={280} style={{ flexShrink: 0 }}>
         <ScrollArea.Autosize mah="calc(100vh - 140px)" type="hover">
           <Stack gap={2}>
@@ -223,80 +233,19 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
         )}
         {document && (
           <DocumentReader
+            rootPath={rootPath}
             document={document}
-            onReview={() => void review()}
+            onReview={(revision) => void review(revision)}
             onOpenExternally={() =>
               void window.knightbook.openDocumentExternally(rootPath, document.path)
             }
-            onFollowLink={(path) => setSelected(path)}
+            onFollowLink={(request) => onFollowLink(document.path, request)}
+            // Only the document a link asked for scrolls to the link's heading.
+            scrollTo={openTarget?.path === document.path ? openTarget.scrollTo : null}
+            back={backFor(document.path)}
           />
         )}
       </Card>
     </Group>
-  )
-}
-
-function DocumentReader({
-  document,
-  onReview,
-  onOpenExternally,
-  onFollowLink,
-}: {
-  document: DocumentReadView
-  onReview: () => void
-  onOpenExternally: () => void
-  onFollowLink: (path: string) => void
-}) {
-  const rendered = renderMarkdown(document.content, document.path)
-
-  return (
-    <Stack gap="sm" style={{ height: '100%' }}>
-      <Group justify="space-between" wrap="nowrap" align="flex-start">
-        <Stack gap={4} style={{ minWidth: 0 }}>
-          <Text size="sm" c="dimmed" style={{ wordBreak: 'break-all' }}>
-            {document.path}
-          </Text>
-          <Group gap="xs">
-            <ReviewBadge review={document.review} />
-            <Badge size="xs" variant="default">
-              Read-only
-            </Badge>
-          </Group>
-        </Stack>
-
-        <Group gap="xs" wrap="nowrap">
-          {document.review.state !== 'reviewed' && (
-            <Button
-              size="xs"
-              variant="default"
-              leftSection={<IconEye size={14} />}
-              onClick={onReview}
-            >
-              Mark reviewed
-            </Button>
-          )}
-          <Tooltip label="Open in your own editor" withArrow>
-            <Button
-              size="xs"
-              variant="default"
-              leftSection={<IconExternalLink size={14} />}
-              onClick={onOpenExternally}
-            >
-              Edit externally
-            </Button>
-          </Tooltip>
-        </Group>
-      </Group>
-
-      {rendered.frontmatter && (
-        <Code block style={{ maxHeight: 140, overflow: 'auto', fontSize: 11 }}>
-          {rendered.frontmatter.trimEnd()}
-        </Code>
-      )}
-
-      <ScrollArea.Autosize mah="calc(100vh - 260px)" type="auto">
-        <MarkdownBody html={rendered.html} onFollowLink={onFollowLink} />
-      </ScrollArea.Autosize>
-    </Stack>
   )
 }

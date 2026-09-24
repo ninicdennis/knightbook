@@ -23,8 +23,9 @@ const api: KnightbookApi = {
     ipcRenderer.invoke('ticket:recordVerificationIssue', rootPath, id, revision, reason),
   resolveVerificationIssue: (rootPath, id, revision) =>
     ipcRenderer.invoke('ticket:resolveVerificationIssue', rootPath, id, revision),
-  recordTicketReview: (rootPath, id, note) =>
-    ipcRenderer.invoke('ticket:review', rootPath, id, note),
+  recordTicketReview: (rootPath, id, note, revision) =>
+    ipcRenderer.invoke('ticket:review', rootPath, id, note, revision),
+  ticketChanges: (rootPath, id) => ipcRenderer.invoke('ticket:changes', rootPath, id),
   archiveTickets: (rootPath, targets) => ipcRenderer.invoke('ticket:archive', rootPath, targets),
   restoreTicket: (rootPath, id, revision) =>
     ipcRenderer.invoke('ticket:restore', rootPath, id, revision),
@@ -45,9 +46,12 @@ const api: KnightbookApi = {
   removeDocumentEntry: (rootPath, entry) =>
     ipcRenderer.invoke('documents:removeEntry', rootPath, entry),
   readDocument: (rootPath, path) => ipcRenderer.invoke('document:read', rootPath, path),
-  reviewDocument: (rootPath, path) => ipcRenderer.invoke('document:review', rootPath, path),
+  reviewDocument: (rootPath, path, revision) =>
+    ipcRenderer.invoke('document:review', rootPath, path, revision),
+  documentChanges: (rootPath, path) => ipcRenderer.invoke('document:changes', rootPath, path),
   openDocumentExternally: (rootPath, path) =>
     ipcRenderer.invoke('document:openExternally', rootPath, path),
+  resolveLink: (rootPath, path) => ipcRenderer.invoke('link:resolve', rootPath, path),
   openExternalLink: (url) => ipcRenderer.invoke('link:openExternal', url),
 }
 

@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "diff": "^9.0.0",
     "yaml": "^2.8.1",
     "zod": "^4.6.5"
   },

@@ -8,10 +8,16 @@ import {
   recordReview,
   removeFromWorkspace,
   resolveInRoot,
+  resolveLinkDestination,
   reviewStatus,
   type Project,
 } from '@knightbook/core'
-import type { DocumentListView, DocumentReadView, Result } from '../shared/contract.js'
+import type {
+  DocumentListView,
+  DocumentReadView,
+  LinkDestinationView,
+  Result,
+} from '../shared/contract.js'
 import { guard } from './guard.js'
 
 /**
@@ -133,10 +139,13 @@ export function registerDocumentHandlers(): void {
       }),
   )
 
-  /** Decision D-003: only the user records a review, never an AI tool. */
+  /**
+   * Decision D-003: only the user records a review, never an AI tool. A revision,
+   * when given, is the one the user was shown; newer content is refused.
+   */
   ipcMain.handle(
     'document:review',
-    async (_event, rootPath: unknown, path: unknown) =>
+    async (_event, rootPath: unknown, path: unknown, revision: unknown) =>
       await guard<DocumentReadView>(async () => {
         if (typeof rootPath !== 'string' || typeof path !== 'string') {
           throw new Error('A project and document path are required.')
@@ -146,6 +155,7 @@ export function registerDocumentHandlers(): void {
         const document = await readDocument(project, path)
         await recordReview(project, documentRecordId(project, path), document.content, {
           note: 'Reviewed in the app.',
+          ...(typeof revision === 'string' ? { expectedRevision: revision } : {}),
         })
 
         return {
@@ -175,6 +185,22 @@ export function registerDocumentHandlers(): void {
         const failure = await shell.openPath(resolveInRoot(project.root, path))
         if (failure) throw new Error(failure)
         return null
+      }),
+  )
+
+  /**
+   * Where an in-project link leads. The renderer resolved the relative path
+   * against the file it appears in; this checks the result against the project
+   * boundary, the manifest and the ticket folder before anything is shown.
+   */
+  ipcMain.handle(
+    'link:resolve',
+    async (_event, rootPath: unknown, path: unknown) =>
+      await guard<LinkDestinationView>(async () => {
+        if (typeof rootPath !== 'string' || typeof path !== 'string') {
+          throw new Error('A project and link path are required.')
+        }
+        return await resolveLinkDestination(await openProject(rootPath), path)
       }),
   )
 

@@ -204,14 +204,20 @@ export function registerProjectHandlers(): void {
    */
   ipcMain.handle(
     'ticket:review',
-    async (_event, rootPath: unknown, id: unknown, note: unknown) =>
+    async (_event, rootPath: unknown, id: unknown, note: unknown, revision: unknown) =>
       await guard<ProjectView>(async () => {
         if (typeof rootPath !== 'string' || typeof id !== 'string') {
           throw new Error('A project and ticket are required.')
         }
 
         const project = await openProject(rootPath)
-        await recordTicketReview(project, id, 'user', typeof note === 'string' ? note : '')
+        await recordTicketReview(
+          project,
+          id,
+          'user',
+          typeof note === 'string' ? note : '',
+          typeof revision === 'string' ? revision : undefined,
+        )
         return await buildView(project)
       }),
   )
