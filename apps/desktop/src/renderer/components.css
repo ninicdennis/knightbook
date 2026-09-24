@@ -1,0 +1,88 @@
+/*
+ * Mantine components styled once for the whole app, so each use does not have
+ * to opt in.
+ *
+ * Overlays: everything that floats over the board, dialogs, drawers, menus and
+ * popovers.
+ * They share the card layer, the same raised surface as a ticket, so an overlay
+ * reads as something lifted off the board rather than as a separate grey
+ * interface. A hairline and one shadow set them apart instead of a heavy frame.
+ *
+ * These use Mantine's static class names so every overlay in the app follows
+ * without each one opting in. This file loads after Mantine's own styles, which
+ * is what lets the same specificity win.
+ */
+
+.mantine-Modal-content,
+.mantine-Modal-header,
+.mantine-Drawer-content,
+.mantine-Drawer-header {
+  background: var(--ps-card-bg);
+}
+
+.mantine-Modal-content {
+  border: 1px solid var(--ps-hairline);
+  box-shadow: var(--ps-overlay-shadow);
+}
+
+.mantine-Drawer-content {
+  box-shadow: var(--ps-overlay-shadow);
+}
+
+/* A rule under the title, as the ticket detail view already has, so the title
+   and the content are separated by space and a line rather than by a box. */
+.mantine-Modal-header,
+.mantine-Drawer-header {
+  border-bottom: 1px solid var(--ps-hairline);
+}
+
+/* Mantine drops the body's top padding under a header, which would put the
+   first line against the rule. The ticket detail view sets its own. */
+.mantine-Modal-body,
+.mantine-Drawer-body {
+  padding-top: var(--mantine-spacing-md);
+}
+
+.mantine-Modal-title,
+.mantine-Drawer-title {
+  font-size: var(--mantine-font-size-lg);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.mantine-Popover-dropdown,
+.mantine-Menu-dropdown {
+  background: var(--ps-card-bg);
+  border-color: var(--ps-hairline);
+  box-shadow: var(--ps-overlay-shadow);
+}
+
+.mantine-Menu-label {
+  color: var(--mantine-color-dimmed);
+}
+
+/*
+ * Segmented controls: the header's view switch, the colour scheme in Settings,
+ * and the search scope. The track sits on the column layer and the chosen
+ * option is raised onto the card layer and set in semibold, the same way a
+ * selected document is. The accent stays free for the next ticket and for
+ * keyboard focus. Applied to every SegmentedControl through theme.ts.
+ */
+.ps-segmented {
+  background: var(--ps-column-bg);
+  border: 1px solid var(--ps-hairline);
+}
+
+.ps-segmented-indicator {
+  background: var(--ps-card-bg);
+  box-shadow: var(--ps-card-shadow);
+}
+
+.ps-segmented-label {
+  color: var(--ps-text-muted);
+}
+
+.ps-segmented-label[data-active] {
+  color: var(--mantine-color-text);
+  font-weight: 600;
+}

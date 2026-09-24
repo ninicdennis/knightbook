@@ -1,11 +1,14 @@
 import '@mantine/core/styles.css'
 import '../src/renderer/markdown.css'
 import '../src/renderer/surfaces.css'
+import '../src/renderer/shell.css'
+import '../src/renderer/documents.css'
+import '../src/renderer/components.css'
 import { MantineProvider } from '@mantine/core'
 import { createRoot } from 'react-dom/client'
 import { App } from '../src/renderer/App.js'
 import { hostColorSchemeManager } from '../src/renderer/color-scheme.js'
-import { theme } from '../src/renderer/theme.js'
+import { cssVariablesResolver, theme } from '../src/renderer/theme.js'
 import { stubApi } from './stub-api.js'
 
 /**
@@ -21,6 +24,7 @@ void stubApi.readSettings().then((settings) => {
   createRoot(document.getElementById('root')!).render(
     <MantineProvider
       theme={theme}
+      cssVariablesResolver={cssVariablesResolver}
       defaultColorScheme={settings.colorScheme}
       colorSchemeManager={hostColorSchemeManager(settings.colorScheme)}
     >

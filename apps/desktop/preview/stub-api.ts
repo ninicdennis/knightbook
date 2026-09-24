@@ -4,6 +4,7 @@ import type {
   RememberedProject,
   TicketView,
 } from '../src/shared/contract.js'
+import { stubListDocuments, stubReadDocument } from './documents-stub.js'
 import { setStubAllowed, stubMcpStatus } from './mcp-status-stub.js'
 import { SAMPLE_DOCUMENT } from './sample-document.js'
 import { stubTicketDetail } from './ticket-detail-stub.js'
@@ -323,39 +324,8 @@ export const stubApi: KnightbookApi = {
     record('removeDocumentEntry', entry)
     return await stubApi.listDocuments(root)
   },
-  listDocuments: async () => ({
-    ok: true,
-    value: {
-      documents: [
-        {
-          path: 'README.md',
-          title: 'README',
-          includedVia: 'README.md',
-          review: { state: 'unreviewed', lastReviewedAt: null, changeSummary: null },
-        },
-        {
-          path: 'docs/architecture.md',
-          title: 'architecture',
-          includedVia: 'docs',
-          review: {
-            state: 'reviewed',
-            lastReviewedAt: '2026-09-18T09:00:00Z',
-            changeSummary: null,
-          },
-        },
-      ],
-      problems: [{ path: 'docs/moved-away.md', reason: 'missing' }],
-    },
-  }),
-  readDocument: async (_root, path) => ({
-    ok: true,
-    value: {
-      path,
-      content: SAMPLE_DOCUMENT,
-      revision: 'rev-doc',
-      review: { state: 'unreviewed', lastReviewedAt: null, changeSummary: null },
-    },
-  }),
+  listDocuments: async () => await stubListDocuments(),
+  readDocument: async (_root, path) => await stubReadDocument(path),
   reviewDocument: async (_root, path) => ({
     ok: true,
     value: {

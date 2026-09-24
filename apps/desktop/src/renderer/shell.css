@@ -1,0 +1,138 @@
+/*
+ * The application shell: the header and footer around every view of an open
+ * project. They sit on the window layer, the same shade as the space around the
+ * board columns, so the chrome and the board read as one surface separated by a
+ * hairline rather than as a grey bar laid over a blue-grey board.
+ *
+ * Controls in the shell use the card layer, the same raised surface as a ticket,
+ * so an interactive thing looks the same wherever it is.
+ *
+ * The narrow layout below starts at Mantine's `md` breakpoint, and App.tsx gives
+ * the header a taller height from the same breakpoint. They must agree, because
+ * AppShell offsets the main area by the height it is told, not the one it
+ * measures.
+ */
+
+.ps-shell-chrome {
+  background: var(--ps-app-bg);
+  border-color: var(--ps-hairline);
+}
+
+/* Wide: identity left, search centred, navigation and utilities right. The two
+   outer columns share the leftover space equally so search stays centred on the
+   window. The controls never shrink below their own width; the identity column
+   gives way first, and its name and path truncate. */
+.ps-shell-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 22.5rem) minmax(max-content, 1fr);
+  grid-template-areas: 'identity search actions';
+  align-items: center;
+  column-gap: var(--mantine-spacing-md);
+  row-gap: var(--mantine-spacing-xs);
+  height: 100%;
+}
+
+.ps-shell-identity {
+  grid-area: identity;
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  min-width: 0;
+}
+
+.ps-shell-identity-text {
+  min-width: 0;
+}
+
+.ps-shell-search {
+  grid-area: search;
+  min-width: 0;
+}
+
+.ps-shell-actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--mantine-spacing-xs);
+}
+
+.ps-shell-utilities {
+  grid-area: utilities;
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+}
+
+/* Narrow: identity keeps the first row with the utilities beside it, and
+   navigation and search share a second row, where search takes whatever
+   navigation leaves. The actions wrapper steps aside so its two groups can be
+   placed on different rows. */
+@mixin smaller-than $mantine-breakpoint-md {
+  .ps-shell-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'identity identity utilities'
+      'views search search';
+    column-gap: var(--mantine-spacing-sm);
+  }
+
+  .ps-shell-actions {
+    display: contents;
+  }
+}
+
+.ps-shell-name {
+  font-size: var(--mantine-font-size-lg);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The end of a checkout path is what tells two clones apart, so it is the part
+   kept when the path does not fit. Right-to-left direction puts the ellipsis at
+   the start; the inner element keeps the path itself reading left to right. */
+.ps-shell-path {
+  font-size: var(--mantine-font-size-xs);
+  line-height: 1.35;
+  color: var(--ps-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+.ps-shell-path > span {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* One height for every control in the header, so the row lines up. */
+.ps-shell-control {
+  height: 2.125rem;
+  min-height: 2.125rem;
+  background: var(--ps-card-bg);
+  border: 1px solid var(--ps-hairline);
+  box-shadow: var(--ps-card-shadow);
+}
+
+.ps-shell-control:where(:hover) {
+  background: var(--ps-card-bg-quiet);
+}
+
+/* View navigation: the shared segmented style (components.css) at the header's
+   control height. */
+.ps-shell-views {
+  grid-area: views;
+  height: 2.125rem;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.ps-shell-views-label {
+  padding-block: 0;
+  line-height: calc(2.125rem - 6px);
+}

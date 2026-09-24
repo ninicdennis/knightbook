@@ -17,7 +17,7 @@ import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Stack gap={6}>
-      <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>
+      <Text size="xs" fw={600} c="dimmed">
         {title}
       </Text>
       {children}

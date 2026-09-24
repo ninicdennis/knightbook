@@ -76,6 +76,7 @@ export function ProjectSwitcher({ currentPath, blockedReason, onSwitch, onOpenFo
     <>
       <Tooltip label="Projects" withArrow>
         <ActionIcon
+          className="ps-shell-control"
           variant="default"
           size="lg"
           onClick={drawer.open}
@@ -171,10 +172,12 @@ function ProjectRow({ project, current, blocked, onChoose, onForget }: RowProps)
       gap={4}
       wrap="nowrap"
       align="stretch"
+      // The open project sits on the column layer rather than in the accent,
+      // which the board keeps for the next ticket and keyboard focus.
       style={{
-        border: '1px solid var(--mantine-color-default-border)',
+        border: '1px solid var(--ps-hairline)',
         borderRadius: 'var(--mantine-radius-sm)',
-        background: current ? 'var(--mantine-primary-color-light)' : undefined,
+        background: current ? 'var(--ps-column-bg)' : undefined,
       }}
     >
       <UnstyledButton
@@ -185,7 +188,7 @@ function ProjectRow({ project, current, blocked, onChoose, onForget }: RowProps)
         p="xs"
         style={{ flex: 1, minWidth: 0, opacity: unavailable ? 0.7 : 1 }}
       >
-        <Text size="sm" fw={current ? 700 : 500} truncate>
+        <Text size="sm" fw={current ? 600 : 500} truncate>
           {project.name}
           {current && (
             <Text span size="xs" c="dimmed" fw={400}>

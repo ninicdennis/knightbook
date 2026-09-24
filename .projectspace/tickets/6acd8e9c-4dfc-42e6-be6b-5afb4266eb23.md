@@ -2,11 +2,17 @@
 schema_version: 1
 id: 6acd8e9c-4dfc-42e6-be6b-5afb4266eb23
 title: "Stage the matching Node runtime for each release target"
-status: verification
+status: done
 depends_on: []
 created_at: 2026-09-19T20:05:15.184Z
-updated_at: 2026-09-21T03:17:12.760Z
+updated_at: 2026-09-24T20:12:54.659Z
 related_documents: [ "docs/experiments/packaging-findings.md", "docs/release-automation.md" ]
+completion:
+  decision_source: direct_user_action
+  recorded_by: user
+  recorded_at: 2026-09-24T20:12:54.659Z
+  instruction: Moved to Done in the app.
+  accepted_revision: ab5bb27c6fe5ec1b04887e4841a61e18
 ---
 
 # Per-target runtime staging

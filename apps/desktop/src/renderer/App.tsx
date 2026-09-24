@@ -22,6 +22,13 @@ import { useSearchShortcut } from './hooks/useSearchShortcut.js'
 import { useTicketActions } from './hooks/useTicketActions.js'
 
 /**
+ * Below `md` the header reflows onto two rows (shell.css). AppShell offsets the
+ * main area by this height rather than measuring the header, so the two
+ * breakpoints must match.
+ */
+const HEADER_HEIGHT = { base: 104, md: 60 }
+
+/**
  * The window's root: which screen is showing, which view of an open project,
  * and which ticket or dialog is open over it. What happens to tickets lives in
  * the action hooks; this only wires them to what is on screen.
@@ -120,11 +127,13 @@ export function App() {
 
   return (
     <AppShell
-      {...(screen.kind === 'open' ? { header: { height: 72 }, footer: { height: 32 } } : {})}
+      {...(screen.kind === 'open'
+        ? { header: { height: HEADER_HEIGHT }, footer: { height: 32 } }
+        : {})}
       padding="md"
     >
       {screen.kind === 'open' && (
-        <AppShell.Header px="md" py="xs">
+        <AppShell.Header className="ps-shell-chrome" px="md" py="xs">
           <ProjectHeader
             name={screen.project.name}
             checkoutPath={screen.project.checkoutPath}
@@ -188,40 +197,44 @@ export function App() {
                 {actionError}
               </Alert>
             )}
-            {view === 'documents' ? (
-              <DocumentsView
-                rootPath={screen.path}
-                openTarget={documentTarget}
-                refreshToken={refreshToken}
-              />
-            ) : view === 'archive' ? (
-              <ArchiveView
-                tickets={screen.project.archivedTickets}
-                busyTicketId={busyTicketId}
-                onOpen={setDetailId}
-                onRestore={actions.restore}
-              />
-            ) : (
-              <Board
-                project={screen.project}
-                busyTicketId={busyTicketId}
-                onMove={actions.move}
-                onComplete={actions.askToComplete}
-                onReorder={actions.reorder}
-                onReportIssue={actions.askAboutIssue}
-                onResolveIssue={actions.resolveIssue}
-                onReview={actions.review}
-                onOpen={setDetailId}
-                onArchive={archive.archiveOne}
-                onArchiveColumn={archive.askToArchiveColumn}
-              />
-            )}
+            {/* The view gets what is left under an alert, not the whole height,
+                so its own scrolling regions still end inside the window. */}
+            <div style={{ flex: 1, minHeight: 0 }}>
+              {view === 'documents' ? (
+                <DocumentsView
+                  rootPath={screen.path}
+                  openTarget={documentTarget}
+                  refreshToken={refreshToken}
+                />
+              ) : view === 'archive' ? (
+                <ArchiveView
+                  tickets={screen.project.archivedTickets}
+                  busyTicketId={busyTicketId}
+                  onOpen={setDetailId}
+                  onRestore={actions.restore}
+                />
+              ) : (
+                <Board
+                  project={screen.project}
+                  busyTicketId={busyTicketId}
+                  onMove={actions.move}
+                  onComplete={actions.askToComplete}
+                  onReorder={actions.reorder}
+                  onReportIssue={actions.askAboutIssue}
+                  onResolveIssue={actions.resolveIssue}
+                  onReview={actions.review}
+                  onOpen={setDetailId}
+                  onArchive={archive.archiveOne}
+                  onArchiveColumn={archive.askToArchiveColumn}
+                />
+              )}
+            </div>
           </Stack>
         )}
       </AppShell.Main>
 
       {screen.kind === 'open' && (
-        <AppShell.Footer>
+        <AppShell.Footer className="ps-shell-chrome">
           <McpStatusFooter checkoutPath={screen.project.checkoutPath} />
         </AppShell.Footer>
       )}

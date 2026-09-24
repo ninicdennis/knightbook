@@ -9,15 +9,15 @@ import type { ColorSchemeChoice } from '../shared/contract.js'
  *
  * These two values are the renderer's own page background (`--ps-app-bg`). They
  * are duplicated rather than shared because this side cannot read a stylesheet;
- * keep them in step with surfaces.css.
+ * window-theme.test.ts fails when they drift from surfaces.css.
  */
-const BACKGROUND = { light: '#f4f5f7', dark: '#14161a' } as const
+export const WINDOW_BACKGROUND = { light: '#eef0f4', dark: '#14161a' } as const
 
 /** Electron's own name for the same three choices. */
 const THEME_SOURCE = { light: 'light', dark: 'dark', auto: 'system' } as const
 
 export function windowBackground(): string {
-  return nativeTheme.shouldUseDarkColors ? BACKGROUND.dark : BACKGROUND.light
+  return nativeTheme.shouldUseDarkColors ? WINDOW_BACKGROUND.dark : WINDOW_BACKGROUND.light
 }
 
 /**

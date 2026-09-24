@@ -1,37 +1,20 @@
-import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  Center,
-  Code,
-  Divider,
-  Group,
-  Loader,
-  NavLink,
-  ScrollArea,
-  Stack,
-  Text,
-  Tooltip,
-} from '@mantine/core'
-import {
-  IconAlertTriangle,
-  IconExternalLink,
-  IconEye,
-  IconEyeOff,
-  IconFileText,
-} from '@tabler/icons-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Alert, Button, Center, Loader, Stack, Text } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
+import { IconAlertTriangle, IconFileText } from '@tabler/icons-react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import type { DocumentListView, DocumentReadView, Result } from '../../shared/contract.js'
-import { renderMarkdown } from '../markdown.js'
+import { DocumentNav } from './DocumentNav.js'
+import { DocumentReader, type ReaderState } from './DocumentReader.js'
 import { IncludedEntries } from './IncludedEntries.js'
-import { MarkdownBody } from './MarkdownBody.js'
-import { ReviewBadge } from './ReviewBadge.js'
 
 /**
- * Reading project documentation. Editing stays in the user's own editor until
- * the formatted-editor question is settled, so this is deliberately read-only
- * and says so, rather than offering an edit affordance that does not work.
+ * Reading project documentation: a list of included documents beside a reader.
+ * On a narrow window the two take turns, with a way back to the list, because
+ * a squeezed side-by-side layout leaves neither readable.
+ *
+ * Three kinds of failure are kept apart, because each leaves something different
+ * on screen: the list could not be read, one document could not be read, or an
+ * action on the manifest or a review was refused.
  */
 
 interface Props {
@@ -42,52 +25,82 @@ interface Props {
   refreshToken?: number
 }
 
+/** Matches Mantine's `sm` breakpoint (48em), below which the panels take turns. */
+const NARROW_QUERY = '(max-width: 47.99em)'
+
 export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }: Props) {
   const [listing, setListing] = useState<DocumentListView | null>(null)
+  const [listError, setListError] = useState<string | null>(null)
+  const [listAttempt, setListAttempt] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
   const [document, setDocument] = useState<DocumentReadView | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [readError, setReadError] = useState<{ path: string; message: string } | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  const narrow = useMediaQuery(NARROW_QUERY) ?? false
+  const [pane, setPane] = useState<'list' | 'reader'>('list')
+  const navRef = useRef<HTMLDivElement>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const moveFocus = useRef(false)
 
   useEffect(() => {
     let cancelled = false
     void window.knightbook.listDocuments(rootPath).then((result) => {
       if (cancelled) return
-      setLoading(false)
       if (result.ok) {
         setListing(result.value)
+        setListError(null)
         setSelected((current) => current ?? result.value.documents[0]?.path ?? null)
       } else {
-        setError(result.message)
+        setListError(result.message)
       }
     })
     return () => {
       cancelled = true
     }
-  }, [rootPath, refreshToken])
+  }, [rootPath, refreshToken, listAttempt])
 
   useEffect(() => {
-    if (openTarget) setSelected(openTarget.path)
+    if (!openTarget) return
+    setSelected(openTarget.path)
+    setPane('reader')
   }, [openTarget])
 
-  const open = useCallback(
+  const read = useCallback(
     async (path: string) => {
-      setSelected(path)
-      setError(null)
+      setReadError(null)
       const result = await window.knightbook.readDocument(rootPath, path)
       if (result.ok) setDocument(result.value)
       else {
         setDocument(null)
-        setError(result.message)
+        setReadError({ path, message: result.message })
       }
     },
     [rootPath],
   )
 
   useEffect(() => {
-    if (selected) void open(selected)
-  }, [selected, open, refreshToken])
+    if (selected) void read(selected)
+  }, [selected, read, refreshToken])
+
+  // Switching panes on a narrow window moves focus with it, so a keyboard user
+  // lands on what just appeared instead of on a control that has gone.
+  useEffect(() => {
+    if (!moveFocus.current) return
+    moveFocus.current = false
+    if (pane === 'reader') headingRef.current?.focus()
+    else
+      [...(navRef.current?.querySelectorAll<HTMLElement>('[data-document-path]') ?? [])]
+        .find((item) => item.dataset.documentPath === selected)
+        ?.focus()
+  }, [pane, selected])
+
+  const choose = (path: string) => {
+    setSelected(path)
+    moveFocus.current = narrow
+    setPane('reader')
+  }
 
   /**
    * Including and removing both return the whole listing, so the view shows what
@@ -97,7 +110,7 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
    */
   const applyToManifest = useCallback(async (run: () => Promise<Result<DocumentListView>>) => {
     setBusy(true)
-    setError(null)
+    setActionError(null)
 
     const result = await run()
     if (result.ok) {
@@ -107,7 +120,7 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
           ? current
           : (result.value.documents[0]?.path ?? null),
       )
-    } else setError(result.message)
+    } else setActionError(result.message)
     setBusy(false)
   }, [])
 
@@ -118,15 +131,17 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
       setDocument(result.value)
       const refreshed = await window.knightbook.listDocuments(rootPath)
       if (refreshed.ok) setListing(refreshed.value)
-    } else setError(result.message)
+    } else setActionError(result.message)
   }, [rootPath, document])
 
-  if (loading) {
-    return (
+  if (!listing) {
+    return listError ? (
+      <ListFailed message={listError} onRetry={() => setListAttempt((n) => n + 1)} />
+    ) : (
       <Center style={{ height: '100%' }}>
         <Stack align="center" gap="xs">
           <Loader />
-          <Text size="sm" c="dimmed">
+          <Text size="sm" c="var(--ps-text-muted)">
             Reading project files…
           </Text>
         </Stack>
@@ -134,7 +149,7 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
     )
   }
 
-  const entries = listing && (
+  const entries = (
     <IncludedEntries
       listing={listing}
       busy={busy}
@@ -150,153 +165,133 @@ export function DocumentsView({ rootPath, openTarget = null, refreshToken = 0 }:
     />
   )
 
-  if (!listing || listing.documents.length === 0) {
-    return (
-      <Center style={{ height: '100%' }}>
-        <Alert
-          icon={<IconFileText size={18} />}
-          color="blue"
-          variant="light"
-          title="No documents included yet"
-          w={520}
-          maw="100%"
-        >
-          <Stack gap="sm">
-            <Text size="sm">
-              Existing Markdown stays where it already lives. Nothing is copied or moved when it is
-              included here.
-            </Text>
-            <Text size="sm" c="dimmed">
-              Include files or a folder below, or let an AI tool connected to this project do it
-              through MCP.
-            </Text>
-            {error && (
-              <Text size="sm" c="orange">
-                {error}
-              </Text>
-            )}
-            {entries}
-          </Stack>
-        </Alert>
-      </Center>
-    )
+  const refreshFailure =
+    listError &&
+    `Could not re-read the document list: ${listError} The list shown is the last one that loaded.`
+  const noticeText = actionError ?? refreshFailure
+
+  if (listing.documents.length === 0) {
+    return <NoDocuments error={noticeText} entries={entries} />
   }
 
+  const readerState: ReaderState | null = !selected
+    ? null
+    : readError?.path === selected
+      ? { kind: 'failed', path: selected, message: readError.message }
+      : document?.path === selected
+        ? { kind: 'ready', document }
+        : { kind: 'loading', path: selected }
+
+  const showNav = !narrow || pane === 'list'
+  const showReader = readerState && (!narrow || pane === 'reader')
+
   return (
-    <Group align="stretch" gap="md" wrap="nowrap" style={{ height: '100%' }}>
-      <Card withBorder padding="xs" radius="md" w={280} style={{ flexShrink: 0 }}>
-        <ScrollArea.Autosize mah="calc(100vh - 140px)" type="hover">
-          <Stack gap={2}>
-            {listing.documents.map((item) => (
-              <NavLink
-                key={item.path}
-                active={item.path === selected}
-                label={item.title}
-                description={item.path}
-                onClick={() => setSelected(item.path)}
-                rightSection={
-                  item.review.state !== 'reviewed' ? (
-                    <IconEyeOff size={13} opacity={0.5} />
-                  ) : undefined
-                }
-              />
-            ))}
-          </Stack>
-        </ScrollArea.Autosize>
-
-        <Divider my="xs" />
-        {entries}
-      </Card>
-
-      <Card withBorder padding="md" radius="md" style={{ flex: 1, minWidth: 0 }}>
-        {error && (
-          <Alert
-            icon={<IconAlertTriangle size={16} />}
-            color="orange"
-            variant="light"
-            mb="sm"
-            withCloseButton
-            onClose={() => setError(null)}
-          >
-            {error}
-          </Alert>
-        )}
-        {document && (
-          <DocumentReader
-            document={document}
-            onReview={() => void review()}
-            onOpenExternally={() =>
-              void window.knightbook.openDocumentExternally(rootPath, document.path)
-            }
-            onFollowLink={(path) => setSelected(path)}
+    <div className="ps-docs" data-narrow={narrow || undefined}>
+      {showNav && (
+        <div ref={navRef} style={{ display: 'contents' }}>
+          <DocumentNav
+            documents={listing.documents}
+            selected={selected}
+            onSelect={choose}
+            entries={entries}
           />
-        )}
-      </Card>
-    </Group>
+        </div>
+      )}
+
+      {showReader && selected && (
+        <DocumentReader
+          state={readerState}
+          title={listing.documents.find((item) => item.path === selected)?.title ?? selected}
+          headingRef={headingRef}
+          {...(narrow
+            ? {
+                onBack: () => {
+                  moveFocus.current = true
+                  setPane('list')
+                },
+              }
+            : {})}
+          notice={
+            noticeText && (
+              <Alert
+                icon={<IconAlertTriangle size={16} />}
+                color="orange"
+                variant="light"
+                mx="md"
+                mt="sm"
+                withCloseButton
+                onClose={() => {
+                  setActionError(null)
+                  setListError(null)
+                }}
+              >
+                {noticeText}
+              </Alert>
+            )
+          }
+          onRetry={() => void read(selected)}
+          onReview={() => void review()}
+          onOpenExternally={() => void window.knightbook.openDocumentExternally(rootPath, selected)}
+          onFollowLink={(path) => setSelected(path)}
+        />
+      )}
+    </div>
   )
 }
 
-function DocumentReader({
-  document,
-  onReview,
-  onOpenExternally,
-  onFollowLink,
-}: {
-  document: DocumentReadView
-  onReview: () => void
-  onOpenExternally: () => void
-  onFollowLink: (path: string) => void
-}) {
-  const rendered = renderMarkdown(document.content, document.path)
-
+function ListFailed({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <Stack gap="sm" style={{ height: '100%' }}>
-      <Group justify="space-between" wrap="nowrap" align="flex-start">
-        <Stack gap={4} style={{ minWidth: 0 }}>
-          <Text size="sm" c="dimmed" style={{ wordBreak: 'break-all' }}>
-            {document.path}
+    <Center style={{ height: '100%' }}>
+      <Alert
+        icon={<IconAlertTriangle size={18} />}
+        color="orange"
+        variant="light"
+        title="The document list could not be read"
+        w={520}
+        maw="100%"
+      >
+        <Stack gap="sm" align="flex-start">
+          <Text size="sm">{message}</Text>
+          <Text size="sm" c="var(--ps-text-muted)">
+            Nothing was changed. The documents themselves are untouched on disk.
           </Text>
-          <Group gap="xs">
-            <ReviewBadge review={document.review} />
-            <Badge size="xs" variant="default">
-              Read-only
-            </Badge>
-          </Group>
+          <Button size="xs" variant="default" onClick={onRetry}>
+            Try again
+          </Button>
         </Stack>
+      </Alert>
+    </Center>
+  )
+}
 
-        <Group gap="xs" wrap="nowrap">
-          {document.review.state !== 'reviewed' && (
-            <Button
-              size="xs"
-              variant="default"
-              leftSection={<IconEye size={14} />}
-              onClick={onReview}
-            >
-              Mark reviewed
-            </Button>
+function NoDocuments({ error, entries }: { error: string | null; entries: ReactNode }) {
+  return (
+    <Center style={{ height: '100%' }}>
+      <Alert
+        icon={<IconFileText size={18} />}
+        color="blue"
+        variant="light"
+        title="No documents included yet"
+        w={520}
+        maw="100%"
+      >
+        <Stack gap="sm">
+          <Text size="sm">
+            Existing Markdown stays where it already lives. Nothing is copied or moved when it is
+            included here.
+          </Text>
+          <Text size="sm" c="var(--ps-text-muted)">
+            Include files or a folder below, or let an AI tool connected to this project do it
+            through MCP.
+          </Text>
+          {error && (
+            <Text size="sm" c="orange">
+              {error}
+            </Text>
           )}
-          <Tooltip label="Open in your own editor" withArrow>
-            <Button
-              size="xs"
-              variant="default"
-              leftSection={<IconExternalLink size={14} />}
-              onClick={onOpenExternally}
-            >
-              Edit externally
-            </Button>
-          </Tooltip>
-        </Group>
-      </Group>
-
-      {rendered.frontmatter && (
-        <Code block style={{ maxHeight: 140, overflow: 'auto', fontSize: 11 }}>
-          {rendered.frontmatter.trimEnd()}
-        </Code>
-      )}
-
-      <ScrollArea.Autosize mah="calc(100vh - 260px)" type="auto">
-        <MarkdownBody html={rendered.html} onFollowLink={onFollowLink} />
-      </ScrollArea.Autosize>
-    </Stack>
+          {entries}
+        </Stack>
+      </Alert>
+    </Center>
   )
 }

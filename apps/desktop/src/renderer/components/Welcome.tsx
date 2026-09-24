@@ -33,19 +33,21 @@ export function Welcome({ recentProjects, onChoose, onOpenRecent }: Props) {
           <Stack gap="xs">
             <Group gap={6}>
               <IconHistory size={14} opacity={0.6} />
-              <Text
-                size="xs"
-                fw={600}
-                tt="uppercase"
-                c="dimmed"
-                style={{ letterSpacing: '0.05em' }}
-              >
+              <Text size="xs" fw={600} c="dimmed">
                 Recent
               </Text>
             </Group>
             {recentProjects.map(({ path, name }) => (
               <UnstyledButton key={path} onClick={() => onOpenRecent(path)}>
-                <Card withBorder padding="xs" radius="sm">
+                <Card
+                  padding="xs"
+                  radius="sm"
+                  style={{
+                    background: 'var(--ps-card-bg)',
+                    border: '1px solid var(--ps-hairline)',
+                    boxShadow: 'var(--ps-card-shadow)',
+                  }}
+                >
                   <Text size="sm" fw={500}>
                     {name}
                   </Text>
