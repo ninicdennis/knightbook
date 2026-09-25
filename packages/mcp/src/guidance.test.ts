@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import type { McpServer } from '@modelcontextprotocol/server'
 import { registerDocumentTools } from './document-tools.js'
+import { registerPlanTools } from './plan-tools.js'
 import { SHARED_INSTRUCTIONS, SINGLE_PROJECT_INSTRUCTIONS } from './instructions.js'
 import { registerProjectsTool } from './projects-tool.js'
 import { createScope } from './scope.js'
@@ -28,7 +29,7 @@ const SKILL_PATH = join(
 const skill = readFileSync(SKILL_PATH, 'utf8')
 
 /** Every tool is named group_verb. These record fields share a prefix but are not tools. */
-const TOOL_SHAPED = /\b((?:project|projects|ticket|document|documents|review)_[a-z_]+)\b/g
+const TOOL_SHAPED = /\b((?:project|projects|ticket|document|documents|review|plan)_[a-z_]+)\b/g
 const FIELDS_NOT_TOOLS = new Set(['project_id'])
 
 /** Both kinds of connection together: the skill describes each. */
@@ -40,6 +41,7 @@ function registeredToolNames(): string[] {
   for (const scope of [single, shared]) {
     registerTools(recorder, scope)
     registerDocumentTools(recorder, scope)
+    registerPlanTools(recorder, scope)
   }
   registerProjectsTool(recorder, 'unused')
   return [...names]

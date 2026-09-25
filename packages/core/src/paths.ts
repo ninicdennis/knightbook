@@ -105,4 +105,6 @@ export const reservedPaths = {
   ticketsDir: (root: ProjectRoot) => join(root.path, RESERVED_DIR, 'tickets'),
   ticketFile: (root: ProjectRoot, id: string) =>
     join(root.path, RESERVED_DIR, 'tickets', `${id}.md`),
+  plansDir: (root: ProjectRoot) => join(root.path, RESERVED_DIR, 'plans'),
+  planFile: (root: ProjectRoot, id: string) => join(root.path, RESERVED_DIR, 'plans', `${id}.md`),
 }
