@@ -5,8 +5,10 @@ title: "Stage the matching Node runtime for each release target"
 status: done
 depends_on: []
 created_at: 2026-09-19T20:05:15.184Z
-updated_at: 2026-09-24T20:12:54.659Z
-related_documents: [ "docs/experiments/packaging-findings.md", "docs/release-automation.md" ]
+updated_at: 2026-09-25T14:35:47.044Z
+related_documents:
+  - docs/experiments/packaging-findings.md
+  - docs/proposals/release-automation.md
 completion:
   decision_source: direct_user_action
   recorded_by: user
