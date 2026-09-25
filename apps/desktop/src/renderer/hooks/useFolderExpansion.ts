@@ -45,12 +45,22 @@ export function useFolderExpansion(rootPath: string, selected: string | null) {
     [rootPath],
   )
 
-  // A document chosen from a link, search or the reader must be visible in the list.
+  /*
+   * A document chosen from a link, search or the list must be visible in it, so
+   * its folders open when the selection changes. Only then: collapsing a folder
+   * that holds the open document is the user's choice and must stick.
+   */
   useEffect(() => {
     if (!selected) return
-    const hidden = ancestorFolders(selected).filter((folder) => collapsed.has(folder))
-    if (hidden.length > 0) update((next) => hidden.forEach((folder) => next.delete(folder)))
-  }, [selected, collapsed, update])
+    setCollapsed((current) => {
+      const hidden = ancestorFolders(selected).filter((folder) => current.has(folder))
+      if (hidden.length === 0) return current
+      const next = new Set(current)
+      hidden.forEach((folder) => next.delete(folder))
+      writeCollapsed(rootPath, next)
+      return next
+    })
+  }, [selected, rootPath])
 
   const toggle = useCallback(
     (folder: string) =>

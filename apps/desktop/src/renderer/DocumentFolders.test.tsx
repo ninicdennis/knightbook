@@ -101,6 +101,19 @@ describe('the folder tree', () => {
     await waitFor(() => expect(notes.getAttribute('aria-current')).toBe('true'))
   })
 
+  it('keeps a folder collapsed when it holds the open document', async () => {
+    const nav = await openDocuments()
+    await user.click(within(nav).getByRole('button', { name: /^guide/ }))
+    const docs = within(nav).getByRole('button', { name: /^Documentation docs/ })
+
+    await user.click(docs)
+
+    // Opening it again here was the bug: it flashed closed and reopened itself.
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(docs.getAttribute('aria-expanded')).toBe('false')
+    expect(within(nav).queryByRole('button', { name: /^guide/ })).toBeNull()
+  })
+
   it('works from the keyboard', async () => {
     const nav = await openDocuments()
     const docs = within(nav).getByRole('button', { name: /^Documentation docs/ })
