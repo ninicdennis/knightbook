@@ -3,6 +3,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { useState } from 'react'
 import { useMcpStatus } from '../hooks/useMcpStatus.js'
 import { describeMcpStatus } from '../mcp-status.js'
+import { AiSetupDialog } from './AiSetupDialog.js'
 import { McpStatusDetails } from './McpStatusDetails.js'
 import { McpStatusDot } from './McpStatusDot.js'
 
@@ -19,6 +20,8 @@ import { McpStatusDot } from './McpStatusDot.js'
 export function McpStatusFooter({ checkoutPath }: { checkoutPath: string }) {
   const status = useMcpStatus(checkoutPath)
   const [open, panel] = useDisclosure(false)
+  // Held here, not in the panel: the popover closes when the dialog opens.
+  const [setupOpen, setup] = useDisclosure(false)
   // Frozen while the panel is open so wording does not shift under the reader's
   // eyes mid-sentence. Polling continues; the next close picks it up.
   const [frozen, setFrozen] = useState<typeof status>(null)
@@ -83,9 +86,14 @@ export function McpStatusFooter({ checkoutPath }: { checkoutPath: string }) {
             // The panel holds a frozen reading; the user's own change is a fact
             // it should show at once rather than after the panel is reopened.
             onAccessChange={(access) => setFrozen((reading) => reading && { ...reading, access })}
+            onSetUp={() => {
+              panel.close()
+              setup.open()
+            }}
           />
         </Popover.Dropdown>
       </Popover>
+      <AiSetupDialog opened={setupOpen} onClose={setup.close} checkoutPath={checkoutPath} />
     </Group>
   )
 }

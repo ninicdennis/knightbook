@@ -3,7 +3,9 @@ import {
   describeReason,
   evaluateReadiness,
   failedPrerequisites,
+  listPlanRecords,
   listTicketRecords,
+  phasesContaining,
   ProjectError,
   ticketReviewStatus,
   type Project,
@@ -138,6 +140,7 @@ export async function toTicketDetail(project: Project, id: string): Promise<Tick
     updatedAt: ticket.frontmatter.updated_at,
     relatedDocuments: ticket.frontmatter.related_documents,
     dependencies,
+    plans: phasesContaining((await listPlanRecords(project)).plans, id),
     /*
      * Acceptances that were taken back. This belongs to reading one ticket
      * closely, not to scanning the board, so it is on the detail only.

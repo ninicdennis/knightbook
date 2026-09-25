@@ -7,6 +7,7 @@ import { ArchiveView } from './components/ArchiveView.js'
 import { Board } from './components/Board.js'
 import { CompletionDialog } from './components/CompletionDialog.js'
 import { DocumentsView } from './components/DocumentsView.js'
+import { PlansView } from './components/PlansView.js'
 import { McpStatusFooter } from './components/McpStatusFooter.js'
 import { ProjectHeader, type View } from './components/ProjectHeader.js'
 import { LoadingProject, ProjectLoadFailed } from './components/ProjectStatusScreens.js'
@@ -134,6 +135,13 @@ export function App() {
     setDocumentTarget({ path, nonce: Date.now(), scrollTo })
   }, [])
 
+  const [planTarget, setPlanTarget] = useState<{ id: string; nonce: number } | null>(null)
+  const openPlan = useCallback((id: string) => {
+    setDetailId(null)
+    setView('plans')
+    setPlanTarget({ id, nonce: Date.now() })
+  }, [])
+
   const openTicket = useCallback((id: string, scrollTo: ScrollTarget | null = null) => {
     setDetailId(id)
     setDetailScroll(scrollTo)
@@ -235,6 +243,14 @@ export function App() {
                   }
                   backFor={(path) => backAction(links.backFrom({ kind: 'document', path }))}
                 />
+              ) : view === 'plans' ? (
+                <PlansView
+                  rootPath={screen.path}
+                  openTarget={planTarget}
+                  refreshToken={refreshToken}
+                  onOpenTicket={openTicket}
+                  onFollowLink={(request) => links.follow(null, request)}
+                />
               ) : view === 'archive' ? (
                 <ArchiveView
                   tickets={screen.project.archivedTickets}
@@ -293,6 +309,7 @@ export function App() {
           }}
           onResolveIssue={() => actions.resolveIssue(detailTicket.id)}
           onReview={(revision) => actions.review(detailTicket.id, revision)}
+          onOpenPlan={openPlan}
           onFollowLink={(request) =>
             links.follow(
               { kind: 'ticket', id: detailTicket.id, title: detailTicket.title },

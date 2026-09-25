@@ -1,10 +1,10 @@
-import { mkdtemp, readFile, stat } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, relative, sep } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { call, callExpectingError, connect } from './client.js'
 import { packagedResources, requireWhenAsked } from './packaged.js'
-import { removeWorkspace } from './stage.js'
+import { removeWorkspace, REPO_ROOT } from './stage.js'
 
 /**
  * The same checks as packaging.test.ts, but against the output of a real
@@ -34,7 +34,26 @@ afterAll(async () => {
   await removeWorkspace(workspace)
 })
 
+/** Every file under a folder, by relative path, so two copies can be compared whole. */
+async function folderContents(dir: string): Promise<Record<string, string>> {
+  const contents: Record<string, string> = {}
+  for (const entry of await readdir(dir, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile()) continue
+    const path = join(entry.parentPath, entry.name)
+    contents[relative(dir, path).split(sep).join('/')] = await readFile(path, 'utf8')
+  }
+  return contents
+}
+
 describePackaged('the installed application', () => {
+  // The app installs and exports this copy, so it must be the repository's, whole.
+  it('ships the complete workflow skill, identical to its one source', async () => {
+    const shipped = await folderContents(join(resources!.resourcesDir, 'skills', 'projectspace'))
+    const source = await folderContents(join(REPO_ROOT, 'skills', 'projectspace'))
+    expect(Object.keys(shipped)).toContain('SKILL.md')
+    expect(shipped).toEqual(source)
+  })
+
   it('keeps the MCP runtime outside the ASAR archive', async () => {
     const asar = await stat(join(resources!.resourcesDir, 'app.asar'))
     const runtime = await stat(resources!.nodePath)

@@ -75,6 +75,7 @@ describe('a prerequisite that failed verification', () => {
         relatedDocuments: [],
         dependencies: [],
         previousCompletions: [],
+        plans: [],
       },
     })
 

@@ -15,7 +15,7 @@ import { SEARCH_SHORTCUT_LABEL } from '../shortcuts.js'
  * Layout, including the narrow-window reflow, is in shell.css.
  */
 
-export type View = 'board' | 'documents' | 'archive'
+export type View = 'board' | 'documents' | 'plans' | 'archive'
 
 interface Props {
   name: string
@@ -91,6 +91,7 @@ export function ProjectHeader({
           data={[
             { value: 'board', label: 'Board' },
             { value: 'documents', label: 'Documents' },
+            { value: 'plans', label: 'Plans' },
             /*
              * The count is on the tab because the archive is otherwise
              * invisible: without it, a ticket that left the board looks lost

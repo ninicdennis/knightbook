@@ -7,6 +7,8 @@ import type {
 import { documentsStub } from './documents-stub.js'
 import { setStubAllowed, stubMcpStatus } from './mcp-status-stub.js'
 import { record } from './record.js'
+import { plansStub } from './plans-stub.js'
+import { skillSetupStub } from './skill-setup-stub.js'
 import { stubReviewChanges } from './review-changes-stub.js'
 import { stubTicketDetail } from './ticket-detail-stub.js'
 import { stubTicketSearch } from './ticket-search-stub.js'
@@ -268,6 +270,10 @@ export const stubApi: KnightbookApi = {
     record('readTicket', id)
     return stubTicketDetail(PROJECT, id)
   },
+  openTicketExternally: async (_root, id) => {
+    record('openTicketExternally', id)
+    return { ok: true, value: null }
+  },
   reorderBacklog: async (_root, ticketIds) => {
     record('reorderBacklog', ticketIds)
     return { ok: true, value: PROJECT }
@@ -287,6 +293,8 @@ export const stubApi: KnightbookApi = {
   showProjectInWindowTitle: async (project) => {
     record('showProjectInWindowTitle', project)
   },
+  ...skillSetupStub,
+  ...plansStub,
 
   mcpLaunchCommand: async () => ({
     command: String.raw`C:\Program Files\Knightbook\resources\mcp\node.exe`,

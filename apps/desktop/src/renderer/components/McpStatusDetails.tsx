@@ -1,4 +1,5 @@
-import { Divider, List, Stack, Text } from '@mantine/core'
+import { Button, Divider, Group, List, Stack, Text } from '@mantine/core'
+import { IconSettingsAutomation } from '@tabler/icons-react'
 import type { McpAccessView, McpStatusView } from '../../shared/contract.js'
 import { describeActivity, describeAge, type McpDisplay } from '../mcp-status.js'
 import { CopyMcpConfig } from './CopyMcpConfig.js'
@@ -24,6 +25,8 @@ interface Props {
   display: McpDisplay
   checkoutPath: string
   onAccessChange: (access: McpAccessView) => void
+  /** Opens the guided connection and skill setup. */
+  onSetUp: () => void
 }
 
 function Fact({ label, value }: { label: string; value: string }) {
@@ -85,7 +88,13 @@ function describeConnection(status: McpStatusView): string {
   return `Opened ${describeAge(connected[0]!.connectedAt!)}.`
 }
 
-export function McpStatusDetails({ status, display, checkoutPath, onAccessChange }: Props) {
+export function McpStatusDetails({
+  status,
+  display,
+  checkoutPath,
+  onAccessChange,
+  onSetUp,
+}: Props) {
   return (
     <Stack gap="xs">
       <Text size="sm" fw={600}>
@@ -129,7 +138,12 @@ export function McpStatusDetails({ status, display, checkoutPath, onAccessChange
 
       <Divider />
 
-      <CopyMcpConfig label="Copy MCP configuration" />
+      <Group gap="xs">
+        <Button size="xs" leftSection={<IconSettingsAutomation size={14} />} onClick={onSetUp}>
+          Set up your AI tool
+        </Button>
+        <CopyMcpConfig label="Copy MCP configuration" />
+      </Group>
 
       <Text size="xs" c="dimmed">
         Your AI client starts and stops this server itself, so the app has no Start or Stop to

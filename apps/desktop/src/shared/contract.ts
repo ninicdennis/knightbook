@@ -31,6 +31,8 @@ export type {
   LinkDestinationView,
 } from './documents-contract.js'
 import type { DocumentsApi } from './documents-contract.js'
+import type { PlansApi } from './plans-contract.js'
+import type { SkillSetupApi } from './skill-setup-contract.js'
 
 export type TicketStatus = 'backlog' | 'in_progress' | 'verification' | 'done'
 
@@ -130,6 +132,15 @@ export interface TicketDetailView extends TicketView {
   dependencies: DependencyView[]
   /** Oldest first. Empty for a ticket that was never accepted and reopened. */
   previousCompletions: ReopenedCompletionView[]
+  /** Each plan phase that lists this ticket. Plan files that could not be read are left out. */
+  plans: TicketPlanView[]
+}
+
+export interface TicketPlanView {
+  planId: string
+  planTitle: string
+  phaseId: string
+  phaseTitle: string
 }
 
 /**
@@ -274,7 +285,7 @@ export interface WindowTitleProject {
   checkoutPath: string
 }
 
-export interface KnightbookApi extends DocumentsApi, ReviewChangesApi {
+export interface KnightbookApi extends DocumentsApi, ReviewChangesApi, SkillSetupApi, PlansApi {
   /** Projects this machine has opened, most recent first, each checked for availability. */
   rememberedProjects(): Promise<RememberedProject[]>
   /** Forgets one entry and returns the updated list. Deletes nothing on disk. */
@@ -339,6 +350,8 @@ export interface KnightbookApi extends DocumentsApi, ReviewChangesApi {
   restoreTicket(rootPath: string, id: string, revision: string): Promise<Result<ProjectView>>
   /** Everything written on one ticket, for the detail view. */
   readTicket(rootPath: string, id: string): Promise<Result<TicketDetailView>>
+  /** Opens the ticket's own Markdown file with the system's handler. The host builds the path. */
+  openTicketExternally(rootPath: string, id: string): Promise<Result<null>>
   /** Bounded text search over ticket titles and bodies in one checkout. */
   searchTickets(
     rootPath: string,
