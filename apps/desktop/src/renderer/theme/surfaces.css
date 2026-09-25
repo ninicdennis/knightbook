@@ -8,7 +8,7 @@
  * interface does not read as colourless. Light is the default here and dark is
  * the override, matching how Mantine sets `data-mantine-color-scheme` on :root.
  *
- * The two window backgrounds are repeated in src/main/window-theme.ts, which
+ * The two window backgrounds are repeated in src/main/window/window-theme.ts, which
  * paints the native window before this stylesheet exists. Its test fails if
  * they drift apart.
  */

@@ -13,16 +13,16 @@ import {
   updateTicket,
   type TicketType,
 } from '@knightbook/core'
-import { forgetProject, readAppState, rememberProject } from './app-state.js'
+import { forgetProject, readAppState, rememberProject } from './project/app-state.js'
 import { guard } from './guard.js'
-import { accessRegistryPath } from './mcp-access.js'
-import { mcpLaunchCommand } from './mcp-resources.js'
-import { readMcpStatus } from './mcp-status.js'
-import { describeRememberedProjects } from './remembered-projects.js'
-import { allowSetupFor } from './setup-permit.js'
-import { registerArchiveHandlers } from './archive-ipc.js'
-import { buildView } from './project-view.js'
-import { toTicketDetail } from './ticket-view.js'
+import { accessRegistryPath } from './mcp/mcp-access.js'
+import { mcpLaunchCommand } from './mcp/mcp-resources.js'
+import { readMcpStatus } from './mcp/mcp-status.js'
+import { describeRememberedProjects } from './project/remembered-projects.js'
+import { allowSetupFor } from './project/setup-permit.js'
+import { registerArchiveHandlers } from './tickets/archive-ipc.js'
+import { buildView } from './project/project-view.js'
+import { toTicketDetail } from './tickets/ticket-view.js'
 import type { ProjectView, TicketSearchView } from '../shared/contract.js'
 
 /**

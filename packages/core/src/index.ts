@@ -1,4 +1,4 @@
-export { ProjectError, isProjectError, type ProjectErrorCode } from './errors.js'
+export { ProjectError, isProjectError, type ProjectErrorCode } from './records/errors.js'
 export {
   RESERVED_DIR,
   reservedPaths,
@@ -6,29 +6,29 @@ export {
   resolveProjectRoot,
   toProjectRelative,
   type ProjectRoot,
-} from './paths.js'
-export { revisionOf, type Revision } from './revision.js'
+} from './records/paths.js'
+export { revisionOf, type Revision } from './records/revision.js'
 export {
   parseRecord,
   serializeRecord,
   SUPPORTED_SCHEMA_VERSION,
   type ParsedRecord,
-} from './frontmatter.js'
-export { readRecord, writeRecord, type ReadResult, type WriteResult } from './write.js'
+} from './records/frontmatter.js'
+export { readRecord, writeRecord, type ReadResult, type WriteResult } from './records/write.js'
 export {
   initializeProject,
   openProject,
   projectExists,
   setBacklogOrder,
   type Project,
-} from './project.js'
+} from './records/project.js'
 export {
   backlogOrderReport,
   inspectBacklogOrder,
   reorderBacklog,
   type BacklogOrderReport,
   type ReorderResult,
-} from './backlog-order.js'
+} from './tickets/backlog-order.js'
 export {
   archiveTicket,
   createTicket,
@@ -44,13 +44,13 @@ export {
   type TicketListing,
   type TicketProblem,
   type UpdateTicketInput,
-} from './tickets.js'
+} from './tickets/tickets.js'
 export {
   isUnattributedCompletion,
   recordUserCompletion,
   type RecordCompletionInput,
-} from './completion.js'
-export { selectNextTicket, type Candidate, type SelectionResult } from './selection.js'
+} from './tickets/completion.js'
+export { selectNextTicket, type Candidate, type SelectionResult } from './tickets/selection.js'
 export {
   createPlan,
   listPlanRecords,
@@ -64,13 +64,13 @@ export {
   type PlanListing,
   type PlanProblem,
   type UpdatePlanInput,
-} from './plans.js'
+} from './plans/plans.js'
 export {
   planProgress,
   type PlanProgress,
   type Progress,
   type ProgressState,
-} from './plan-progress.js'
+} from './plans/plan-progress.js'
 export {
   describeReason,
   evaluateReadiness,
@@ -78,13 +78,13 @@ export {
   type FailedPrerequisite,
   type IneligibilityReason,
   type Readiness,
-} from './dependencies.js'
+} from './tickets/dependencies.js'
 export {
   recordVerificationIssue,
   resolveVerificationIssue,
   type RecordVerificationIssueInput,
   type ResolveVerificationIssueInput,
-} from './verification.js'
+} from './tickets/verification.js'
 export {
   mutableStatusSchema,
   ticketStatusSchema,
@@ -97,7 +97,7 @@ export {
   type TicketFrontmatter,
   type TicketStatus,
   type TicketType,
-} from './schema.js'
+} from './records/schema.js'
 export {
   includeDocuments,
   createDocument,
@@ -110,20 +110,20 @@ export {
   type DocumentListing,
   type DocumentProblem,
   type IncludedDocument,
-} from './documents.js'
+} from './documents/documents.js'
 export {
   FOLDER_TITLE_MAX_LENGTH,
   listFolderTitles,
   setFolderTitle,
   type FolderTitle,
-} from './folder-titles.js'
-export { searchProject, type SearchHit, type SearchResult } from './search.js'
+} from './documents/folder-titles.js'
+export { searchProject, type SearchHit, type SearchResult } from './search/search.js'
 export {
   DOCUMENT_SEARCH_LIMIT,
   searchDocuments,
   type DocumentSearchHit,
   type DocumentSearchResult,
-} from './document-search.js'
+} from './search/document-search.js'
 export {
   searchTickets,
   TICKET_SEARCH_LIMIT,
@@ -131,8 +131,8 @@ export {
   type SearchScope,
   type TicketSearchHit,
   type TicketSearchResult,
-} from './ticket-search.js'
-export { resolveLinkDestination, type LinkDestination } from './links.js'
+} from './search/ticket-search.js'
+export { resolveLinkDestination, type LinkDestination } from './documents/links.js'
 export {
   compareSources,
   reviewChanges,
@@ -141,7 +141,7 @@ export {
   type ChangesState,
   type ReviewChanges,
   type SourceComparison,
-} from './review-changes.js'
+} from './review/review-changes.js'
 export {
   assertHumanReviewer,
   BOOKKEEPING_FIELDS,
@@ -157,7 +157,7 @@ export {
   type ReviewRecord,
   type ReviewState,
   type ReviewStatus,
-} from './review.js'
+} from './review/review.js'
 export {
   ACCESS_REGISTRY_SCHEMA_VERSION,
   grantCheckoutAccess,
@@ -167,20 +167,20 @@ export {
   type AccessEntry,
   type AccessRegistry,
   type GrantInput,
-} from './access-registry.js'
+} from './mcp/access-registry.js'
 export {
   describeEnabledCheckouts,
   findEnabledCheckout,
   resolveEnabledCheckout,
   type EnabledCheckout,
   type ResolvedCheckout,
-} from './checkout-access.js'
+} from './mcp/checkout-access.js'
 export {
   clearMcpActivitySync,
   readMcpActivity,
   recordMcpActivity,
   type McpActivityRecord,
-} from './mcp-activity.js'
+} from './mcp/mcp-activity.js'
 export {
   readMcpSessions,
   readSharedMcpSessions,
@@ -191,4 +191,4 @@ export {
   type McpSessionHandle,
   type McpSessionReading,
   type McpSessionRecord,
-} from './mcp-sessions.js'
+} from './mcp/mcp-sessions.js'

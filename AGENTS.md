@@ -84,7 +84,8 @@ docs/              Specification, technical design, research, experiment finding
   - Only entry points (`main.tsx`, `App.tsx`, `index.ts`, `index.html`) and
     cross-cutting glue stay at a package's root.
   - Split a folder by sub-feature once it passes about 20 files. Don't create a
-    folder for fewer than three.
+    feature folder for fewer than three; fold a small feature into its nearest
+    neighbour instead. `test/` is the exception.
   - Move files with `git mv` so history follows them, and keep moves in their own
     change, apart from behaviour changes.
 - Prettier leaves Markdown and `.projectspace/` alone on purpose; prose is written by
