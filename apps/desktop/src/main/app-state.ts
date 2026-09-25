@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parseRememberedEntries, type RememberedEntry } from './remembered-projects.js'
 import { adoptLegacyAppState, type AdoptionResult } from './state-migration.js'
+import { parseWindowState, type StoredWindowState } from './window-placement.js'
 import type { AppSettings, ColorSchemeChoice } from '../shared/contract.js'
 
 /**
@@ -19,12 +20,14 @@ export interface AppState {
   /** Most recently opened first. */
   readonly recentProjects: RememberedEntry[]
   readonly settings: AppSettings
+  /** Null until a window has been saved, or when the stored one was unusable. */
+  readonly window: StoredWindowState | null
 }
 
 /** Following the operating system is the only choice that needs no prior decision. */
 export const DEFAULT_SETTINGS: AppSettings = { colorScheme: 'auto' }
 
-const EMPTY: AppState = { recentProjects: [], settings: DEFAULT_SETTINGS }
+const EMPTY: AppState = { recentProjects: [], settings: DEFAULT_SETTINGS, window: null }
 
 const COLOR_SCHEMES: ColorSchemeChoice[] = ['light', 'dark', 'auto']
 
@@ -71,10 +74,12 @@ export async function readAppState(): Promise<AppState> {
     const parsed = JSON.parse(await readFile(statePath(), 'utf8')) as {
       recentProjects?: unknown
       settings?: unknown
+      window?: unknown
     }
     return {
       recentProjects: parseRememberedEntries(parsed.recentProjects).slice(0, MAX_REMEMBERED),
       settings: parseSettings(parsed.settings),
+      window: parseWindowState(parsed.window),
     }
   } catch {
     // Absent or unreadable state is not an error: it is simply a first run.
@@ -94,6 +99,24 @@ async function writeAppState(state: AppState): Promise<boolean> {
   }
 }
 
+/*
+ * Every change reads the whole file, merges, and writes it back. Window moves
+ * save often, so without one queue a window save could read the file just
+ * before a recent-project change lands and then write the old list back.
+ */
+let pendingChange: Promise<unknown> = Promise.resolve()
+
+function changeAppState<T>(change: () => Promise<T>): Promise<T> {
+  const next = pendingChange.then(change)
+  pendingChange = next.catch(() => undefined)
+  return next
+}
+
+/** Resolves once every change started so far has been written or has failed. */
+export async function appStateChangesSettled(): Promise<void> {
+  await pendingChange
+}
+
 export async function readSettings(): Promise<AppSettings> {
   return (await readAppState()).settings
 }
@@ -103,35 +126,48 @@ export async function readSettings(): Promise<AppSettings> {
  * screen overwrite another's value. Throws when the file could not be written,
  * because a preference that silently fails to persist would look like it worked.
  */
-export async function saveSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
-  const current = await readAppState()
-  const settings: AppSettings = { ...current.settings, ...patch }
-  if (!(await writeAppState({ ...current, settings }))) {
-    throw new Error('The settings file could not be written.')
-  }
-  return settings
+export function saveSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
+  return changeAppState(async () => {
+    const current = await readAppState()
+    const settings: AppSettings = { ...current.settings, ...patch }
+    if (!(await writeAppState({ ...current, settings }))) {
+      throw new Error('The settings file could not be written.')
+    }
+    return settings
+  })
 }
 
-export async function rememberProject(checkoutPath: string, name: string): Promise<AppState> {
-  const current = await readAppState()
-  const next: AppState = {
-    ...current,
-    recentProjects: [
-      { path: checkoutPath, name },
-      ...current.recentProjects.filter((entry) => entry.path !== checkoutPath),
-    ].slice(0, MAX_REMEMBERED),
-  }
-  await writeAppState(next)
-  return next
+export function rememberProject(checkoutPath: string, name: string): Promise<AppState> {
+  return changeAppState(async () => {
+    const current = await readAppState()
+    const next: AppState = {
+      ...current,
+      recentProjects: [
+        { path: checkoutPath, name },
+        ...current.recentProjects.filter((entry) => entry.path !== checkoutPath),
+      ].slice(0, MAX_REMEMBERED),
+    }
+    await writeAppState(next)
+    return next
+  })
 }
 
 /** Drops the entry from this list only. Nothing on disk is touched. */
-export async function forgetProject(checkoutPath: string): Promise<AppState> {
-  const current = await readAppState()
-  const next: AppState = {
-    ...current,
-    recentProjects: current.recentProjects.filter((entry) => entry.path !== checkoutPath),
-  }
-  await writeAppState(next)
-  return next
+export function forgetProject(checkoutPath: string): Promise<AppState> {
+  return changeAppState(async () => {
+    const current = await readAppState()
+    const next: AppState = {
+      ...current,
+      recentProjects: current.recentProjects.filter((entry) => entry.path !== checkoutPath),
+    }
+    await writeAppState(next)
+    return next
+  })
+}
+
+/** Silent on failure, like the recent-project list: a lost position is only an inconvenience. */
+export function saveWindowState(window: StoredWindowState): Promise<void> {
+  return changeAppState(async () => {
+    await writeAppState({ ...(await readAppState()), window })
+  })
 }

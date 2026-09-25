@@ -284,6 +284,9 @@ export const stubApi: KnightbookApi = {
     record('saveSettings', patch)
     return { ok: true, value: { colorScheme: patch.colorScheme ?? 'auto' } }
   },
+  showProjectInWindowTitle: async (project) => {
+    record('showProjectInWindowTitle', project)
+  },
 
   mcpLaunchCommand: async () => ({
     command: String.raw`C:\Program Files\Knightbook\resources\mcp\node.exe`,

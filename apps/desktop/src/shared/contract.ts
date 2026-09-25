@@ -268,6 +268,12 @@ export interface AppSettings {
   colorScheme: ColorSchemeChoice
 }
 
+/** The project a window title names, as the loaded project record gives it. */
+export interface WindowTitleProject {
+  name: string
+  checkoutPath: string
+}
+
 export interface KnightbookApi extends DocumentsApi, ReviewChangesApi {
   /** Projects this machine has opened, most recent first, each checked for availability. */
   rememberedProjects(): Promise<RememberedProject[]>
@@ -357,4 +363,6 @@ export interface KnightbookApi extends DocumentsApi, ReviewChangesApi {
   readSettings(): Promise<AppSettings>
   /** Merges the given fields into the stored settings and returns the stored result. */
   saveSettings(patch: Partial<AppSettings>): Promise<Result<AppSettings>>
+  /** Names the open project and its checkout folder in the window title; null claims no project. */
+  showProjectInWindowTitle(project: WindowTitleProject | null): Promise<void>
 }

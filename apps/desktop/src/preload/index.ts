@@ -39,6 +39,7 @@ const api: KnightbookApi = {
   mcpStatus: (rootPath) => ipcRenderer.invoke('mcp:status', rootPath),
   readSettings: () => ipcRenderer.invoke('app:readSettings'),
   saveSettings: (patch) => ipcRenderer.invoke('app:saveSettings', patch),
+  showProjectInWindowTitle: (project) => ipcRenderer.invoke('window:showProjectInTitle', project),
 
   listDocuments: (rootPath) => ipcRenderer.invoke('documents:list', rootPath),
   includeDocumentFiles: (rootPath) => ipcRenderer.invoke('documents:includeFiles', rootPath),

@@ -11,6 +11,15 @@ import { registerMcpAccessHandlers } from './mcp-access.js'
 import { mcpLaunchCommand } from './mcp-resources.js'
 import { applicationMenuTemplate, menuBarIsVisible } from './app-menu.js'
 import { followSystemChanges, windowBackground } from './window-theme.js'
+import {
+  finishSavingBeforeQuit,
+  placementOptions,
+  rememberedPlacement,
+  rememberWindowPlacement,
+} from './window-memory.js'
+import type { WindowPlacement } from './window-placement.js'
+import { PLAIN_WINDOW_TITLE } from './window-title.js'
+import { registerWindowTitleHandler } from './window-title-ipc.js'
 
 /**
  * Technical design section 1: the renderer receives narrow operations through
@@ -32,12 +41,10 @@ const isDevelopment = !app.isPackaged
  */
 app.setName('Knightbook')
 
-function createWindow(): BrowserWindow {
+function createWindow(placement: WindowPlacement): BrowserWindow {
   const window = new BrowserWindow({
-    width: 1280,
-    height: 860,
-    minWidth: 720,
-    minHeight: 480,
+    ...placementOptions(placement),
+    title: PLAIN_WINDOW_TITLE,
     show: false,
     // Follows the user's colour-scheme setting, which is applied before this runs.
     backgroundColor: windowBackground(),
@@ -57,7 +64,13 @@ function createWindow(): BrowserWindow {
    */
   if (!menuBarIsVisible(process.platform)) window.setMenuBarVisibility(false)
 
-  window.once('ready-to-show', () => window.show())
+  window.once('ready-to-show', () => {
+    if (placement.maximized) window.maximize()
+    window.show()
+  })
+  rememberWindowPlacement(window)
+  // The host owns the title (window-title-ipc.ts); a reload must not put the page's <title> back.
+  window.on('page-title-updated', (event) => event.preventDefault())
 
   // Nothing in a project document may navigate the app or open a window.
   window.webContents.setWindowOpenHandler(({ url }) => {
@@ -107,6 +120,7 @@ void app.whenReady().then(async () => {
   registerSetupHandlers()
   registerSettingsHandlers()
   registerMcpAccessHandlers()
+  registerWindowTitleHandler()
   process.stdout.write(`MCP launch command: ${JSON.stringify(mcpLaunchCommand())}\n`)
 
   /*
@@ -127,10 +141,11 @@ void app.whenReady().then(async () => {
   // Before the first window, so it is not painted in the other scheme first.
   await applyStoredColorScheme()
   followSystemChanges()
-  createWindow()
+  finishSavingBeforeQuit()
+  createWindow(await rememberedPlacement())
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) void rememberedPlacement().then(createWindow)
   })
 })
 
