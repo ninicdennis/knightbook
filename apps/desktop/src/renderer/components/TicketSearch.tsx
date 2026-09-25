@@ -167,8 +167,17 @@ export function TicketSearch({
       size="lg"
       /* Near the top, because the list grows downwards as you type. */
       yOffset="12vh"
+      /*
+       * A column down to the results, so the list is the only part that
+       * shrinks and scrolls. A fixed cap on the list could add up to more
+       * than the dialog's own maximum height and give it a second scrollbar.
+       */
+      styles={{
+        content: { display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+        body: { display: 'flex', flexDirection: 'column', minHeight: 0 },
+      }}
     >
-      <Stack gap="sm">
+      <Stack gap="sm" className="ps-search-column" style={{ minHeight: 0 }}>
         <TextInput
           data-autofocus
           aria-label="Search tickets"
@@ -236,8 +245,7 @@ export function TicketSearch({
             // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
             role="listbox"
             aria-label="Search results"
-            mah="52vh"
-            style={{ overflowY: 'auto' }}
+            style={{ position: 'relative', minHeight: 0, overflowY: 'auto' }}
           >
             {hits.map((hit, index) => (
               <Hit

@@ -157,7 +157,7 @@ export function SetupFolder({ path, onSetUp, onChooseAnother }: Props) {
 
         {inspection && (
           <Stack gap={6}>
-            <Text size="xs" fw={600} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>
+            <Text size="xs" fw={600} c="dimmed">
               Connecting an AI tool
             </Text>
             <Text size="xs" c="dimmed">

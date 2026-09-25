@@ -1,0 +1,204 @@
+/*
+ * The Documents workspace uses the board's layers: navigation sits on the quiet
+ * column layer, like a board column, and the reader is raised onto the card
+ * layer, like a ticket. The selected document is lifted onto the card layer too,
+ * so selection means the same thing here as it does on the board.
+ *
+ * Every panel takes its height from its container rather than from a guess at
+ * the viewport, and only the regions meant to scroll do so. That keeps the last
+ * document and the last line of prose reachable whatever sits above them: an
+ * alert, frontmatter, or a taller header on a narrow window.
+ */
+
+.ps-docs {
+  display: grid;
+  grid-template-columns: 17.5rem minmax(0, 1fr);
+  gap: var(--mantine-spacing-md);
+  height: 100%;
+  min-height: 0;
+}
+
+/* Narrow: one panel at a time, list or reader, chosen in DocumentsView. */
+.ps-docs[data-narrow] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ps-docs-nav {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--ps-column-bg);
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-xs);
+}
+
+.ps-docs-nav-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 2px var(--mantine-spacing-xs) var(--mantine-spacing-xs);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+}
+
+.ps-docs-list {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ps-docs-item {
+  /* Contains the visually hidden review label, which is absolutely positioned;
+     without this it escapes the scrolling list and lengthens the page. */
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mantine-spacing-xs);
+  width: 100%;
+  padding: 6px var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+  border: 1px solid transparent;
+  text-align: left;
+  color: inherit;
+}
+
+.ps-docs-item:hover {
+  background: var(--ps-column-bg-active);
+}
+
+.ps-docs-item[aria-current='true'] {
+  background: var(--ps-card-bg);
+  border-color: var(--ps-hairline);
+  box-shadow: var(--ps-card-shadow);
+}
+
+.ps-docs-item-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.ps-docs-item-title {
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ps-docs-item[aria-current='true'] .ps-docs-item-title {
+  font-weight: 600;
+}
+
+/* The same start-truncation as the header's checkout path: the file name at the
+   end is the part that tells documents apart. */
+.ps-docs-path {
+  font-size: var(--mantine-font-size-xs);
+  line-height: 1.35;
+  color: var(--ps-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+.ps-docs-path > span {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Include controls stay below the list and never take it over: past a third of
+   the panel they scroll on their own. */
+.ps-docs-entries {
+  flex-shrink: 0;
+  max-height: 35%;
+  overflow-y: auto;
+  margin-top: var(--mantine-spacing-xs);
+  padding: var(--mantine-spacing-xs);
+  border-top: 1px solid var(--ps-hairline);
+}
+
+.ps-docs-reader {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--ps-card-bg);
+  border: 1px solid var(--ps-hairline);
+  border-radius: var(--mantine-radius-md);
+  box-shadow: var(--ps-card-shadow);
+}
+
+/* Identity, review state and actions stay put while the body scrolls. It wraps
+   rather than clipping, so a narrow window moves the actions onto a new line. */
+.ps-docs-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  border-bottom: 1px solid var(--ps-hairline);
+}
+
+.ps-docs-toolbar-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mantine-spacing-xs);
+  min-width: min(100%, 14rem);
+  flex: 1;
+}
+
+.ps-docs-title {
+  margin: 0;
+  font-size: var(--mantine-font-size-lg);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+/* The full path, wrapped: in the reader it is the one place to read all of it. */
+.ps-docs-reader-path {
+  font-size: var(--mantine-font-size-xs);
+  color: var(--ps-text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* The one scrolling region of the reader, and where a future editor would go.
+   Positioned so it contains absolutely placed content, such as the diff view's
+   hidden labels, which would otherwise lengthen the page instead of scrolling. */
+.ps-docs-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--mantine-spacing-md);
+}
+
+.ps-docs-state {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mantine-spacing-lg);
+}
+
+/* A short window (a small screen, or a large zoom) cannot spare a fixed toolbar:
+   at 200% a wrapped toolbar left one line of prose visible. Here the reader
+   scrolls as a whole instead, so the toolbar is one scroll away and the body
+   gets the full height. */
+@media (max-height: 30em) {
+  .ps-docs-reader {
+    overflow-y: auto;
+  }
+
+  .ps-docs-body {
+    flex: none;
+    overflow: visible;
+  }
+}

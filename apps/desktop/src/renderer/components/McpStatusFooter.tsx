@@ -29,7 +29,7 @@ export function McpStatusFooter({ checkoutPath }: { checkoutPath: string }) {
     return (
       <Group gap="xs" h="100%" px="xs" wrap="nowrap">
         <Loader size={12} />
-        <Text size="xs" c="dimmed">
+        <Text size="xs" c="var(--ps-text-muted)">
           Checking MCP status…
         </Text>
       </Group>
@@ -68,7 +68,7 @@ export function McpStatusFooter({ checkoutPath }: { checkoutPath: string }) {
               <Text size="xs" fw={500} style={{ whiteSpace: 'nowrap' }}>
                 {display.label}
               </Text>
-              <Text size="xs" c="dimmed" visibleFrom="sm">
+              <Text size="xs" c="var(--ps-text-muted)" visibleFrom="sm">
                 Details
               </Text>
             </Group>

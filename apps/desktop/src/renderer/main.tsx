@@ -2,12 +2,15 @@ import '@mantine/core/styles.css'
 import './markdown.css'
 import './surfaces.css'
 import './review-changes.css'
+import './shell.css'
+import './documents.css'
+import './components.css'
 import { MantineProvider } from '@mantine/core'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App.js'
 import { hostColorSchemeManager } from './color-scheme.js'
-import { theme } from './theme.js'
+import { cssVariablesResolver, theme } from './theme.js'
 import type { ColorSchemeChoice } from '../shared/contract.js'
 
 /**
@@ -20,6 +23,7 @@ function start(colorScheme: ColorSchemeChoice): void {
     <StrictMode>
       <MantineProvider
         theme={theme}
+        cssVariablesResolver={cssVariablesResolver}
         defaultColorScheme={colorScheme}
         colorSchemeManager={hostColorSchemeManager(colorScheme)}
       >

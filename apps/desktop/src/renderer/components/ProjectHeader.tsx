@@ -1,14 +1,4 @@
-import {
-  ActionIcon,
-  Group,
-  Kbd,
-  SegmentedControl,
-  Stack,
-  Text,
-  Title,
-  Tooltip,
-  UnstyledButton,
-} from '@mantine/core'
+import { ActionIcon, Kbd, SegmentedControl, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { IconRefresh, IconSearch } from '@tabler/icons-react'
 import { ProjectSwitcher } from './ProjectSwitcher.js'
 import { SettingsDrawer } from './SettingsDrawer.js'
@@ -21,6 +11,8 @@ import { SEARCH_SHORTCUT_LABEL } from '../shortcuts.js'
  *
  * MCP status and the connection actions live in the footer instead, so there is
  * one place to look for "can my AI tool reach this project" rather than two.
+ *
+ * Layout, including the narrow-window reflow, is in shell.css.
  */
 
 export type View = 'board' | 'documents' | 'archive'
@@ -55,59 +47,47 @@ export function ProjectHeader({
   onOpenSearch,
 }: Props) {
   return (
-    <Group justify="space-between" align="flex-start" wrap="nowrap">
-      <Group gap="sm" align="flex-start" wrap="nowrap" style={{ minWidth: 0 }}>
+    <div className="ps-shell-header">
+      <div className="ps-shell-identity">
         <ProjectSwitcher
           currentPath={checkoutPath}
           blockedReason={switchBlockedReason}
           onSwitch={onSwitchProject}
           onOpenFolder={onOpenFolder}
         />
-        <Stack gap={2} style={{ minWidth: 0 }}>
-          <Title order={3}>{name}</Title>
-          {/* Identifying, not interesting: it has to be readable without competing
-              with the project name above it or the board below. */}
-          <Text size="xs" c="dimmed" style={{ wordBreak: 'break-all', opacity: 0.75 }}>
-            {checkoutPath}
-          </Text>
-        </Stack>
-      </Group>
+        <ProjectIdentity name={name} checkoutPath={checkoutPath} />
+      </div>
 
       {/* The centre belongs to search: it is the one thing here that is about
-          finding work rather than about which project is open. It shrinks before
-          it wraps, so a long project name squeezes it instead of breaking the row. */}
-      <Group justify="center" style={{ flex: 1, minWidth: 0 }} px="sm">
-        <UnstyledButton
-          onClick={onOpenSearch}
-          aria-label={`Search tickets (${SEARCH_SHORTCUT_LABEL})`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            width: '100%',
-            maxWidth: 360,
-            minWidth: 0,
-            padding: '6px 10px',
-            borderRadius: 'var(--mantine-radius-md)',
-            border: '1px solid var(--ps-hairline)',
-            background: 'var(--ps-card-bg)',
-          }}
-        >
-          <IconSearch size={15} opacity={0.6} style={{ flexShrink: 0 }} />
-          <Text size="xs" c="dimmed" style={{ flex: 1, minWidth: 0 }} truncate>
-            Search tickets
-          </Text>
-          <Kbd size="xs" visibleFrom="md" style={{ flexShrink: 0 }}>
-            {SEARCH_SHORTCUT_LABEL}
-          </Kbd>
-        </UnstyledButton>
-      </Group>
+          finding work rather than about which project is open. */}
+      <UnstyledButton
+        className="ps-shell-search ps-shell-control"
+        onClick={onOpenSearch}
+        aria-label={`Search tickets (${SEARCH_SHORTCUT_LABEL})`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          paddingInline: 10,
+          borderRadius: 'var(--mantine-radius-md)',
+        }}
+      >
+        <IconSearch size={15} opacity={0.6} style={{ flexShrink: 0 }} />
+        <Text size="sm" c="var(--ps-text-muted)" style={{ flex: 1, minWidth: 0 }} truncate>
+          Search tickets
+        </Text>
+        <Kbd size="xs" visibleFrom="lg" style={{ flexShrink: 0 }}>
+          {SEARCH_SHORTCUT_LABEL}
+        </Kbd>
+      </UnstyledButton>
 
-      <Group gap="xs" wrap="nowrap">
+      <div className="ps-shell-actions">
         <SegmentedControl
-          size="xs"
+          size="sm"
           value={view}
           onChange={(next) => onViewChange(next as View)}
+          // Added to the shared segmented classes from theme.ts, not in place of them.
+          classNames={{ root: 'ps-shell-views', label: 'ps-shell-views-label' }}
           data={[
             { value: 'board', label: 'Board' },
             { value: 'documents', label: 'Documents' },
@@ -120,25 +100,60 @@ export function ProjectHeader({
           ]}
         />
 
-        <Tooltip
-          multiline
-          w={280}
-          withArrow
-          label="Reload from the project files. This also happens when you return to this window."
-        >
-          <ActionIcon
-            variant="default"
-            size="lg"
-            loading={refreshing}
-            onClick={onRefresh}
-            aria-label="Refresh from disk"
+        <div className="ps-shell-utilities">
+          <Tooltip
+            multiline
+            w={280}
+            withArrow
+            label="Reload from the project files. This also happens when you return to this window."
           >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
+            <ActionIcon
+              className="ps-shell-control"
+              variant="default"
+              size="lg"
+              loading={refreshing}
+              onClick={onRefresh}
+              aria-label="Refresh from disk"
+            >
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
 
-        <SettingsDrawer />
-      </Group>
-    </Group>
+          <SettingsDrawer />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Name and checkout, each on one line. Both truncate rather than wrap, so a long
+ * name or a deep path cannot push the controls off the window. The full text
+ * stays in the document for assistive technology and in a tooltip on hover.
+ */
+function ProjectIdentity({ name, checkoutPath }: { name: string; checkoutPath: string }) {
+  return (
+    <div className="ps-shell-identity-text">
+      <Tooltip label={name} openDelay={400} withArrow position="bottom-start">
+        <h1 className="ps-shell-name" style={{ margin: 0 }}>
+          {name}
+        </h1>
+      </Tooltip>
+      {/* Identifying, not interesting: it has to be readable without competing
+          with the project name above it or the board below. */}
+      <Tooltip
+        label={checkoutPath}
+        openDelay={400}
+        withArrow
+        position="bottom-start"
+        multiline
+        maw="min(36rem, calc(100vw - 32px))"
+        style={{ wordBreak: 'break-all' }}
+      >
+        <div className="ps-shell-path">
+          <span>{checkoutPath}</span>
+        </div>
+      </Tooltip>
+    </div>
   )
 }

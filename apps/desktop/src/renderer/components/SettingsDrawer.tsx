@@ -50,7 +50,13 @@ export function SettingsDrawer() {
   return (
     <>
       <Tooltip label="Settings" withArrow>
-        <ActionIcon variant="default" size="lg" onClick={drawer.open} aria-label="Open settings">
+        <ActionIcon
+          className="ps-shell-control"
+          variant="default"
+          size="lg"
+          onClick={drawer.open}
+          aria-label="Open settings"
+        >
           <IconSettings size={18} />
         </ActionIcon>
       </Tooltip>

@@ -55,7 +55,7 @@ export function IncludedEntries({
   return (
     <Stack gap={6}>
       <Group justify="space-between" wrap="nowrap">
-        <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>
+        <Text size="xs" fw={600} c="var(--ps-text-muted)">
           Included from
         </Text>
         <Menu position="bottom-end" withinPortal>
@@ -88,7 +88,7 @@ export function IncludedEntries({
             <Text size="xs" style={{ wordBreak: 'break-all' }}>
               {entry.path}
             </Text>
-            <Text size="xs" c={entry.problem ? 'orange' : 'dimmed'}>
+            <Text size="xs" c={entry.problem ? 'orange' : 'var(--ps-text-muted)'}>
               {entry.problem === 'missing'
                 ? 'no longer exists'
                 : entry.problem === 'not_readable'
