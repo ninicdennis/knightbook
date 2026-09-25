@@ -17,7 +17,7 @@ Keep the existing system sans-serif stack (Segoe UI on Windows). Proposed scale:
 ### Reading styles as built (2026-09-24)
 
 Ticket e5cc328b. Ticket bodies and documents share one set of reading styles in
-`apps/desktop/src/renderer/markdown.css`, scoped to `.markdown-body` so nothing
+`apps/desktop/src/renderer/markdown/markdown.css`, scoped to `.markdown-body` so nothing
 reaches the board or its cards. This is also the **content styling contract for
 the future formatted editor** (ticket b217a95f): the editor's content area should
 use the same `--md-*` properties so a document looks the same read and edited. No

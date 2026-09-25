@@ -67,7 +67,7 @@ docs/              Specification, technical design, research, experiment finding
   reviewed, and `ticket_update` must not set Done. See "Three rules the code
   enforces" in [Using Knightbook with AI tools](docs/using-knightbook.md).
 - **Document content is untrusted.** Rendering stays sanitized, links are classified,
-  images are not fetched. `markdown.test.tsx` covers each case.
+  images are not fetched. `renderer/markdown/markdown.test.tsx` covers each case.
 - **The skill must match the tools.** `packages/mcp/src/guidance.test.ts` fails when
   `skills/projectspace/SKILL.md` and the real tool list drift. Update the skill in the
   same change as the tools.
@@ -76,6 +76,17 @@ docs/              Specification, technical design, research, experiment finding
 
 - Files stay under 400 lines, ideally under 300; split before adding to a file near
   the limit. `App.tsx` and the MCP ticket tools were split for this.
+- Source is grouped by feature, not by file type (decision D-027). A feature's
+  components, hooks, helpers, CSS and tests share one folder, such as
+  `renderer/tickets/`; there are no `components/`, `hooks/` or `styles/` folders.
+  - Tests sit beside the code they cover. A scenario test for a whole feature goes
+    in that feature's folder. Shared fixtures and setup live in a `test/` folder.
+  - Only entry points (`main.tsx`, `App.tsx`, `index.ts`, `index.html`) and
+    cross-cutting glue stay at a package's root.
+  - Split a folder by sub-feature once it passes about 20 files. Don't create a
+    folder for fewer than three.
+  - Move files with `git mv` so history follows them, and keep moves in their own
+    change, apart from behaviour changes.
 - Prettier leaves Markdown and `.projectspace/` alone on purpose; prose is written by
   hand. Match the plain, specific voice of the existing docs.
 - The product is Knightbook, but `.projectspace/` and the `projectspace` skill name

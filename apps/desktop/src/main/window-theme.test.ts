@@ -11,7 +11,7 @@ vi.mock('electron', () => ({ BrowserWindow: {}, nativeTheme: {} }))
  * of the wrong shade shows at the edge on every startup and resize.
  */
 
-const surfaces = readFileSync(new URL('../renderer/surfaces.css', import.meta.url), 'utf8')
+const surfaces = readFileSync(new URL('../renderer/theme/surfaces.css', import.meta.url), 'utf8')
 
 function appBackground(selector: string): string | undefined {
   const start = surfaces.indexOf(`${selector} {`)

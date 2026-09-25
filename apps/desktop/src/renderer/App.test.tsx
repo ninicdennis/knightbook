@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { KnightbookApi } from '../shared/contract.js'
-import { makeApi, project, renderApp, ticket } from './test-fixtures.js'
+import { makeApi, project, renderApp, ticket } from './test/test-fixtures.js'
 
 /**
  * These cover the states the specification says must stay distinguishable: work
