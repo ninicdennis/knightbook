@@ -5,7 +5,7 @@ title: "Flag dependents when a prerequisite fails verification (D-017)"
 status: done
 depends_on: []
 created_at: 2026-09-19T20:05:15.168Z
-updated_at: 2026-09-20T14:24:45.371Z
+updated_at: 2026-09-25T18:28:05.901Z
 related_documents: [ "docs/project-workspace-spec.md", "docs/project-workspace-technical-design.md" ]
 completion:
   decision_source: direct_user_action
@@ -13,6 +13,8 @@ completion:
   recorded_at: 2026-09-20T14:24:45.371Z
   instruction: Moved to Done in the app.
   accepted_revision: 7ce23ce62079e579aa84899ee347e1cb
+archived:
+  archived_at: 2026-09-25T18:28:05.900Z
 ---
 
 # Failed-prerequisite flag
