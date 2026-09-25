@@ -18,7 +18,8 @@ if (typeof window !== 'undefined') {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: (query: string) => ({
-      matches: false,
+      // Reduced motion is on, so no Mantine transition leaves a timer behind.
+      matches: query.includes('prefers-reduced-motion: reduce'),
       media: query,
       onchange: null,
       addListener: () => {},

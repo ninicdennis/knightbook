@@ -224,10 +224,16 @@ export function makeApi(): KnightbookApi {
   }
 }
 
-/** `env="test"` disables Mantine's transitions, which otherwise race the queries. */
+/**
+ * `env="test"` disables Mantine's transitions, which otherwise race the queries.
+ * It still leaves each Transition scheduling an animation frame and a timeout
+ * when it opens or closes, and one that fires after a fast test file has torn
+ * down jsdom fails the run with "window is not defined". Honouring reduced
+ * motion, which test-setup.ts reports, makes those changes synchronous instead.
+ */
 export function renderApp() {
   return render(
-    <MantineProvider env="test">
+    <MantineProvider env="test" theme={{ respectReducedMotion: true }}>
       <App />
     </MantineProvider>,
   )
