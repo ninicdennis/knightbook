@@ -1,4 +1,10 @@
-import type { ProjectView, SearchHighlight, TicketSearchView } from '../src/shared/contract.js'
+import type {
+  ProjectView,
+  Result,
+  SearchHighlight,
+  TicketSearchView,
+} from '../src/shared/contract.js'
+import type { DocumentSearchView } from '../src/shared/document-search-contract.js'
 
 /**
  * A stand-in for the host's ticket search, so the real search dialog can be
@@ -82,5 +88,38 @@ export function stubTicketSearch(
           },
         ]
       : [],
+  }
+}
+
+/**
+ * Document search over the preview's two documents and its sample text. Add
+ * ?docsearch=error to see the document half fail while tickets still answer.
+ */
+export function stubDocumentSearch(
+  checkoutPath: string,
+  query: string,
+  documents: { path: string; title: string }[],
+  content: string,
+): Result<DocumentSearchView> {
+  if (new URLSearchParams(window.location.search).get('docsearch') === 'error') {
+    return { ok: false, code: 'io_error', message: 'The document manifest could not be read.' }
+  }
+  const needle = query.trim().replace(/\s+/g, ' ').toLowerCase()
+  const hits: DocumentSearchView['hits'] = []
+  for (const document of documents) {
+    const titleHighlights = occurrences(document.title, needle)
+    const excerpt = excerptAround(content.replace(/\s+/g, ' '), needle)
+    if (needle.length === 0 || (titleHighlights.length === 0 && excerpt === null)) continue
+    hits.push({
+      path: document.path,
+      title: document.title,
+      titleHighlights,
+      excerpt,
+      excerptHighlights: excerpt ? occurrences(excerpt, needle) : [],
+    })
+  }
+  return {
+    ok: true,
+    value: { checkoutPath, query, hits, totalMatches: hits.length, unsearchable: [] },
   }
 }

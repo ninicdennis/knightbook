@@ -24,6 +24,8 @@ import { registerSkillSetupHandlers } from './skill-setup-ipc.js'
 import { registerTicketFileHandler } from './ticket-file-ipc.js'
 import { registerPlanHandlers } from './plans-ipc.js'
 import { registerTicketCreateHandler } from './ticket-create-ipc.js'
+import { registerTicketEditHandlers } from './ticket-edit-ipc.js'
+import { registerDocumentSearchHandler } from './document-search-ipc.js'
 
 /**
  * Technical design section 1: the renderer receives narrow operations through
@@ -129,6 +131,8 @@ void app.whenReady().then(async () => {
   registerTicketFileHandler()
   registerPlanHandlers()
   registerTicketCreateHandler()
+  registerTicketEditHandlers()
+  registerDocumentSearchHandler()
   process.stdout.write(`MCP launch command: ${JSON.stringify(mcpLaunchCommand())}\n`)
 
   /*

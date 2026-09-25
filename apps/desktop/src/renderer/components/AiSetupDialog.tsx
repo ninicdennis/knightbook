@@ -38,16 +38,11 @@ function ConnectStep() {
         Your client starts Knightbook's MCP server from this configuration. It is the same for every
         project, so you add it once. Then allow each project with the switch in the MCP panel.
       </Text>
-      <Group>
-        <CopyMcpConfig label="Copy MCP configuration" />
-      </Group>
       <Text size="xs" c="var(--ps-text-muted)">
-        Claude Code: paste it as the <Code>knightbook</Code> entry under <Code>mcpServers</Code> in
-        a <Code>.mcp.json</Code> file, or pass it to <Code>claude mcp add-json</Code>. Codex: add a{' '}
-        <Code>[mcp_servers.knightbook]</Code> table to <Code>~/.codex/config.toml</Code> with the
-        same <Code>command</Code> and <Code>args</Code>. Other clients take the same command and
-        arguments in their own format.
+        Choose your client when you copy: Claude, Codex and OpenCode each get a complete entry in
+        their own format, and the app says which file it goes in.
       </Text>
+      <CopyMcpConfig label="Copy MCP configuration" />
     </Stack>
   )
 }

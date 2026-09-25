@@ -453,6 +453,18 @@ The line comparison uses the `diff` package (jsdiff) for its array diff with an
 edit-length and time bound, as the 2026-09-21 research recommended. Per D-019 it
 is a supporting package added for this feature, not a user-approved dependency.
 
+### Line endings (2026-09-25, D-025)
+
+Line endings are not content. `contentFingerprint` normalises CRLF and lone CR to
+LF before parsing, so a body's paragraph breaks survive in either style. Review
+status and the changes view both call `unchangedSinceReview`, which accepts the
+current file when its bytes match the reviewed revision, when the same content in
+LF matches it or the retained snapshot source, or when its fingerprint matches the
+stored one or one recomputed from that snapshot source. The recomputation is what
+lets reviews stored before this change, whose fingerprint was taken over CRLF
+bytes, match again without migrating any file. The raw revision in write.ts is
+untouched, so a file rewritten on disk still conflicts before any write.
+
 ## 8. Saving without losing work
 
 All desktop-host and MCP mutations call the same write path:
@@ -501,6 +513,23 @@ The packaged app carries `skills/projectspace/` in `extraResources` as `resource
 - **The state is re-checked at write time**, so a folder edited after the dialog showed it is refused. New folders are built beside the target and moved into place, so a client never loads a half-written skill.
 - **Export** writes a new `projectspace` folder into a folder the user picks and refuses if one is already there. **Copy skill text** covers clients without skills.
 - **A file on disk is not activation.** The dialog says it can confirm placement only; whether a client loaded the skill is visible only in the client.
+
+### Header search covers documents (2026-09-25)
+
+Ticket bd3357e9. Ctrl/Cmd+K searches tickets and the workspace's included documents, shown under two headings. The document half is core's `searchDocuments` (`document-search.ts`), and it reads documents through `readSearchableDocuments`, the same scan `searchProject` (MCP `project_search`) now uses, so both agree on which documents exist, which are over the 512 KB scanning bound, and which could not be read. `project_search` output is unchanged. The highlight helpers the ticket search already had moved to `search-text.ts` so both kinds of hit are matched and marked the same way.
+
+Tickets and documents are separate host operations with separate limits (20 each), answered side by side: one failing leaves the other's results on screen and names which failed, and each group says "No ticket contains" or "No document contains" on its own. Documents are not searched in the Archived scope, because documents are never archived; the dialog says so. Like `project_search`, a document is matched on its whole file, frontmatter included, so an excerpt can begin in the frontmatter.
+
+### MCP configuration per client (2026-09-25, D-026)
+
+**Copy MCP configuration** opens a choice of client, and each choice copies a complete entry built by `mcpClientSnippets` in `apps/desktop/src/shared/mcp-client-config.ts` from the existing `McpLaunchCommand`. No contract operation was added. Checked against each client's documentation on 2026-09-25:
+
+- **Claude Code and Claude Desktop** (code.claude.com/docs/en/mcp): JSON `{ "mcpServers": { "knightbook": { "type": "stdio", "command", "args" } } }`, for `.mcp.json`, `~/.claude.json` or `claude_desktop_config.json`. The `claude mcp add … -- <command>` line is not offered: a command line has to be quoted for the user's shell, and PowerShell, cmd and POSIX shells quote paths with spaces differently.
+- **Codex** (learn.chatgpt.com/docs/extend/mcp, redirected from developers.openai.com/codex/mcp): TOML `[mcp_servers.knightbook]` with `command` and `args`, in `~/.codex/config.toml` or a project's `.codex/config.toml`. Strings are TOML literal strings, so Windows backslashes need no escaping; a path containing `'` falls back to an escaped basic string.
+- **OpenCode** (opencode.ai/docs/mcp-servers and /docs/config): JSON `{ "mcp": { "knightbook": { "type": "local", "command": [program, ...args], "enabled": true } } }`, in `~/.config/opencode/opencode.json` or a project's `opencode.json`. OpenCode merges its config files.
+- **Another client** gets the plain `command` and `args`, as before.
+
+After copying, the panel says which file the entry goes in and that an existing server list should be merged, not duplicated. A refused clipboard write is reported as nothing copied. These formats belong to the clients and can change without notice; three plus a fallback keeps that exposure small.
 
 ## 10. Formatted editor boundary
 

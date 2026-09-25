@@ -8,6 +8,10 @@ import {
   reviewedSource,
   ticketRecordId,
 } from './review.js'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { snapshotWriteDir } from './review-storage.js'
+import { revisionOf } from './revision.js'
 import { readTicket, createTicket, updateTicket } from './tickets.js'
 import { withFixtureProject } from './fixture-project.js'
 
@@ -70,6 +74,84 @@ describe('meaningful-change classification', () => {
       '## Acceptance criteria\n- Every',
     )
     expect(contentFingerprint(merged)).not.toBe(contentFingerprint(SOURCE))
+  })
+})
+
+const toCrlf = (text: string): string => text.replace(/\n/g, '\r\n')
+
+describe('line endings (D-025)', () => {
+  it('fingerprints LF, CRLF and mixed endings of the same content alike', () => {
+    const mixed = SOURCE.replace('# Add readiness check\n', '# Add readiness check\r\n')
+    expect(contentFingerprint(toCrlf(SOURCE))).toBe(contentFingerprint(SOURCE))
+    expect(contentFingerprint(mixed)).toBe(contentFingerprint(SOURCE))
+  })
+
+  it('still sees a merged paragraph in CRLF content', () => {
+    const merged = toCrlf(SOURCE).replace(
+      '## Acceptance criteria\r\n\r\n- Every',
+      '## Acceptance criteria\r\n- Every',
+    )
+    expect(contentFingerprint(merged)).not.toBe(contentFingerprint(SOURCE))
+  })
+
+  it('keeps an LF review when the file comes back as CRLF', async () => {
+    await withFixtureProject(async (project) => {
+      const id = ticketRecordId('t1')
+      await recordReview(project, id, SOURCE)
+      expect((await reviewStatus(project, id, toCrlf(SOURCE))).state).toBe('reviewed')
+    })
+  })
+
+  it('keeps a CRLF review when the file comes back as LF', async () => {
+    await withFixtureProject(async (project) => {
+      const id = ticketRecordId('t1')
+      await recordReview(project, id, toCrlf(SOURCE))
+      expect((await reviewStatus(project, id, SOURCE)).state).toBe('reviewed')
+    })
+  })
+
+  it('flags a real change made along with a line-ending change', async () => {
+    await withFixtureProject(async (project) => {
+      const id = ticketRecordId('t1')
+      await recordReview(project, id, SOURCE)
+      const changed = toCrlf(SOURCE.replace('verification or done', 'done only'))
+      expect((await reviewStatus(project, id, changed)).state).toBe('changed_since_review')
+
+      const retitled = toCrlf(SOURCE.replace('"Add readiness check"', '"Drop readiness check"'))
+      expect((await reviewStatus(project, id, retitled)).state).toBe('changed_since_review')
+    })
+  })
+
+  it('recovers a snapshot stored before D-025, with a fingerprint taken over CRLF', async () => {
+    await withFixtureProject(async (project) => {
+      const id = ticketRecordId('t1')
+      const crlf = toCrlf(SOURCE)
+      // As Git leaves it: the whole snapshot file checked out as CRLF, carrying a
+      // fingerprint no current computation reproduces.
+      const snapshot = toCrlf(
+        [
+          '---',
+          'schema_version: 1',
+          `record_id: ${JSON.stringify(id)}`,
+          'reviewed_at: 2026-09-20T10:00:00.000Z',
+          `reviewed_revision: ${revisionOf(SOURCE)}`,
+          'content_fingerprint: computed-over-crlf-bytes',
+          'note: ""',
+          '---',
+          '',
+          SOURCE,
+        ].join('\n'),
+      )
+      const directory = snapshotWriteDir(project.root, id)
+      await mkdir(directory, { recursive: true })
+      await writeFile(join(directory, '2026-09-20T10-00-00-000Z.md'), snapshot)
+
+      expect((await reviewStatus(project, id, crlf)).state).toBe('reviewed')
+      const reformatted = SOURCE.replace('# Add readiness check', '#  Add readiness check')
+      expect((await reviewStatus(project, id, reformatted)).state).toBe('reviewed')
+      const changed = crlf.replace('verification or done', 'done only')
+      expect((await reviewStatus(project, id, changed)).state).toBe('changed_since_review')
+    })
   })
 })
 

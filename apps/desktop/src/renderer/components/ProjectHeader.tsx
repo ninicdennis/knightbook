@@ -63,7 +63,7 @@ export function ProjectHeader({
       <UnstyledButton
         className="ps-shell-search ps-shell-control"
         onClick={onOpenSearch}
-        aria-label={`Search tickets (${SEARCH_SHORTCUT_LABEL})`}
+        aria-label={`Search tickets and documents (${SEARCH_SHORTCUT_LABEL})`}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -74,7 +74,7 @@ export function ProjectHeader({
       >
         <IconSearch size={15} opacity={0.6} style={{ flexShrink: 0 }} />
         <Text size="sm" c="var(--ps-text-muted)" style={{ flex: 1, minWidth: 0 }} truncate>
-          Search tickets
+          Search tickets and documents
         </Text>
         <Kbd size="xs" visibleFrom="lg" style={{ flexShrink: 0 }}>
           {SEARCH_SHORTCUT_LABEL}

@@ -1,36 +1,20 @@
-import {
-  Alert,
-  Badge,
-  Group,
-  Loader,
-  Modal,
-  SegmentedControl,
-  Stack,
-  Text,
-  TextInput,
-  UnstyledButton,
-} from '@mantine/core'
+import { Alert, Loader, Modal, SegmentedControl, Stack, Text, TextInput } from '@mantine/core'
 import { IconAlertTriangle, IconSearch } from '@tabler/icons-react'
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
-import type { SearchHighlight, SearchScope, TicketSearchView } from '../../shared/contract.js'
-import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
-import { TicketTypeBadge } from './TicketTypeBadge.js'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import type { SearchScope } from '../../shared/contract.js'
+import { useHeaderSearch } from '../hooks/useHeaderSearch.js'
+import { DocumentHit, TicketHit, documentHitId, ticketHitId } from './SearchHits.js'
 
 /**
- * Finding a ticket by what is written in it, including the parts a card never
- * shows: acceptance criteria, notes, and handoffs.
+ * Finding a ticket or a document by what is written in it, including the parts
+ * a card never shows: acceptance criteria, notes, and handoffs.
  *
  * The matching is plain, case-insensitive substring matching done in the host.
  * Nothing here is fuzzy or ranked by a score, because a person typing into a
- * board search expects every result to contain what they typed.
- *
- * Ticket text is written by an AI and is exactly as untrusted as a document, so
- * matches are marked up from offsets the host returns rather than from any
- * markup: the text itself only ever reaches the DOM as React children.
+ * search expects every result to contain what they typed. Results come in two
+ * groups, each with its own empty and failed state, so "no documents matched"
+ * never looks like "documents could not be searched".
  */
-
-/** Long enough to stop a burst of keystrokes, short enough to feel immediate. */
-const DEBOUNCE_MS = 120
 
 interface Props {
   opened: boolean
@@ -39,9 +23,12 @@ interface Props {
   refreshToken: number
   onClose: () => void
   onOpenTicket: (id: string) => void
+  onOpenDocument: (path: string) => void
   /** The scope the Archive tab wants when search is opened from there. */
   defaultScope?: SearchScope
 }
+
+type Item = { kind: 'ticket'; id: string } | { kind: 'document'; path: string }
 
 export function TicketSearch({
   opened,
@@ -49,28 +36,26 @@ export function TicketSearch({
   refreshToken,
   onClose,
   onOpenTicket,
+  onOpenDocument,
   defaultScope = 'active',
 }: Props) {
   const [query, setQuery] = useState('')
-  const [result, setResult] = useState<TicketSearchView | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [active, setActive] = useState(0)
   const [scope, setScope] = useState<SearchScope>(defaultScope)
+  const { tickets, documents, loading } = useHeaderSearch({
+    opened,
+    rootPath,
+    query,
+    scope,
+    refreshToken,
+  })
 
-  // Every request carries a number. Only the newest one is allowed to land, so
-  // a slow reply for an earlier query cannot overwrite a later answer.
-  const latest = useRef(0)
   const listRef = useRef<HTMLDivElement>(null)
   /** Whatever had focus when search opened, so closing can hand it back. */
   const returnTo = useRef<HTMLElement | null>(null)
 
   const reset = useCallback(() => {
-    latest.current += 1
     setQuery('')
-    setResult(null)
-    setError(null)
-    setLoading(false)
     setActive(0)
     // Back to the scope this was opened for, so searching from the Archive tab
     // starts in the archive again rather than remembering the last search.
@@ -84,64 +69,33 @@ export function TicketSearch({
 
   /**
    * Closing puts focus back where it was, whether search was opened from the
-   * header or from the keyboard. This is done here rather than left to the
-   * dialog's own focus return so the behaviour is the same however it closes,
-   * and so it can be tested.
+   * header or from the keyboard. Done here rather than left to the dialog's
+   * own focus return so the behaviour is the same however it closes.
    */
   useEffect(() => {
     if (opened) {
-      const active = document.activeElement
-      returnTo.current = active instanceof HTMLElement ? active : null
+      const current = document.activeElement
+      returnTo.current = current instanceof HTMLElement ? current : null
       return
     }
-
     const target = returnTo.current
     returnTo.current = null
     if (target?.isConnected) target.focus()
   }, [opened])
 
-  useEffect(() => {
-    if (!opened) return
+  const ticketHits = tickets.view?.hits ?? []
+  const documentHits = documents.view?.hits ?? []
+  // One list for the keyboard, tickets first, in the order they are shown.
+  const items: Item[] = [
+    ...ticketHits.map((hit): Item => ({ kind: 'ticket', id: hit.id })),
+    ...documentHits.map((hit): Item => ({ kind: 'document', path: hit.path })),
+  ]
 
-    const trimmed = query.trim()
-    if (trimmed.length === 0) {
-      latest.current += 1
-      setResult(null)
-      setError(null)
-      setLoading(false)
-      return
-    }
-
-    const sequence = (latest.current += 1)
-    setLoading(true)
-    const timer = setTimeout(() => {
-      void window.knightbook.searchTickets(rootPath, trimmed, scope).then((answer) => {
-        if (sequence !== latest.current) return
-        setLoading(false)
-        if (!answer.ok) {
-          setError(answer.message)
-          setResult(null)
-          return
-        }
-        // The host echoes what it answered; a reply about another checkout or
-        // another query is not this question's answer.
-        if (answer.value.checkoutPath !== rootPath || answer.value.query !== trimmed) return
-        setError(null)
-        setResult(answer.value)
-        setActive(0)
-      })
-    }, DEBOUNCE_MS)
-
-    return () => clearTimeout(timer)
-    // `scope` is a dependency: changing it asks a different question of the
-    // same text, so the results have to be fetched again rather than filtered.
-  }, [opened, query, rootPath, refreshToken, scope])
-
-  const hits = result?.hits ?? []
+  useEffect(() => setActive(0), [tickets.view, documents.view])
 
   const move = (delta: number) => {
-    if (hits.length === 0) return
-    setActive((current) => (current + delta + hits.length) % hits.length)
+    if (items.length === 0) return
+    setActive((current) => (current + delta + items.length) % items.length)
   }
 
   // Keep the highlighted row on screen when arrowing past the visible ones.
@@ -152,18 +106,28 @@ export function TicketSearch({
     if (row instanceof HTMLElement && typeof row.scrollIntoView === 'function') {
       row.scrollIntoView({ block: 'nearest' })
     }
-  }, [active, hits.length])
+  }, [active, items.length])
 
-  const open = (id: string) => {
+  const open = (item: Item) => {
     onClose()
-    onOpenTicket(id)
+    if (item.kind === 'ticket') onOpenTicket(item.id)
+    else onOpenDocument(item.path)
   }
+
+  const trimmed = query.trim()
+  const highlighted = items[active]
+  const activeId = !highlighted
+    ? undefined
+    : highlighted.kind === 'ticket'
+      ? ticketHitId(highlighted.id)
+      : documentHitId(highlighted.path)
+  const answered = tickets.view || tickets.error || documents.view || documents.error
 
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Search tickets"
+      title="Search tickets and documents"
       size="lg"
       /* Near the top, because the list grows downwards as you type. */
       yOffset="12vh"
@@ -180,10 +144,10 @@ export function TicketSearch({
       <Stack gap="sm" className="ps-search-column" style={{ minHeight: 0 }}>
         <TextInput
           data-autofocus
-          aria-label="Search tickets"
+          aria-label="Search tickets and documents"
           aria-controls="ticket-search-results"
-          aria-activedescendant={hits[active] ? `ticket-search-hit-${hits[active].id}` : undefined}
-          placeholder="Title, acceptance criteria, notes…"
+          aria-activedescendant={activeId}
+          placeholder="Title, acceptance criteria, notes, document text…"
           leftSection={<IconSearch size={16} />}
           rightSection={loading ? <Loader size="xs" /> : null}
           value={query}
@@ -195,9 +159,9 @@ export function TicketSearch({
             } else if (event.key === 'ArrowUp') {
               event.preventDefault()
               move(-1)
-            } else if (event.key === 'Enter' && hits[active]) {
+            } else if (event.key === 'Enter' && highlighted) {
               event.preventDefault()
-              open(hits[active].id)
+              open(highlighted)
             }
           }}
         />
@@ -216,27 +180,16 @@ export function TicketSearch({
           ]}
         />
 
-        {error && (
-          <Alert icon={<IconAlertTriangle size={16} />} color="orange" variant="light">
-            {error} Nothing was changed.
-          </Alert>
-        )}
-
-        {!error && query.trim().length === 0 && (
+        {trimmed.length === 0 && (
           <Text size="sm" c="dimmed">
-            Searches ticket titles and everything written in them, in this project only.
+            Searches ticket titles and everything written in them, and the documents in this
+            workspace, in this project only.
           </Text>
         )}
 
-        {!error && query.trim().length > 0 && result && hits.length === 0 && (
-          <Text size="sm" c="dimmed">
-            No ticket contains “{query.trim()}”.
-          </Text>
-        )}
-
-        {hits.length > 0 && (
+        {trimmed.length > 0 && answered && (
           <Stack
-            gap={4}
+            gap="sm"
             ref={listRef}
             id="ticket-search-results"
             // A select/option pair cannot hold a status badge, a marked title
@@ -247,120 +200,105 @@ export function TicketSearch({
             aria-label="Search results"
             style={{ position: 'relative', minHeight: 0, overflowY: 'auto' }}
           >
-            {hits.map((hit, index) => (
-              <Hit
-                key={hit.id}
-                hit={hit}
-                active={index === active}
-                onHover={() => setActive(index)}
-                onOpen={() => open(hit.id)}
-              />
-            ))}
+            <ResultGroup
+              label="Tickets"
+              error={tickets.error}
+              empty={tickets.view !== null && ticketHits.length === 0}
+              emptyText={`No ticket contains “${trimmed}”.`}
+              shown={ticketHits.length}
+              total={tickets.view?.totalMatches ?? 0}
+              unsearchable={tickets.view?.unsearchable.length ?? 0}
+              noun="ticket file"
+            >
+              {ticketHits.map((hit, index) => (
+                <TicketHit
+                  key={hit.id}
+                  hit={hit}
+                  active={index === active}
+                  onHover={() => setActive(index)}
+                  onOpen={() => open({ kind: 'ticket', id: hit.id })}
+                />
+              ))}
+            </ResultGroup>
+
+            {scope === 'archived' ? (
+              <Text size="xs" c="dimmed">
+                Documents are never archived, so they are searched under Active and All.
+              </Text>
+            ) : (
+              <ResultGroup
+                label="Documents"
+                error={documents.error}
+                empty={documents.view !== null && documentHits.length === 0}
+                emptyText={`No document contains “${trimmed}”.`}
+                shown={documentHits.length}
+                total={documents.view?.totalMatches ?? 0}
+                unsearchable={documents.view?.unsearchable.length ?? 0}
+                noun="document"
+              >
+                {documentHits.map((hit, index) => (
+                  <DocumentHit
+                    key={hit.path}
+                    hit={hit}
+                    active={ticketHits.length + index === active}
+                    onHover={() => setActive(ticketHits.length + index)}
+                    onOpen={() => open({ kind: 'document', path: hit.path })}
+                  />
+                ))}
+              </ResultGroup>
+            )}
           </Stack>
-        )}
-
-        {result && result.totalMatches > hits.length && (
-          <Text size="xs" c="dimmed">
-            Showing {hits.length} of {result.totalMatches} matches. Narrow the search to see the
-            rest.
-          </Text>
-        )}
-
-        {/* A ticket that could not be read could not be searched either, and
-            that must not look like "no match". */}
-        {result && result.unsearchable.length > 0 && (
-          <Text size="xs" c="orange">
-            {result.unsearchable.length} ticket file
-            {result.unsearchable.length === 1 ? '' : 's'} could not be read, so{' '}
-            {result.unsearchable.length === 1 ? 'it was' : 'they were'} not searched.
-          </Text>
         )}
       </Stack>
     </Modal>
   )
 }
 
-function Hit({
-  hit,
-  active,
-  onHover,
-  onOpen,
-}: {
-  hit: TicketSearchView['hits'][number]
-  active: boolean
-  onHover: () => void
-  onOpen: () => void
-}) {
-  return (
-    <UnstyledButton
-      id={`ticket-search-hit-${hit.id}`}
-      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-      role="option"
-      aria-selected={active}
-      data-active={active}
-      onMouseEnter={onHover}
-      onClick={onOpen}
-      p="xs"
-      style={{
-        borderRadius: 'var(--mantine-radius-sm)',
-        background: active ? 'var(--mantine-color-default-hover)' : 'transparent',
-      }}
-    >
-      <Group gap="xs" wrap="nowrap" align="baseline">
-        <Badge size="xs" variant="light" color={STATUS_COLOR[hit.status]} style={{ flexShrink: 0 }}>
-          {STATUS_LABEL[hit.status]}
-        </Badge>
-        <TicketTypeBadge type={hit.type} size="xs" />
-        {/* Labelled, never hidden: a result that is no longer on the board must
-            say so, or the reader goes looking for a card that is not there. */}
-        {hit.archivedAt && (
-          <Badge size="xs" variant="outline" color="gray" style={{ flexShrink: 0 }}>
-            Archived
-          </Badge>
-        )}
-        <Text size="sm" fw={600} lineClamp={1}>
-          <Marked text={hit.title} highlights={hit.titleHighlights} />
-        </Text>
-      </Group>
-      {hit.excerpt && (
-        <Text size="xs" c="dimmed" lineClamp={2} mt={2}>
-          <Marked text={hit.excerpt} highlights={hit.excerptHighlights} />
-        </Text>
-      )}
-    </UnstyledButton>
-  )
+interface GroupProps {
+  label: string
+  error: string | null
+  empty: boolean
+  emptyText: string
+  shown: number
+  total: number
+  /** Files that could not be read, so could not be searched: never "no match". */
+  unsearchable: number
+  noun: string
+  children: ReactNode
 }
 
-/**
- * Renders text with the matched ranges marked. The text is passed as children,
- * never as markup, so a ticket containing HTML or a script tag shows those
- * characters instead of doing anything.
- */
-function Marked({ text, highlights }: { text: string; highlights: SearchHighlight[] }) {
-  if (highlights.length === 0) return <>{text}</>
-
-  const parts: { value: string; marked: boolean }[] = []
-  let cursor = 0
-  for (const range of highlights) {
-    if (range.start > cursor) parts.push({ value: text.slice(cursor, range.start), marked: false })
-    parts.push({ value: text.slice(range.start, range.start + range.length), marked: true })
-    cursor = range.start + range.length
-  }
-  if (cursor < text.length) parts.push({ value: text.slice(cursor), marked: false })
-
+function ResultGroup(props: GroupProps) {
+  const { label, error, empty, emptyText, shown, total, unsearchable, noun, children } = props
+  const headingId = `search-group-${label.toLowerCase()}`
   return (
-    <>
-      {parts.map((part, index) => (
-        <Fragment key={index}>
-          {part.marked ? (
-            <mark style={{ background: 'var(--mantine-color-yellow-light)', color: 'inherit' }}>
-              {part.value}
-            </mark>
-          ) : (
-            part.value
-          )}
-        </Fragment>
-      ))}
-    </>
+    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+    <Stack gap={4} role="group" aria-labelledby={headingId}>
+      <Text id={headingId} size="xs" fw={700} tt="uppercase" c="dimmed">
+        {label}
+      </Text>
+      {error ? (
+        <Alert icon={<IconAlertTriangle size={16} />} color="orange" variant="light">
+          {label} could not be searched: {error} Nothing was changed.
+        </Alert>
+      ) : empty ? (
+        <Text size="sm" c="dimmed">
+          {emptyText}
+        </Text>
+      ) : (
+        children
+      )}
+      {total > shown && (
+        <Text size="xs" c="dimmed">
+          Showing {shown} of {total} matches. Narrow the search to see the rest.
+        </Text>
+      )}
+      {unsearchable > 0 && (
+        <Text size="xs" c="orange">
+          {unsearchable} {noun}
+          {unsearchable === 1 ? '' : 's'} could not be read, so{' '}
+          {unsearchable === 1 ? 'it was' : 'they were'} not searched.
+        </Text>
+      )}
+    </Stack>
   )
 }

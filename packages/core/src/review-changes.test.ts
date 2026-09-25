@@ -178,6 +178,17 @@ describe('reviewChanges', () => {
     })
   })
 
+  it('notes a line-ending change and agrees with review status that it does not count', async () => {
+    await withFixtureProject(async (project) => {
+      const id = ticketRecordId('t1')
+      await recordReview(project, id, SOURCE)
+
+      const result = await reviewChanges(project, id, SOURCE.replace(/\n/g, '\r\n'))
+      expect(result.notes).toContain('Line endings changed from LF to CRLF.')
+      expect(result.substantive).toBe(false)
+    })
+  })
+
   it('reports identical content as identical', async () => {
     await withFixtureProject(async (project) => {
       const id = ticketRecordId('t1')

@@ -1,7 +1,7 @@
 import { diffArrays } from 'diff'
 import type { Project } from './project.js'
-import { BOOKKEEPING_FIELDS, contentFingerprint, type ReviewRecord } from './review.js'
-import { readSnapshotHistory } from './review-storage.js'
+import { BOOKKEEPING_FIELDS, unchangedSinceReview, type ReviewRecord } from './review.js'
+import { readSnapshotHistory, type Snapshot } from './review-storage.js'
 import { revisionOf, type Revision } from './revision.js'
 
 /**
@@ -104,15 +104,14 @@ export async function reviewChanges(
   return {
     ...common,
     ...compareSources(latest.body, currentSource),
-    substantive: countsForReview(latest.review, currentSource),
+    substantive: countsForReview(latest, currentSource),
   }
 }
 
-/** The same two tests reviewStatus applies, so the two never disagree. */
-function countsForReview(review: ReviewRecord, currentSource: string): boolean | null {
-  if (revisionOf(currentSource) === review.reviewedRevision) return false
+/** The same test reviewStatus applies, so the two never disagree. */
+function countsForReview(snapshot: Snapshot, currentSource: string): boolean | null {
   try {
-    return contentFingerprint(currentSource) !== review.contentFingerprint
+    return !unchangedSinceReview(snapshot, currentSource)
   } catch {
     // Frontmatter that does not parse cannot be classified; say so, not "no".
     return null

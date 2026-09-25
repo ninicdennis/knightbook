@@ -7,7 +7,12 @@ export default defineConfig({
     environment: 'jsdom',
     // The build scripts are plain JavaScript and run under Node, not jsdom;
     // each of those files asks for the node environment in its own docblock.
-    include: ['src/renderer/**/*.test.tsx', 'src/main/**/*.test.ts', 'scripts/**/*.test.mjs'],
+    include: [
+      'src/renderer/**/*.test.tsx',
+      'src/main/**/*.test.ts',
+      'src/shared/**/*.test.ts',
+      'scripts/**/*.test.mjs',
+    ],
     setupFiles: ['./src/renderer/test-setup.ts'],
   },
 })

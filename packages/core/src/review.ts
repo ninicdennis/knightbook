@@ -4,7 +4,7 @@ import { ProjectError } from './errors.js'
 import { parseRecord } from './frontmatter.js'
 import { reservedPaths, resolveInRoot, toProjectRelative } from './paths.js'
 import type { Project } from './project.js'
-import { readSnapshots, snapshotWriteDir } from './review-storage.js'
+import { readSnapshots, snapshotWriteDir, type Snapshot } from './review-storage.js'
 import { revisionOf, type Revision } from './revision.js'
 import { writeRecord } from './write.js'
 
@@ -71,7 +71,7 @@ export const BOOKKEEPING_FIELDS: ReadonlySet<string> = new Set([
  * intent, so an unclassified change is surfaced rather than decided.
  */
 export function contentFingerprint(source: string): string {
-  const record = parseRecord(source)
+  const record = parseRecord(normalizeLineEndings(source))
 
   const substantive: Record<string, unknown> = {}
   const data = record.data.toJS() as Record<string, unknown> | null
@@ -94,6 +94,40 @@ export function contentFingerprint(source: string): string {
 
   return revisionOf(
     `${JSON.stringify(substantive, Object.keys(substantive).sort())}\n${normalizedBody}`,
+  )
+}
+
+/**
+ * Line endings are representation, not content (decision D-025). Git for Windows
+ * rewrites committed files to CRLF on checkout by default, so a record reviewed
+ * as LF can come back as CRLF with nobody having edited it.
+ */
+function normalizeLineEndings(text: string): string {
+  return text.replace(/\r\n?/g, '\n')
+}
+
+/**
+ * Whether current content still counts as the reviewed content. Review status
+ * and the changes view both ask this, so they cannot disagree.
+ *
+ * The stored revision stays byte-exact because it is also what ties a review to
+ * the exact bytes a person saw. The comparison here is looser: it accepts the
+ * same content in either line ending, then falls back to the fingerprint. The
+ * fingerprint is recomputed from the retained snapshot as well as read from it,
+ * because snapshots recorded before D-025 stored one computed over CRLF bytes,
+ * which no LF version of the same content can match.
+ */
+export function unchangedSinceReview(snapshot: Snapshot, currentSource: string): boolean {
+  if (revisionOf(currentSource) === snapshot.review.reviewedRevision) return true
+
+  const current = normalizeLineEndings(currentSource)
+  if (revisionOf(current) === snapshot.review.reviewedRevision) return true
+  if (normalizeLineEndings(snapshot.body) === current) return true
+
+  const fingerprint = contentFingerprint(current)
+  return (
+    fingerprint === snapshot.review.contentFingerprint ||
+    fingerprint === contentFingerprint(snapshot.body)
   )
 }
 
@@ -174,18 +208,15 @@ export async function reviewStatus(
   recordId: string,
   currentSource: string,
 ): Promise<ReviewStatus> {
-  const review = await lastReview(project, recordId)
-  if (!review) {
+  const snapshot = (await readSnapshots(project.root, recordId)).at(-1)
+  if (!snapshot) {
     return { state: 'unreviewed', lastReview: null, changeSummary: null }
   }
 
-  const currentRevision = revisionOf(currentSource)
-  if (currentRevision === review.reviewedRevision) {
-    return { state: 'reviewed', lastReview: review, changeSummary: null }
-  }
-
-  if (contentFingerprint(currentSource) === review.contentFingerprint) {
-    // Bytes moved but nothing substantive did: reformatting, or a status change.
+  const review = snapshot.review
+  if (unchangedSinceReview(snapshot, currentSource)) {
+    // Bytes may have moved, but nothing substantive did: line endings,
+    // reformatting, or a status change.
     return { state: 'reviewed', lastReview: review, changeSummary: null }
   }
 

@@ -13,6 +13,7 @@ import { renderMarkdown } from '../markdown.js'
 import { MarkdownBody } from './MarkdownBody.js'
 import type { BackTarget } from './BackToSource.js'
 import { ReadingModeSwitch, ReviewChanges, type ReadingMode } from './ReviewChanges.js'
+import { TicketBlocker } from './TicketBlocker.js'
 import { TicketDetailActions } from './TicketDetailActions.js'
 import { TicketDetailHeader } from './TicketDetailHeader.js'
 import {
@@ -50,6 +51,8 @@ interface Props {
   onClose: () => void
   onMove: (status: MovableStatus) => void
   onSetType: (type: TicketType | null) => void
+  /** Records why the ticket cannot move; null clears it. */
+  onSetBlocker: (blocker: string | null) => void
   onComplete: () => void
   /** D-017: the user says this did not pass verification, and why. */
   onReportIssue: () => void
@@ -73,6 +76,7 @@ export function TicketDetailModal({
   onClose,
   onMove,
   onSetType,
+  onSetBlocker,
   onComplete,
   onReportIssue,
   onResolveIssue,
@@ -183,16 +187,7 @@ export function TicketDetailModal({
           }}
         >
           <Stack gap="lg">
-            {ticket.blocker && (
-              <Alert
-                icon={<IconAlertTriangle size={16} />}
-                color="orange"
-                variant="light"
-                title="Blocked"
-              >
-                {ticket.blocker}
-              </Alert>
-            )}
+            <TicketBlocker blocker={ticket.blocker} onSave={onSetBlocker} />
 
             <VerificationIssueNotice ticket={ticket} />
 

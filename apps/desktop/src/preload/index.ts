@@ -15,6 +15,8 @@ const api: KnightbookApi = {
   readProject: (rootPath) => ipcRenderer.invoke('project:read', rootPath),
   setTicketStatus: (rootPath, id, status, revision) =>
     ipcRenderer.invoke('ticket:setStatus', rootPath, id, status, revision),
+  setTicketBlocker: (rootPath, id, blocker, revision) =>
+    ipcRenderer.invoke('ticket:setBlocker', rootPath, id, blocker, revision),
   setTicketType: (rootPath, id, type, revision) =>
     ipcRenderer.invoke('ticket:setType', rootPath, id, type, revision),
   completeTicket: (rootPath, id, revision) =>
@@ -32,6 +34,7 @@ const api: KnightbookApi = {
   createTicket: (rootPath, input) => ipcRenderer.invoke('ticket:create', rootPath, input),
   readTicket: (rootPath, id) => ipcRenderer.invoke('ticket:read', rootPath, id),
   openTicketExternally: (rootPath, id) => ipcRenderer.invoke('ticket:openExternally', rootPath, id),
+  searchDocuments: (rootPath, query) => ipcRenderer.invoke('document:search', rootPath, query),
   searchTickets: (rootPath, query, scope) =>
     ipcRenderer.invoke('ticket:search', rootPath, query, scope),
   reorderBacklog: (rootPath, ticketIds) =>
