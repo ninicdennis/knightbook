@@ -21,6 +21,7 @@ import { useProjectScreen } from './hooks/useProjectScreen.js'
 import { useRefreshOnFocus } from './hooks/useRefreshOnFocus.js'
 import { useSearchShortcut } from './hooks/useSearchShortcut.js'
 import { useTicketActions } from './hooks/useTicketActions.js'
+import { useWindowTitle } from './hooks/useWindowTitle.js'
 
 /**
  * Below `md` the header reflows onto two rows (shell.css). AppShell offsets the
@@ -45,6 +46,7 @@ export function App() {
     choose,
     openAfterSetup,
   } = useProjectScreen()
+  useWindowTitle(screen)
   const [busyTicketId, setBusyTicketId] = useState<string | null>(null)
   const controls = { screen, setScreen, load, setActionError, setBusyTicketId }
   const actions = useTicketActions(controls)

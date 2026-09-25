@@ -148,6 +148,7 @@ export function makeApi(): KnightbookApi {
     mcpStatus: vi.fn().mockResolvedValue(mcpStatus()),
     readSettings: vi.fn().mockResolvedValue({ colorScheme: 'auto' }),
     saveSettings: vi.fn().mockResolvedValue({ ok: true, value: { colorScheme: 'auto' } }),
+    showProjectInWindowTitle: vi.fn().mockResolvedValue(undefined),
     listDocuments: vi.fn().mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
     includeDocumentFiles: vi
       .fn()
