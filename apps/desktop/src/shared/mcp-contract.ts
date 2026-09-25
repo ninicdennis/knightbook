@@ -1,3 +1,5 @@
+import type { Result } from './contract.js'
+
 /**
  * What the window is told about MCP: how the client should launch the server,
  * what could be observed about running servers, and the per-project access
@@ -56,4 +58,16 @@ export interface McpAccessView {
   checkoutId: string | null
   /** Set when the access list could not be read: nothing is reachable, which is not "off". */
   problem: string | null
+}
+
+export interface McpApi {
+  /**
+   * The one shared configuration for every project the user enables. It names
+   * the access list, not a project, so it never changes when projects do.
+   */
+  mcpLaunchCommand(): Promise<McpLaunchCommand>
+  /** Turns "Allow AI access through MCP" on or off for one checkout. */
+  setMcpAccess(rootPath: string, enabled: boolean): Promise<Result<McpAccessView>>
+  /** Observes MCP status for one checkout. Reads only; it never writes to the project. */
+  mcpStatus(rootPath: string): Promise<McpStatusView>
 }

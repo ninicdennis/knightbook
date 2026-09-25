@@ -1,9 +1,5 @@
-import type {
-  ProjectView,
-  Result,
-  SearchHighlight,
-  TicketSearchView,
-} from '../src/shared/contract.js'
+import type { ProjectView, Result } from '../src/shared/contract.js'
+import type { SearchHighlight, TicketSearchView } from '../src/shared/ticket-search-contract.js'
 import type { DocumentSearchView } from '../src/shared/document-search-contract.js'
 
 /**

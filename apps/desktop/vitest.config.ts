@@ -13,6 +13,6 @@ export default defineConfig({
       'src/shared/**/*.test.ts',
       'scripts/**/*.test.mjs',
     ],
-    setupFiles: ['./src/renderer/test-setup.ts'],
+    setupFiles: ['./src/renderer/test/test-setup.ts'],
   },
 })

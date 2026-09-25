@@ -1,0 +1,46 @@
+/*
+ * The board's three layers. Separating the window, a column, and a card by
+ * background shade rather than by three similar outlines leaves borders free to
+ * mean something: the next ticket, the column a card is being dropped into,
+ * blocked work, and keyboard focus.
+ *
+ * The shades carry a slight blue cast towards the accent hue, so a neutral grey
+ * interface does not read as colourless. Light is the default here and dark is
+ * the override, matching how Mantine sets `data-mantine-color-scheme` on :root.
+ *
+ * The two window backgrounds are repeated in src/main/window/window-theme.ts, which
+ * paints the native window before this stylesheet exists. Its test fails if
+ * they drift apart.
+ */
+:root {
+  --ps-app-bg: #eef0f4;
+  --ps-column-bg: #e3e6ec;
+  --ps-column-bg-quiet: #e8eaef;
+  --ps-column-bg-active: #dbe1ee;
+  --ps-card-bg: #ffffff;
+  --ps-card-bg-quiet: #f7f8fa;
+  --ps-hairline: rgba(16, 24, 40, 0.08);
+  --ps-card-shadow: 0 1px 2px rgba(16, 24, 40, 0.07);
+  /* Secondary text that stays at 4.5:1 on every layer above. Mantine's own
+     dimmed grey falls short of that on these blue-grey backgrounds. */
+  --ps-text-muted: #5f6673;
+  /* Anything floating over the board: dialogs, drawers, menus, popovers. */
+  --ps-overlay-shadow: 0 8px 24px rgba(16, 24, 40, 0.14), 0 1px 3px rgba(16, 24, 40, 0.08);
+}
+
+:root[data-mantine-color-scheme='dark'] {
+  --ps-app-bg: #14161a;
+  --ps-column-bg: #1c1f26;
+  --ps-column-bg-quiet: #181b21;
+  --ps-column-bg-active: #232834;
+  --ps-card-bg: #252932;
+  --ps-card-bg-quiet: #1f232b;
+  --ps-hairline: rgba(255, 255, 255, 0.08);
+  --ps-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --ps-text-muted: #8c939f;
+  --ps-overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+body {
+  background: var(--ps-app-bg);
+}

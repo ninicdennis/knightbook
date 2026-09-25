@@ -12,13 +12,13 @@ Date: 2026-09-21. Research and backlog scope only; no application changes or liv
 
 ## Plans: proposed implementation direction
 
-No plan or phase model exists today. Tickets already have stable IDs and related document paths (packages/core/src/schema.ts); document inclusion preserves project-relative Markdown in place (packages/core/src/documents.ts). Use multiple ordinary Markdown plan files with discoverable project-relative registration and a small explicit phase/ticket-reference structure. Keep freeform goals, ideas, value rationale, and notes in Markdown. Decide the exact backward-compatible schema during implementation planning; do not require fixed prose headings or repurpose document titles as stable identities.
+No plan or phase model exists today. Tickets already have stable IDs and related document paths (packages/core/src/records/schema.ts); document inclusion preserves project-relative Markdown in place (packages/core/src/documents/documents.ts). Use multiple ordinary Markdown plan files with discoverable project-relative registration and a small explicit phase/ticket-reference structure. Keep freeform goals, ideas, value rationale, and notes in Markdown. Decide the exact backward-compatible schema during implementation planning; do not require fixed prose headings or repurpose document titles as stable identities.
 
 Plans group existing canonical tickets. They do not duplicate ticket bodies, status, priority, or completion. Proposed progress: distinct linked-ticket counts by board state, Done/total as completion, Verification shown separately. Unattributed Done should retain its existing warning. An empty phase is unplanned, not 100% complete; missing references remain visible. A ticket linked in multiple phases is counted once at plan level. External AI should be able to discover/read/create/update plans and links through the local MCP workflow, with safe revisions and preserved prose. Automatic AI scheduling, a hosted provider, Gantt dates, and a second task system are outside this first scope.
 
 ## Review diffs: evidence and recommendation
 
-packages/core/src/review.ts already records full reviewed source, retrieves it with reviewedSource, and computes review state separately from byte changes. packages/mcp/src/document-tools.ts exposes reviewed_source optionally through review_status. The desktop contract currently exposes state/timestamp/summary without a comparison UI.
+packages/core/src/review/review.ts already records full reviewed source, retrieves it with reviewedSource, and computes review state separately from byte changes. packages/mcp/src/document-tools.ts exposes reviewed_source optionally through review_status. The desktop contract currently exposes state/timestamp/summary without a comparison UI.
 
 Recommend a read-only unified source diff, last reviewed versus current, with line numbers, additions/removals, and approximately three context lines plus expandable unchanged sections. Label both versions and the review time. Preserve exact-source access, including frontmatter; distinguish lifecycle metadata from prose so status bookkeeping does not masquerade as a changed description. Do not change review fingerprint semantics as a side effect. A missing baseline is an explicit state, never an empty document inferred as the baseline. Viewing changes does not mark reviewed or Done.
 
@@ -32,7 +32,7 @@ Source inspection and alpha-bounds measurement found apps/desktop/build/icon.png
 
 ## Documents: evidence and recommendation
 
-packages/core/src/documents.ts resolves recursive inclusion to a flat list; DocumentsView.tsx renders that list as NavLinks. Retain canonical paths and inclusion semantics but derive nested folder nodes. Store optional path-to-title metadata under .projectspace, preferably a sparse field in the project manifest, without rewriting included Markdown. Root files remain visible and duplicate basenames remain distinguishable. Expansion is local view state, separate from canonical labels.
+packages/core/src/documents/documents.ts resolves recursive inclusion to a flat list; DocumentsView.tsx renders that list as NavLinks. Retain canonical paths and inclusion semantics but derive nested folder nodes. Store optional path-to-title metadata under .projectspace, preferably a sparse field in the project manifest, without rewriting included Markdown. Root files remain visible and duplicate basenames remain distinguishable. Expansion is local view state, separate from canonical labels.
 
 [Mantine Tree](https://mantine.dev/core/tree/) provides a candidate using the existing UI library; verify its keyboard and accessibility requirements against the installed version. Handle selection, collapsed ancestors, missing files, overlapping includes, and stale labels after folder renames explicitly.
 

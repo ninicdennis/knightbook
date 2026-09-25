@@ -1,9 +1,5 @@
-import type {
-  ProjectView,
-  KnightbookApi,
-  RememberedProject,
-  TicketView,
-} from '../src/shared/contract.js'
+import type { ProjectView, KnightbookApi, TicketView } from '../src/shared/contract.js'
+import type { RememberedProject } from '../src/shared/project-setup-contract.js'
 import { documentsStub } from './documents-stub.js'
 import { setStubAllowed, stubMcpStatus } from './mcp-status-stub.js'
 import { record } from './record.js'

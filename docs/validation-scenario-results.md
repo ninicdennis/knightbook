@@ -72,7 +72,7 @@ Two edits to the same Done ticket, measured through `ticket_list`:
 | Completion block deleted, `status: done` left behind | `true` — correct |
 | Block kept, changed to `decision_source: direct_user_action` + `recorded_by: agent` | `false` |
 
-`isUnattributedCompletion` (`packages/core/src/completion.ts:92-94`) is
+`isUnattributedCompletion` (`packages/core/src/tickets/completion.ts:92-94`) is
 `status === 'done' && completion === undefined`, so only the first case can ever be caught. The
 forged block is returned as an ordinary completion, including a pair of values this write path can
 never produce together: a direct in-app action is recorded by the user by definition.
