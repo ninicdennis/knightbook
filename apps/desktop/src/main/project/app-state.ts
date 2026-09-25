@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { parseRememberedEntries, type RememberedEntry } from './remembered-projects.js'
 import { adoptLegacyAppState, type AdoptionResult } from './state-migration.js'
 import { parseWindowState, type StoredWindowState } from '../window/window-placement.js'
-import type { AppSettings, ColorSchemeChoice } from '../../shared/contract.js'
+import type { AppSettings, ColorSchemeChoice } from '../../shared/settings-contract.js'
 
 /**
  * Technical design section 3: remembered checkout locations and window state are

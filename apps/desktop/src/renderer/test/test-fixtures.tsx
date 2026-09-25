@@ -6,11 +6,11 @@ import type {
   McpStatusView,
   ProjectView,
   KnightbookApi,
-  RememberedProject,
   ReviewChangesView,
   TicketDetailView,
   TicketView,
 } from '../../shared/contract.js'
+import type { RememberedProject } from '../../shared/project-setup-contract.js'
 import type { SkillSetupView } from '../../shared/skill-setup-contract.js'
 
 /** Shared by the component tests so each file states only what it is about. */

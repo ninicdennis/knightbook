@@ -12,7 +12,7 @@ import { createRoot } from 'react-dom/client'
 import { App } from './App.js'
 import { hostColorSchemeManager } from './theme/color-scheme.js'
 import { cssVariablesResolver, theme } from './theme/theme.js'
-import type { ColorSchemeChoice } from '../shared/contract.js'
+import type { ColorSchemeChoice } from '../shared/settings-contract.js'
 
 /**
  * The host owns the colour-scheme choice, so it is read before the first render.

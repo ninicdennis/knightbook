@@ -11,7 +11,7 @@ export type {
   McpSessionView,
   McpStatusView,
 } from './mcp-contract.js'
-import type { McpAccessView, McpLaunchCommand, McpStatusView } from './mcp-contract.js'
+import type { McpApi } from './mcp-contract.js'
 // Review state and the changes-since-review comparison, re-exported the same way.
 export type {
   ChangedLineView,
@@ -37,6 +37,10 @@ import type { SkillSetupApi } from './skill-setup-contract.js'
 import type { TicketCreateApi } from './ticket-create-contract.js'
 import type { TicketEditApi } from './ticket-edit-contract.js'
 import type { DocumentSearchApi } from './document-search-contract.js'
+import type { ArchiveApi } from './archive-contract.js'
+import type { ProjectSetupApi } from './project-setup-contract.js'
+import type { SettingsApi } from './settings-contract.js'
+import type { TicketSearchApi } from './ticket-search-contract.js'
 
 export type TicketStatus = 'backlog' | 'in_progress' | 'verification' | 'done'
 
@@ -147,49 +151,6 @@ export interface TicketPlanView {
   phaseTitle: string
 }
 
-/**
- * Which tickets a search looks at. Archived work stays findable, because keeping
- * the record is the point of archiving; it is just not what someone searching
- * the board usually means, so the scope is theirs to choose.
- */
-export type SearchScope = 'active' | 'archived' | 'all'
-
-/** Where a match sits in a string, so the view can mark it up without building markup. */
-export interface SearchHighlight {
-  start: number
-  length: number
-}
-
-export interface TicketSearchHitView {
-  id: string
-  title: string
-  status: TicketStatus
-  type: TicketType | null
-  /** Empty when only the body matched. */
-  titleHighlights: SearchHighlight[]
-  /** Context around the first body match, or null when only the title matched. */
-  excerpt: string | null
-  /** Offsets within `excerpt`, not within the ticket body. */
-  excerptHighlights: SearchHighlight[]
-  /** When it was archived, or null. Archived hits are labelled, never hidden. */
-  archivedAt: string | null
-}
-
-export interface TicketSearchView {
-  /**
-   * The checkout and query this answers. Both are echoed back so a reply that
-   * arrives after the user typed on, or switched project, can be discarded
-   * rather than shown against the wrong question.
-   */
-  checkoutPath: string
-  query: string
-  hits: TicketSearchHitView[]
-  /** Every matching ticket, including any beyond the returned hits. */
-  totalMatches: number
-  /** Ticket files that could not be read, so they could not be searched. */
-  unsearchable: RecordProblemView[]
-}
-
 /** A record file the app could not use. It is listed, never repaired or rewritten. */
 export interface RecordProblemView {
   /** Project-relative path. */
@@ -218,76 +179,8 @@ export interface ProjectView {
   backlogOrderProblems: { duplicates: string[]; unknown: string[] }
 }
 
-/** One ticket to archive, at the revision the user was shown. */
-export interface ArchiveTarget {
-  id: string
-  revision: string
-}
-
-/** One ticket a bulk archive could not take, and why, in the user's terms. */
-export interface ArchiveFailureView {
-  id: string
-  title: string
-  reason: string
-}
-
-/**
- * What a bulk archive actually did. Partial success is a real outcome here
- * rather than an error: each ticket is its own file and its own write, so some
- * can succeed while another was changed underneath the user. The ones that
- * succeeded stay archived, and the rest are named so they can be retried.
- */
-export interface ArchiveOutcome {
-  archivedCount: number
-  failures: ArchiveFailureView[]
-  project: ProjectView
-}
-
 export type Result<T> =
   { ok: true; value: T } | { ok: false; code: string; message: string; currentRevision?: string }
-
-export interface ChosenFolder {
-  path: string
-  initialized: boolean
-}
-
-export interface RememberedProject {
-  path: string
-  name: string
-  /** Why it cannot be opened right now, or null when it can. */
-  unavailable: string | null
-}
-
-export interface FolderInspection {
-  /** The folder's own name, offered as the default project name. */
-  name: string
-  /** Existing documents worth offering to include, as project-relative paths. */
-  suggestions: string[]
-}
-
-export interface SetupOutcome {
-  path: string
-  /** Set when the project exists but something asked for could not be done. */
-  warning: string | null
-}
-
-/** How the window picks its appearance. `auto` follows the operating system. */
-export type ColorSchemeChoice = 'light' | 'dark' | 'auto'
-
-/**
- * Preferences for this installation. Technical design section 3 calls these
- * disposable app state, so they live beside the remembered project list rather
- * than in any project's files: a clone opened on another machine keeps its own.
- */
-export interface AppSettings {
-  colorScheme: ColorSchemeChoice
-}
-
-/** The project a window title names, as the loaded project record gives it. */
-export interface WindowTitleProject {
-  name: string
-  checkoutPath: string
-}
 
 export interface KnightbookApi
   extends
@@ -297,16 +190,12 @@ export interface KnightbookApi
     PlansApi,
     TicketCreateApi,
     TicketEditApi,
-    DocumentSearchApi {
-  /** Projects this machine has opened, most recent first, each checked for availability. */
-  rememberedProjects(): Promise<RememberedProject[]>
-  /** Forgets one entry and returns the updated list. Deletes nothing on disk. */
-  forgetProject(path: string): Promise<RememberedProject[]>
-  chooseProject(): Promise<ChosenFolder | null>
-  /** What is in a folder the user just chose that has no project yet. */
-  inspectFolder(path: string): Promise<Result<FolderInspection>>
-  /** Creates project records in that folder, and includes the named documents in place. */
-  setUpFolder(path: string, name: string, include: string[]): Promise<Result<SetupOutcome>>
+    DocumentSearchApi,
+    TicketSearchApi,
+    ArchiveApi,
+    ProjectSetupApi,
+    SettingsApi,
+    McpApi {
   readProject(rootPath: string): Promise<Result<ProjectView>>
   setTicketStatus(
     rootPath: string,
@@ -348,46 +237,13 @@ export interface KnightbookApi
     note: string,
     revision?: string,
   ): Promise<Result<ProjectView>>
-  /**
-   * Takes tickets off the board, keeping their files and everything on them.
-   * Archiving records nothing about whether work was finished or accepted.
-   *
-   * Takes the exact tickets and revisions the user was looking at, so a ticket
-   * created or changed after they opened the confirmation is not swept up. Each
-   * one is a separate write: this is not a transaction across files, and the
-   * outcome says exactly which ones did not happen and why.
-   */
-  archiveTickets(rootPath: string, targets: ArchiveTarget[]): Promise<Result<ArchiveOutcome>>
-  /** Puts one archived ticket back in the status it kept. Never reopens Done. */
-  restoreTicket(rootPath: string, id: string, revision: string): Promise<Result<ProjectView>>
   /** Everything written on one ticket, for the detail view. */
   readTicket(rootPath: string, id: string): Promise<Result<TicketDetailView>>
   /** Opens the ticket's own Markdown file with the system's handler. The host builds the path. */
   openTicketExternally(rootPath: string, id: string): Promise<Result<null>>
-  /** Bounded text search over ticket titles and bodies in one checkout. */
-  searchTickets(
-    rootPath: string,
-    query: string,
-    scope: SearchScope,
-  ): Promise<Result<TicketSearchView>>
   /**
    * Sets the manual backlog order, which is what "next up" follows. This edits
    * only the order in the project manifest and changes no ticket.
    */
   reorderBacklog(rootPath: string, ticketIds: string[]): Promise<Result<ProjectView>>
-  /**
-   * The one shared configuration for every project the user enables. It names
-   * the access list, not a project, so it never changes when projects do.
-   */
-  mcpLaunchCommand(): Promise<McpLaunchCommand>
-  /** Turns "Allow AI access through MCP" on or off for one checkout. */
-  setMcpAccess(rootPath: string, enabled: boolean): Promise<Result<McpAccessView>>
-  /** Observes MCP status for one checkout. Reads only; it never writes to the project. */
-  mcpStatus(rootPath: string): Promise<McpStatusView>
-  /** This installation's preferences. Missing or unreadable state reads as the defaults. */
-  readSettings(): Promise<AppSettings>
-  /** Merges the given fields into the stored settings and returns the stored result. */
-  saveSettings(patch: Partial<AppSettings>): Promise<Result<AppSettings>>
-  /** Names the open project and its checkout folder in the window title; null claims no project. */
-  showProjectInWindowTitle(project: WindowTitleProject | null): Promise<void>
 }

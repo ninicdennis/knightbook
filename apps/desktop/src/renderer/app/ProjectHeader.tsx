@@ -1,6 +1,6 @@
 import { ActionIcon, Kbd, SegmentedControl, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { IconRefresh, IconSearch } from '@tabler/icons-react'
-import { ProjectSwitcher } from './ProjectSwitcher.js'
+import { ProjectSwitcher } from '../projects/ProjectSwitcher.js'
 import { SettingsDrawer } from './SettingsDrawer.js'
 import { SEARCH_SHORTCUT_LABEL } from './shortcuts.js'
 

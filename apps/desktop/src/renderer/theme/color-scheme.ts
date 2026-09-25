@@ -1,5 +1,5 @@
 import type { MantineColorSchemeManager } from '@mantine/core'
-import type { ColorSchemeChoice } from '../../shared/contract.js'
+import type { ColorSchemeChoice } from '../../shared/settings-contract.js'
 
 /**
  * Mantine keeps the current scheme in a manager of its own. Its default one uses

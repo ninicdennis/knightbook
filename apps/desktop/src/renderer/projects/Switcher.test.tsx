@@ -1,7 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { KnightbookApi, RememberedProject } from '../../shared/contract.js'
+import type { KnightbookApi } from '../../shared/contract.js'
+import type { RememberedProject } from '../../shared/project-setup-contract.js'
 import { CHECKOUT, REMEMBERED, makeApi, project, renderApp, ticket } from '../test/test-fixtures.js'
 
 /**

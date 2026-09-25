@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { guard } from '../guard.js'
 import { inspectFolder, setUpFolder } from './folder-setup.js'
 import { allowSetupFor, assertAwaitingSetup } from './setup-permit.js'
-import type { FolderInspection, SetupOutcome } from '../../shared/contract.js'
+import type { FolderInspection, SetupOutcome } from '../../shared/project-setup-contract.js'
 
 export function registerSetupHandlers(): void {
   ipcMain.handle(

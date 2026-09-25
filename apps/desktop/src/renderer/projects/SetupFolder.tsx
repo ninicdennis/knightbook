@@ -12,7 +12,7 @@ import {
 } from '@mantine/core'
 import { IconAlertTriangle, IconFolderOpen, IconInfoCircle } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
-import type { FolderInspection } from '../../shared/contract.js'
+import type { FolderInspection } from '../../shared/project-setup-contract.js'
 import { CopyMcpConfig } from '../mcp/CopyMcpConfig.js'
 
 /**

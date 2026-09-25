@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { RememberedProject } from '../../shared/contract.js'
+import type { RememberedProject } from '../../shared/project-setup-contract.js'
 import type { Screen } from './screen.js'
 
 /**

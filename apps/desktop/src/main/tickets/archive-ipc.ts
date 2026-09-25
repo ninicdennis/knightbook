@@ -2,7 +2,8 @@ import { ipcMain } from 'electron'
 import { archiveTicket, openProject, restoreTicket } from '@knightbook/core'
 import { guard } from '../guard.js'
 import { buildView, titleOf } from '../project/project-view.js'
-import type { ArchiveFailureView, ArchiveOutcome, ProjectView } from '../../shared/contract.js'
+import type { ProjectView } from '../../shared/contract.js'
+import type { ArchiveFailureView, ArchiveOutcome } from '../../shared/archive-contract.js'
 
 /**
  * Taking tickets off the board and putting them back. Neither is a decision

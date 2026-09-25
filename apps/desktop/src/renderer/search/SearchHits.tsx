@@ -1,7 +1,7 @@
 import { Badge, Group, Text, UnstyledButton } from '@mantine/core'
 import { IconFileText } from '@tabler/icons-react'
 import { Fragment, type ReactNode } from 'react'
-import type { SearchHighlight, TicketSearchView } from '../../shared/contract.js'
+import type { SearchHighlight, TicketSearchView } from '../../shared/ticket-search-contract.js'
 import type { DocumentSearchHitView } from '../../shared/document-search-contract.js'
 import { STATUS_COLOR, STATUS_LABEL } from '../theme/theme.js'
 import { TicketTypeBadge } from '../tickets/TicketTypeBadge.js'

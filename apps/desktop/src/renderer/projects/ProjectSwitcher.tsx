@@ -20,7 +20,7 @@ import {
   IconX,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
-import type { RememberedProject } from '../../shared/contract.js'
+import type { RememberedProject } from '../../shared/project-setup-contract.js'
 
 /**
  * The way to move between projects. The list is read each time the drawer opens,

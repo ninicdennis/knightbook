@@ -12,7 +12,7 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import { IconAlertTriangle, IconInfoCircle, IconSettings } from '@tabler/icons-react'
 import { useState } from 'react'
-import type { ColorSchemeChoice } from '../../shared/contract.js'
+import type { ColorSchemeChoice } from '../../shared/settings-contract.js'
 
 /**
  * Settings for this installation, not for the project. It is laid out as a list

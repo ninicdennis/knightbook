@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import type { Screen } from './screen.js'
+import type { Screen } from '../projects/screen.js'
 
 /**
  * Keeps the window title on the project that is actually open. Only an open

@@ -1,7 +1,7 @@
 import { useDisclosure } from '@mantine/hooks'
 import { useCallback, useState } from 'react'
 import type { MovableStatus, ProjectView, Result, TicketType } from '../../shared/contract.js'
-import type { ScreenControls } from '../app/screen.js'
+import type { ScreenControls } from '../projects/screen.js'
 
 /**
  * Every change the board makes to a ticket, and the one path they share. Each

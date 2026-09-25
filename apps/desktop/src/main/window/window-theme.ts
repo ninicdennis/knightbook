@@ -1,5 +1,5 @@
 import { BrowserWindow, nativeTheme } from 'electron'
-import type { ColorSchemeChoice } from '../../shared/contract.js'
+import type { ColorSchemeChoice } from '../../shared/settings-contract.js'
 
 /**
  * The window's own paint, as opposed to the interface drawn inside it. Electron

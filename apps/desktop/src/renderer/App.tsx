@@ -1,34 +1,26 @@
 import { Alert, AppShell, Stack } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconAlertTriangle } from '@tabler/icons-react'
-import { useCallback, useEffect, useState } from 'react'
-import { ArchiveColumnDialog } from './board/ArchiveColumnDialog.js'
-import { ArchiveView } from './board/ArchiveView.js'
-import { Board } from './board/Board.js'
-import { CompletionDialog } from './verification/CompletionDialog.js'
-import { DocumentsView } from './documents/DocumentsView.js'
-import { PlansView } from './plans/PlansView.js'
-import { McpStatusFooter } from './mcp/McpStatusFooter.js'
-import { NewTicketDialog } from './tickets/NewTicketDialog.js'
-import { ProjectHeader, type View } from './app/ProjectHeader.js'
-import { LoadingProject, ProjectLoadFailed } from './app/ProjectStatusScreens.js'
-import { SetupFolder } from './app/SetupFolder.js'
-import { TicketDetailModal } from './tickets/TicketDetailModal.js'
-import { TicketSearch } from './search/TicketSearch.js'
-import { VerificationIssueDialog } from './verification/VerificationIssueDialog.js'
-import { Welcome } from './app/Welcome.js'
-import { useArchiveActions } from './board/useArchiveActions.js'
-import { useNewTicket } from './tickets/useNewTicket.js'
-import {
-  useLinkNavigation,
-  type LinkPlace,
-  type ScrollTarget,
-} from './markdown/useLinkNavigation.js'
-import { useProjectScreen } from './app/useProjectScreen.js'
-import { useRefreshOnFocus } from './app/useRefreshOnFocus.js'
-import { useSearchShortcut } from './search/useSearchShortcut.js'
-import { useTicketActions } from './tickets/useTicketActions.js'
+import { useState } from 'react'
+import { ProjectDialogs } from './app/ProjectDialogs.js'
+import { ProjectHeader } from './app/ProjectHeader.js'
+import { LoadingProject, ProjectLoadFailed } from './projects/ProjectStatusScreens.js'
+import { ProjectViewSwitch } from './app/ProjectViewSwitch.js'
+import { SetupFolder } from './projects/SetupFolder.js'
+import { Welcome } from './projects/Welcome.js'
+import { useProjectNavigation } from './app/useProjectNavigation.js'
+import { useProjectRefresh } from './app/useProjectRefresh.js'
+import { useProjectScreen } from './projects/useProjectScreen.js'
 import { useWindowTitle } from './app/useWindowTitle.js'
+import { useArchiveActions } from './board/useArchiveActions.js'
+import type { BackTarget } from './markdown/BackToSource.js'
+import { useLinkNavigation, type LinkPlace } from './markdown/useLinkNavigation.js'
+import { McpStatusFooter } from './mcp/McpStatusFooter.js'
+import { TicketSearch } from './search/TicketSearch.js'
+import { useSearchShortcut } from './search/useSearchShortcut.js'
+import { TicketDetailModal } from './tickets/TicketDetailModal.js'
+import { useNewTicket } from './tickets/useNewTicket.js'
+import { useTicketActions } from './tickets/useTicketActions.js'
 
 /**
  * Below `md` the header reflows onto two rows (shell.css). AppShell offsets the
@@ -58,108 +50,33 @@ export function App() {
   const controls = { screen, setScreen, load, setActionError, setBusyTicketId }
   const actions = useTicketActions(controls)
   const archive = useArchiveActions(controls)
+  const { refresh, refreshing, refreshToken } = useProjectRefresh({
+    screen,
+    setScreen,
+    setActionError,
+    busyTicketId,
+  })
 
-  const [searchOpen, search] = useDisclosure(false)
-  const [view, setView] = useState<View>('board')
-  const [detailId, setDetailId] = useState<string | null>(null)
-  /** A heading the open ticket should show, when a link named one. */
-  const [detailScroll, setDetailScroll] = useState<ScrollTarget | null>(null)
-  const [documentTarget, setDocumentTarget] = useState<{
-    path: string
-    nonce: number
-    scrollTo: ScrollTarget | null
-  } | null>(null)
-  const [refreshing, setRefreshing] = useState(false)
-  const [refreshToken, setRefreshToken] = useState(0)
-
-  /**
-   * Re-reads the project without the loading screen, so the user keeps their
-   * place. A failure keeps the last version that loaded and says so, rather than
-   * swapping the board for an error page.
-   */
-  const refresh = useCallback(async () => {
-    if (screen.kind !== 'open' || busyTicketId !== null) return
-    const path = screen.path
-    setRefreshing(true)
-
-    const result = await window.knightbook.readProject(path)
-    if (result.ok) {
-      // The user may have switched projects while this was reading.
-      setScreen((current) =>
-        current.kind === 'open' && current.path === path
-          ? { kind: 'open', path, project: result.value }
-          : current,
-      )
-      setRefreshToken((n) => n + 1)
-    } else {
-      setActionError(
-        `Could not refresh: ${result.message} What is shown is the last version that loaded.`,
-      )
-    }
-    setRefreshing(false)
-  }, [screen, busyTicketId, setScreen, setActionError])
-
-  useRefreshOnFocus(refresh, screen.kind === 'open')
-
-  const openTicket = useCallback((id: string, scrollTo: ScrollTarget | null = null) => {
-    setDetailId(id)
-    setDetailScroll(scrollTo)
-  }, [])
+  const navigation = useProjectNavigation(screen, load)
+  const { view, detailTicket, openTicket, closeTicket } = navigation
   const newTicket = useNewTicket(controls, openTicket)
 
+  const [searchOpen, search] = useDisclosure(false)
   useSearchShortcut(
     screen.kind === 'open',
-    detailId !== null || actions.completion.opened || actions.issue.opened || newTicket.opened,
+    navigation.detailId !== null ||
+      actions.completion.opened ||
+      actions.issue.opened ||
+      newTicket.opened,
     search.open,
   )
 
-  /*
-   * Both lists: an archived ticket is still a readable record, and the Archive
-   * tab opens it. Looking only at the board would make a row there open nothing
-   * at all, because the effect below would immediately close it again.
-   */
-  const detailTicket =
-    screen.kind === 'open' && detailId
-      ? (screen.project.tickets.find((t) => t.id === detailId) ??
-        screen.project.archivedTickets.find((t) => t.id === detailId))
-      : undefined
-
-  // A ticket can vanish between refreshes; close its dialog rather than leave it
-  // ready to reappear on its own.
-  useEffect(() => {
-    if (detailId && !detailTicket) setDetailId(null)
-  }, [detailId, detailTicket])
-
-  const switchProject = useCallback(
-    (path: string) => {
-      if (screen.kind === 'open' && screen.path === path) return
-      setView('board')
-      setDetailId(null)
-      setDocumentTarget(null)
-      void load(path)
-    },
-    [screen, load],
-  )
-
-  const openDocument = useCallback((path: string, scrollTo: ScrollTarget | null = null) => {
-    setDetailId(null)
-    setView('documents')
-    setDocumentTarget({ path, nonce: Date.now(), scrollTo })
-  }, [])
-
-  const [planTarget, setPlanTarget] = useState<{ id: string; nonce: number } | null>(null)
-  const openPlan = useCallback((id: string) => {
-    setDetailId(null)
-    setView('plans')
-    setPlanTarget({ id, nonce: Date.now() })
-  }, [])
-
   const links = useLinkNavigation({
     rootPath: screen.kind === 'open' ? screen.path : null,
-    openDocument,
+    openDocument: navigation.openDocument,
     openTicket,
   })
-  const backAction = (place: LinkPlace | null) =>
+  const backAction = (place: LinkPlace | null): BackTarget | null =>
     place && {
       label: place.kind === 'ticket' ? place.title : place.path,
       onBack: () => links.goBack(place),
@@ -178,7 +95,7 @@ export function App() {
             name={screen.project.name}
             checkoutPath={screen.project.checkoutPath}
             view={view}
-            onViewChange={setView}
+            onViewChange={navigation.setView}
             archivedCount={screen.project.archivedTickets.length}
             refreshing={refreshing}
             onRefresh={() => void refresh()}
@@ -189,7 +106,7 @@ export function App() {
                   ? 'A ticket is being updated. Switching is available once that finishes.'
                   : null
             }
-            onSwitchProject={switchProject}
+            onSwitchProject={navigation.switchProject}
             onOpenFolder={() => void choose()}
             onOpenSearch={search.open}
           />
@@ -240,47 +157,18 @@ export function App() {
             {/* The view gets what is left under an alert, not the whole height,
                 so its own scrolling regions still end inside the window. */}
             <div style={{ flex: 1, minHeight: 0 }}>
-              {view === 'documents' ? (
-                <DocumentsView
-                  rootPath={screen.path}
-                  openTarget={documentTarget}
-                  refreshToken={refreshToken}
-                  onFollowLink={(path, request) =>
-                    links.follow({ kind: 'document', path }, request)
-                  }
-                  backFor={(path) => backAction(links.backFrom({ kind: 'document', path }))}
-                />
-              ) : view === 'plans' ? (
-                <PlansView
-                  rootPath={screen.path}
-                  openTarget={planTarget}
-                  refreshToken={refreshToken}
-                  onOpenTicket={openTicket}
-                  onFollowLink={(request) => links.follow(null, request)}
-                />
-              ) : view === 'archive' ? (
-                <ArchiveView
-                  tickets={screen.project.archivedTickets}
-                  busyTicketId={busyTicketId}
-                  onOpen={openTicket}
-                  onRestore={actions.restore}
-                />
-              ) : (
-                <Board
-                  project={screen.project}
-                  busyTicketId={busyTicketId}
-                  onMove={actions.move}
-                  onComplete={actions.askToComplete}
-                  onReorder={actions.reorder}
-                  onReportIssue={actions.askAboutIssue}
-                  onResolveIssue={actions.resolveIssue}
-                  onReview={actions.review}
-                  onOpen={openTicket}
-                  onArchive={archive.archiveOne}
-                  onArchiveColumn={archive.askToArchiveColumn}
-                  onNewTicket={newTicket.open}
-                />
-              )}
+              <ProjectViewSwitch
+                rootPath={screen.path}
+                project={screen.project}
+                busyTicketId={busyTicketId}
+                refreshToken={refreshToken}
+                navigation={navigation}
+                links={links}
+                backAction={backAction}
+                actions={actions}
+                archive={archive}
+                onNewTicket={newTicket.open}
+              />
             </div>
           </Stack>
         )}
@@ -299,66 +187,38 @@ export function App() {
           rootPath={screen.path}
           ticket={detailTicket}
           isNext={screen.project.nextTicketId === detailTicket.id}
-          onClose={() => setDetailId(null)}
+          onClose={closeTicket}
           // Moving or completing hands off to the board's own flow, which shows
           // the result, so the dialog gets out of the way first.
           onMove={(status) => {
-            setDetailId(null)
+            closeTicket()
             actions.move(detailTicket.id, status)
           }}
           onSetType={(type) => actions.setType(detailTicket.id, type)}
           onSetBlocker={(blocker) => actions.setBlocker(detailTicket.id, blocker)}
           onComplete={() => {
-            setDetailId(null)
+            closeTicket()
             actions.askToComplete(detailTicket.id)
           }}
           onReportIssue={() => {
-            setDetailId(null)
+            closeTicket()
             actions.askAboutIssue(detailTicket.id)
           }}
           onResolveIssue={() => actions.resolveIssue(detailTicket.id)}
           onReview={(revision) => actions.review(detailTicket.id, revision)}
-          onOpenPlan={openPlan}
+          onOpenPlan={navigation.openPlan}
           onFollowLink={(request) =>
             links.follow(
               { kind: 'ticket', id: detailTicket.id, title: detailTicket.title },
               request,
             )
           }
-          scrollTo={detailScroll}
+          scrollTo={navigation.detailScroll}
           back={backAction(links.backFrom({ kind: 'ticket', id: detailTicket.id }))}
         />
       )}
 
-      <ArchiveColumnDialog
-        opened={archive.archiveColumn.opened}
-        status={archive.archiveColumn.status}
-        tickets={archive.archiveColumn.tickets}
-        onClose={archive.archiveColumn.close}
-        onConfirm={archive.archiveColumn.confirm}
-      />
-
-      <NewTicketDialog
-        opened={newTicket.opened}
-        saving={newTicket.saving}
-        error={newTicket.error}
-        onClose={newTicket.close}
-        onCreate={newTicket.create}
-      />
-
-      <CompletionDialog
-        opened={actions.completion.opened}
-        ticket={actions.completion.ticket}
-        onClose={actions.completion.close}
-        onConfirm={actions.completion.confirm}
-      />
-
-      <VerificationIssueDialog
-        opened={actions.issue.opened}
-        ticket={actions.issue.ticket}
-        onClose={actions.issue.close}
-        onConfirm={actions.issue.confirm}
-      />
+      <ProjectDialogs actions={actions} archive={archive} newTicket={newTicket} />
 
       {screen.kind === 'open' && (
         <TicketSearch
@@ -372,7 +232,7 @@ export function App() {
           // Opening a result shows the ticket wherever the user was, because
           // the detail view is not part of either the board or the documents.
           onOpenTicket={openTicket}
-          onOpenDocument={openDocument}
+          onOpenDocument={navigation.openDocument}
         />
       )}
     </AppShell>

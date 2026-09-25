@@ -23,7 +23,8 @@ import { allowSetupFor } from './project/setup-permit.js'
 import { registerArchiveHandlers } from './tickets/archive-ipc.js'
 import { buildView } from './project/project-view.js'
 import { toTicketDetail } from './tickets/ticket-view.js'
-import type { ProjectView, TicketSearchView } from '../shared/contract.js'
+import type { ProjectView } from '../shared/contract.js'
+import type { TicketSearchView } from '../shared/ticket-search-contract.js'
 
 /**
  * The narrow operation surface the renderer is allowed to call. Each handler

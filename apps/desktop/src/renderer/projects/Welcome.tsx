@@ -1,6 +1,6 @@
 import { Button, Card, Center, Group, Stack, Text, Title, UnstyledButton } from '@mantine/core'
 import { IconFolderOpen, IconHistory } from '@tabler/icons-react'
-import type { RememberedProject } from '../../shared/contract.js'
+import type { RememberedProject } from '../../shared/project-setup-contract.js'
 
 /**
  * The state before a project is open. A chosen folder with no project records is

@@ -1,7 +1,7 @@
 import { Alert, Loader, Modal, SegmentedControl, Stack, Text, TextInput } from '@mantine/core'
 import { IconAlertTriangle, IconSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import type { SearchScope } from '../../shared/contract.js'
+import type { SearchScope } from '../../shared/ticket-search-contract.js'
 import { useHeaderSearch } from './useHeaderSearch.js'
 import { DocumentHit, TicketHit, documentHitId, ticketHitId } from './SearchHits.js'
 

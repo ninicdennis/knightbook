@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Result, SearchScope, TicketSearchView } from '../../shared/contract.js'
+import type { Result } from '../../shared/contract.js'
+import type { SearchScope, TicketSearchView } from '../../shared/ticket-search-contract.js'
 import type { DocumentSearchView } from '../../shared/document-search-contract.js'
 
 /**

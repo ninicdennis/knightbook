@@ -1,4 +1,5 @@
-import type { Result, SearchHighlight } from './contract.js'
+import type { Result } from './contract.js'
+import type { SearchHighlight } from './ticket-search-contract.js'
 
 /**
  * Searching the workspace's included documents from the header search, beside

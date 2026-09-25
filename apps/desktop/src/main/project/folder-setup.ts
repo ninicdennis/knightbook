@@ -6,7 +6,7 @@ import {
   isProjectError,
   resolveProjectRoot,
 } from '@knightbook/core'
-import type { FolderInspection, SetupOutcome } from '../../shared/contract.js'
+import type { FolderInspection, SetupOutcome } from '../../shared/project-setup-contract.js'
 
 /**
  * Setting up a folder without an AI tool. It goes through the same core

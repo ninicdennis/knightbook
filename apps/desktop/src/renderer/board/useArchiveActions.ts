@@ -1,7 +1,8 @@
 import { useDisclosure } from '@mantine/hooks'
 import { useCallback, useState } from 'react'
-import type { ArchiveOutcome, Result, TicketStatus } from '../../shared/contract.js'
-import type { ScreenControls } from '../app/screen.js'
+import type { Result, TicketStatus } from '../../shared/contract.js'
+import type { ArchiveOutcome } from '../../shared/archive-contract.js'
+import type { ScreenControls } from '../projects/screen.js'
 
 /**
  * Taking tickets off the board, one at a time or a whole column. It has its own

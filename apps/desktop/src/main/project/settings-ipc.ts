@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { DEFAULT_SETTINGS, readSettings, saveSettings } from './app-state.js'
 import { guard } from '../guard.js'
 import { applyColorScheme } from '../window/window-theme.js'
-import type { AppSettings, ColorSchemeChoice } from '../../shared/contract.js'
+import type { AppSettings, ColorSchemeChoice } from '../../shared/settings-contract.js'
 
 /**
  * Reading and changing this installation's preferences. The renderer sends a

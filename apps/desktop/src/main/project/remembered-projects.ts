@@ -1,7 +1,7 @@
 import { stat } from 'node:fs/promises'
 import { basename } from 'node:path'
 import { projectExists, resolveProjectRoot } from '@knightbook/core'
-import type { RememberedProject } from '../../shared/contract.js'
+import type { RememberedProject } from '../../shared/project-setup-contract.js'
 
 export interface RememberedEntry {
   /** Absolute checkout path. */
