@@ -20,10 +20,20 @@ export interface DocumentProblem {
   reason: 'missing' | 'not_readable'
 }
 
+/** The user's name for a document folder. A label only: nothing on disk is renamed. */
+export interface FolderTitleView {
+  /** Project-relative folder path with forward slashes. */
+  path: string
+  title: string
+  /** The folder no longer exists, typically renamed outside the app. Kept until cleared. */
+  missing: boolean
+}
+
 export interface DocumentListView {
   documents: DocumentSummary[]
   /** Manifest entries that no longer resolve. Reported, never hidden. */
   problems: DocumentProblem[]
+  folderTitles: FolderTitleView[]
 }
 
 export interface DocumentReadView {
@@ -60,6 +70,12 @@ export interface DocumentsApi {
   includeDocumentFolder(rootPath: string): Promise<Result<DocumentListView>>
   /** Drops one manifest entry. The file or folder itself is left on disk. */
   removeDocumentEntry(rootPath: string, entry: string): Promise<Result<DocumentListView>>
+  /** Names a document folder, or clears its name with null. Renames nothing on disk. */
+  setDocumentFolderTitle(
+    rootPath: string,
+    folder: string,
+    title: string | null,
+  ): Promise<Result<DocumentListView>>
   readDocument(rootPath: string, path: string): Promise<Result<DocumentReadView>>
   /** The user's own review (D-003); a revision refuses content changed since shown. */
   reviewDocument(

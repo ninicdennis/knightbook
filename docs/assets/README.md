@@ -9,16 +9,25 @@ image-generation output. It is the only approved source artwork: the SVG attempt
 were rejected and removed, and nothing here should be traced, redrawn, or
 regenerated from them.
 
-`apps/desktop/build/icon.png` is derived from this file — a 1024×1024 resize, made
-with Electron's own `nativeImage`, which is what electron-builder turns into the
-Windows `.ico` and macOS `.icns` at package time. Regenerate it from this PNG
-rather than editing it directly, so there is one source image and not two that can
-drift apart.
+`apps/desktop/build/icon.png` is derived from this file, and electron-builder turns
+it into the Windows `.ico` and macOS `.icns` at package time. Regenerate it with
+`pnpm --filter @knightbook/desktop derive:icon` (`apps/desktop/scripts/derive-icon.cjs`)
+rather than editing it, so there is one source image and not two that can drift
+apart. This PNG itself is never modified.
 
-At 32 pixels and larger the knight stays legible. At 16 pixels — a small Windows
-taskbar, a favicon — the mark reduces to a navy tile with a pale shape in it,
-which is inherent to artwork with this much detail rather than something the
-resize introduced.
+The logo's artwork fills only about 50% × 63.5% of its square; the rest is
+transparent margin plus faint generator haze (alpha below 4 of 255, at most ~1.5%
+opaque). A plain resize carried that margin into the icon and wasted half of every
+native icon slot. Since 2026-09-25 the script crops to the pixels with alpha 4 or
+more, keeps the artwork's proportions, and fits its longer side into 1024 with a
+20-pixel margin: the artwork now fills 75.8% × 96.1%. Nothing of the knight or book
+is clipped; only the haze outside it is dropped.
+
+The packaged Windows icon, inspected on 2026-09-25, has seven 32-bit PNG frames:
+16, 24, 32, 48, 64, 128 and 256 pixels. Windows scales the nearest frame for sizes in
+between (20 and 40 pixels at 125% and 250% scaling). At 16 pixels the knight is now
+recognisable as a knight on a book rather than a pale shape on a navy tile, though
+fine detail such as the spine line is still lost at that size.
 
 Generation brief: a classic Staunton chess knight on a minimal closed book cover,
 navy and white, no text. Final edit prompt: remove only the dark horizontal line

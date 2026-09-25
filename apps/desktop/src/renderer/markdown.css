@@ -6,7 +6,7 @@
  * The --md-* properties below are the content styling contract: the reading
  * scale, measure, and surfaces that the future formatted editor must reproduce,
  * so a document looks the same being read and being edited. Change them here,
- * not per component. docs/ui-ux-design-direction.md records the same contract.
+ * not per component. docs/research/ui-ux-design-direction.md records the same contract.
  */
 .markdown-body {
   /* Scale: prose, then headings from largest to smallest. */

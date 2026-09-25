@@ -252,7 +252,7 @@ Built-in synchronization and automatic Git operations are excluded from the firs
 
 ## Open decisions
 
-Deferred delivery feature: [releases after merge](release-automation.md). Merging
+Deferred delivery feature: [releases after merge](proposals/release-automation.md). Merging
 changes into a designated release branch should eventually build and publish a
 GitHub Release automatically. Tooling, version policy, and platform validation
 remain proposed; implementation is deferred while the product is built out.
@@ -267,6 +267,10 @@ users' projects or in-app automatic updates.
 6. **Platform delivery:** supported OS versions and processor architectures, Linux packaging, and MCP process setup/lifecycle. Windows, macOS, and Linux are all required, and MCP must work with the app window closed.
 
 ## Accepted decisions
+
+- **D-024 — App icon cropped to the artwork (2026-09-25):** Refines D-021. `apps/desktop/build/icon.png` is no longer a plain resize of the logo: it is cropped to the logo's visible artwork and fitted into the square with a small margin, proportions unchanged, so the knight and book fill about 76% × 96% of each native icon slot instead of 50% × 64%. The approved logo PNG is unchanged, and the derivation is a script (`derive:icon`) documented in [the assets README](assets/README.md). The native titlebar and controls are kept; the gain comes from the artwork, not a custom titlebar.
+
+- **D-023 — Documents can be created through MCP, without templates (2026-09-25):** `document_create` writes a new `.md` file at a project-relative path, creating missing folders, and includes it in the workspace, so an AI client with no filesystem access of its own can capture an idea or a specification as a document (validation scenario step 1). It never overwrites an existing file; the check and the write happen under the shared write lock. A file inside an already-included folder is covered by that folder's entry and gets no second entry. No template mechanism is provided through MCP: an AI already writes the whole content, so a template would only be a starting text it can compose itself, and D-010 keeps structure the user's choice. The "document from an optional template" half of scenario step 14 is therefore dropped for MCP and left to the in-app document creation ticket (`6f8476ef`), where a person benefits from a starting shape.
 
 - **D-022 — Plans as one file each, read in the app first (2026-09-24):** The user chose to store each plan as `.projectspace/plans/<id>.md`, found by listing that folder the way tickets are, so a project written before plans existed has none and needs no migration. YAML frontmatter holds the plan's id, title, and an ordered `phases` list; each phase has a stable id, a title, optional `scope` and `value` notes, and the ids of the tickets it groups. The Markdown body is freeform goals, ideas and notes with no required headings. Phases in the body as headings were rejected because they impose prose structure and a hand edit could silently break a phase's identity. A plan stores nothing about its tickets; progress is computed from them each time, a missing or unreadable reference is never counted as done, and a plan or phase with no tickets is empty rather than finished. For the first version the user chose to read plans in the app and write them through MCP (`plan_create`, `plan_update`) or the plan's own file; in-app editing is a separate ticket.
 

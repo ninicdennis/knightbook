@@ -100,15 +100,23 @@ export {
 } from './schema.js'
 export {
   includeDocuments,
+  createDocument,
   listIncludedDocuments,
   readDocument,
   removeFromWorkspace,
   writeDocument,
+  type CreatedDocument,
   type DocumentContent,
   type DocumentListing,
   type DocumentProblem,
   type IncludedDocument,
 } from './documents.js'
+export {
+  FOLDER_TITLE_MAX_LENGTH,
+  listFolderTitles,
+  setFolderTitle,
+  type FolderTitle,
+} from './folder-titles.js'
 export { searchProject, type SearchHit, type SearchResult } from './search.js'
 export {
   searchTickets,

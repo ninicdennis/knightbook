@@ -177,6 +177,7 @@ export function makeApi(): KnightbookApi {
     restoreTicket: boardUnchanged(),
     readTicket: vi.fn().mockResolvedValue({ ok: true, value: detail() }),
     openTicketExternally: vi.fn().mockResolvedValue({ ok: true, value: null }),
+    createTicket: vi.fn(),
     reorderBacklog: boardUnchanged(),
     searchTickets: vi.fn().mockResolvedValue({
       ok: true,
@@ -196,16 +197,19 @@ export function makeApi(): KnightbookApi {
     exportSkill: vi.fn().mockResolvedValue({ ok: true, value: null }),
     listPlans: vi.fn().mockResolvedValue({ ok: true, value: { plans: [], problems: [] } }),
     openPlanExternally: vi.fn().mockResolvedValue({ ok: true, value: null }),
-    listDocuments: vi.fn().mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
+    listDocuments: vi
+      .fn()
+      .mockResolvedValue({ ok: true, value: { documents: [], problems: [], folderTitles: [] } }),
+    setDocumentFolderTitle: vi.fn(),
     includeDocumentFiles: vi
       .fn()
-      .mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
+      .mockResolvedValue({ ok: true, value: { documents: [], problems: [], folderTitles: [] } }),
     includeDocumentFolder: vi
       .fn()
-      .mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
+      .mockResolvedValue({ ok: true, value: { documents: [], problems: [], folderTitles: [] } }),
     removeDocumentEntry: vi
       .fn()
-      .mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
+      .mockResolvedValue({ ok: true, value: { documents: [], problems: [], folderTitles: [] } }),
     readDocument: vi.fn(),
     reviewDocument: vi.fn(),
     documentChanges: vi.fn().mockResolvedValue({ ok: true, value: noBaseline() }),

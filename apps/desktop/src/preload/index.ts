@@ -29,6 +29,7 @@ const api: KnightbookApi = {
   archiveTickets: (rootPath, targets) => ipcRenderer.invoke('ticket:archive', rootPath, targets),
   restoreTicket: (rootPath, id, revision) =>
     ipcRenderer.invoke('ticket:restore', rootPath, id, revision),
+  createTicket: (rootPath, input) => ipcRenderer.invoke('ticket:create', rootPath, input),
   readTicket: (rootPath, id) => ipcRenderer.invoke('ticket:read', rootPath, id),
   openTicketExternally: (rootPath, id) => ipcRenderer.invoke('ticket:openExternally', rootPath, id),
   searchTickets: (rootPath, query, scope) =>
@@ -53,6 +54,8 @@ const api: KnightbookApi = {
   includeDocumentFolder: (rootPath) => ipcRenderer.invoke('documents:includeFolder', rootPath),
   removeDocumentEntry: (rootPath, entry) =>
     ipcRenderer.invoke('documents:removeEntry', rootPath, entry),
+  setDocumentFolderTitle: (rootPath, folder, title) =>
+    ipcRenderer.invoke('documents:setFolderTitle', rootPath, folder, title),
   readDocument: (rootPath, path) => ipcRenderer.invoke('document:read', rootPath, path),
   reviewDocument: (rootPath, path, revision) =>
     ipcRenderer.invoke('document:review', rootPath, path, revision),

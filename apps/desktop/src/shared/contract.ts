@@ -28,11 +28,13 @@ export type {
   DocumentReadView,
   DocumentSummary,
   DocumentsApi,
+  FolderTitleView,
   LinkDestinationView,
 } from './documents-contract.js'
 import type { DocumentsApi } from './documents-contract.js'
 import type { PlansApi } from './plans-contract.js'
 import type { SkillSetupApi } from './skill-setup-contract.js'
+import type { TicketCreateApi } from './ticket-create-contract.js'
 
 export type TicketStatus = 'backlog' | 'in_progress' | 'verification' | 'done'
 
@@ -41,9 +43,9 @@ export type MovableStatus = Exclude<TicketStatus, 'done'>
 
 /**
  * What kind of work a ticket is, independent of where it sits on the board.
- * Null means untyped, which is a real state and not a fourth kind of work.
+ * Null means untyped, which is a real state and not another kind of work.
  */
-export type TicketType = 'feature' | 'bug' | 'task'
+export type TicketType = 'feature' | 'bug' | 'task' | 'research' | 'documentation'
 
 export interface CompletionView {
   decisionSource: 'direct_user_action' | 'reported_user_instruction'
@@ -285,7 +287,8 @@ export interface WindowTitleProject {
   checkoutPath: string
 }
 
-export interface KnightbookApi extends DocumentsApi, ReviewChangesApi, SkillSetupApi, PlansApi {
+export interface KnightbookApi
+  extends DocumentsApi, ReviewChangesApi, SkillSetupApi, PlansApi, TicketCreateApi {
   /** Projects this machine has opened, most recent first, each checked for availability. */
   rememberedProjects(): Promise<RememberedProject[]>
   /** Forgets one entry and returns the updated list. Deletes nothing on disk. */

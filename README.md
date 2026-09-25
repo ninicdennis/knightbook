@@ -10,14 +10,15 @@ person decides what is done.
 ## What it does
 
 - **A board of tickets** in Backlog, In progress, Verification and Done, with
-  dependencies, a manual backlog order, archiving, and search. Only the user can
-  accept work as Done, and each acceptance records who decided.
+  dependencies, a manual backlog order, archiving, and search. New tickets come from
+  the Backlog column or an AI tool. Only the user can accept work as Done, and each
+  acceptance records who decided.
 - **Plans** such as an MVP or a launch, whose phases group existing tickets, with
   progress read from the tickets themselves. The app shows them; your AI tool, or
   your editor, writes them for now.
 - **Documents where they already are.** Existing Markdown is included by path and
   rendered read-only, with links between documents and tickets. Editing happens in
-  your own editor.
+  your own editor; an AI tool can also create new documents through MCP.
 - **Review you can trust.** Tickets and documents show whether you reviewed them,
   and what changed since. Only a person can record a review.
 - **AI access you control.** One MCP configuration reaches the projects you allow,
@@ -150,10 +151,10 @@ purpose, because renaming them would migrate files in every existing project
 | [Using Knightbook with AI tools](docs/using-knightbook.md) | Connecting a client, the status bar, the workflow skill, enforced rules, documents and links |
 | [Specification](docs/project-workspace-spec.md) | What the product does, and every accepted decision |
 | [Technical design](docs/project-workspace-technical-design.md) | Architecture, storage, MCP, and how each part was built |
-| [UI and UX direction](docs/ui-ux-design-direction.md) | Visual and interaction principles for the app |
+| [UI and UX direction](docs/research/ui-ux-design-direction.md) | Visual and interaction principles for the app |
 | [Packaging findings](docs/experiments/packaging-findings.md) | How the bundled runtime and MCP server ship, and what was tested where |
 | [Editor preservation findings](docs/experiments/editor-preservation-findings.md) | Why the formatted editor is blocked, and what would unblock it |
-| [Release automation](docs/release-automation.md) | A proposal for building and publishing releases; not enabled |
+| [Release automation](docs/proposals/release-automation.md) | A proposal for building and publishing releases; not enabled |
 | [AGENTS.md](AGENTS.md) | Working agreement for AI tools changing this repository |
 
 This repository tracks its own work in Knightbook: open this folder in the app to

@@ -1,6 +1,8 @@
 import {
+  createDocument,
   documentRecordId,
   includeDocuments,
+  listFolderTitles,
   listIncludedDocuments,
   readDocument,
   readTicket,
@@ -75,7 +77,9 @@ export function registerDocumentTools(server: McpServer, scope: ProjectScope): v
       title: 'List documents',
       description:
         'Included documents, resolved to the files they point at now. Entries that ' +
-        'no longer resolve are reported as problems rather than omitted silently.',
+        'no longer resolve are reported as problems rather than omitted silently. ' +
+        'folder_titles are the names the user gave document folders in the app; a ' +
+        'title renames nothing, and missing: true means that folder no longer exists.',
       inputSchema: z.object({ ...scope.shape }),
     },
     async (input) =>
@@ -90,7 +94,11 @@ export function registerDocumentTools(server: McpServer, scope: ProjectScope): v
             review: await documentReview(project, document.path),
           })
         }
-        return echo(project, input, { documents, problems: listing.problems })
+        return echo(project, input, {
+          documents,
+          problems: listing.problems,
+          folder_titles: await listFolderTitles(project),
+        })
       }),
   )
 
@@ -139,6 +147,33 @@ export function registerDocumentTools(server: McpServer, scope: ProjectScope): v
           input.expected_revision,
         )
         return echo(project, input, { path: written.path, revision: written.revision })
+      }),
+  )
+
+  server.registerTool(
+    'document_create',
+    {
+      title: 'Create document',
+      description:
+        'Create a new Markdown (.md) document at a project-relative path and include it ' +
+        'in the workspace. Missing folders are created. This never overwrites: if the ' +
+        'file already exists it fails with already_exists, and you should document_read ' +
+        'and document_write it instead. The content is written exactly as given; there ' +
+        'are no templates and no required sections.',
+      inputSchema: z.object({
+        ...scope.shape,
+        path: z.string().min(1),
+        content: z.string(),
+      }),
+    },
+    async (input) =>
+      await guard(async () => {
+        const created = await createDocument(await scope.open(input), input.path, input.content)
+        return echo(created.project, input, {
+          path: created.document.path,
+          revision: created.document.revision,
+          included_via: created.document.includedVia,
+        })
       }),
   )
 

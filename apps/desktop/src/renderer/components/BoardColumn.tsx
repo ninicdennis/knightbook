@@ -1,5 +1,15 @@
-import { Box, Group, Menu, ScrollArea, Stack, Text, UnstyledButton } from '@mantine/core'
-import { IconArchive, IconDotsVertical } from '@tabler/icons-react'
+import {
+  ActionIcon,
+  Box,
+  Group,
+  Menu,
+  ScrollArea,
+  Stack,
+  Text,
+  Tooltip,
+  UnstyledButton,
+} from '@mantine/core'
+import { IconArchive, IconDotsVertical, IconPlus } from '@tabler/icons-react'
 import { useDroppable } from '@dnd-kit/react'
 import type { ReactNode } from 'react'
 import type { ProjectView, TicketStatus } from '../../shared/contract.js'
@@ -20,6 +30,8 @@ interface ColumnProps {
   quiet?: boolean
   /** Opens the confirmation for archiving this column. Null hides the menu. */
   onArchiveColumn: (() => void) | null
+  /** Opens the new-ticket form. Only Backlog has one: new tickets always start there. */
+  onNewTicket?: () => void
   children: ReactNode
 }
 
@@ -28,6 +40,7 @@ export function BoardColumn({
   count,
   quiet = false,
   onArchiveColumn,
+  onNewTicket,
   children,
 }: ColumnProps) {
   const { ref, isDropTarget } = useDroppable({ id: status })
@@ -68,6 +81,19 @@ export function BoardColumn({
           </Text>
         </Group>
         <Group gap={4} wrap="nowrap">
+          {onNewTicket && (
+            <Tooltip label="New ticket" withinPortal>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                aria-label={`New ticket in ${STATUS_LABEL[status]}`}
+                onClick={onNewTicket}
+              >
+                <IconPlus size={14} />
+              </ActionIcon>
+            </Tooltip>
+          )}
           <Text size="sm" c="dimmed" fw={500} aria-label={`${count} in ${STATUS_LABEL[status]}`}>
             {count}
           </Text>

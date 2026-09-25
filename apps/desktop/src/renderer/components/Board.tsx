@@ -36,6 +36,7 @@ interface BoardProps {
   onArchive: (ticketId: string) => void
   /** Opens the confirmation for archiving every ticket in one column. */
   onArchiveColumn: (status: TicketStatus) => void
+  onNewTicket: () => void
 }
 
 export function Board({
@@ -50,6 +51,7 @@ export function Board({
   onOpen,
   onArchive,
   onArchiveColumn,
+  onNewTicket,
 }: BoardProps) {
   const [doneExpanded, setDoneExpanded] = useState(false)
 
@@ -113,6 +115,7 @@ export function Board({
                 count={tickets.length}
                 quiet={status === 'done'}
                 onArchiveColumn={() => onArchiveColumn(status)}
+                {...(status === 'backlog' ? { onNewTicket } : {})}
               >
                 {tickets.length === 0 ? (
                   <EmptyColumn status={status} project={project} />

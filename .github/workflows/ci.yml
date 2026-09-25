@@ -2,7 +2,7 @@ name: CI
 
 # Validates every pull request and every push to main. It has no secrets, no
 # publishing and read-only repository access. Releases are a separate, deferred
-# piece of work (docs/release-automation.md) and must stay separate from this.
+# piece of work (docs/proposals/release-automation.md) and must stay separate from this.
 on:
   pull_request:
     branches: [main]

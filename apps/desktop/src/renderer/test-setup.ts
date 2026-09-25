@@ -36,4 +36,7 @@ if (typeof window !== 'undefined') {
   }
 
   window.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
+
+  // Select scrolls its highlighted option into view from a timer.
+  Element.prototype.scrollIntoView = () => {}
 }

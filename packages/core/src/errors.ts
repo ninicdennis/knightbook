@@ -7,6 +7,8 @@ export type ProjectErrorCode =
   | 'outside_project'
   | 'not_found'
   | 'already_exists'
+  /** Inside the project, but not a place this kind of record can go (a document must be .md). */
+  | 'invalid_path'
   | 'revision_conflict'
   | 'invalid_record'
   | 'unsupported_schema_version'

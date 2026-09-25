@@ -202,3 +202,86 @@
     overflow: visible;
   }
 }
+
+/* Folders in the Documents list. Indentation carries the nesting; the row
+   itself stays as quiet as a document row. */
+.ps-docs-group {
+  margin: 0;
+  padding: 0 0 0 14px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ps-docs-folder {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: var(--mantine-radius-sm);
+}
+.ps-docs-folder:hover {
+  background: var(--ps-column-bg-active);
+}
+.ps-docs-folder-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+  color: inherit;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+}
+.ps-docs-chevron {
+  flex-shrink: 0;
+  transition: transform 120ms ease;
+}
+.ps-docs-folder-toggle[aria-expanded='true'] .ps-docs-chevron {
+  transform: rotate(90deg);
+}
+.ps-docs-folder-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ps-docs-folder-name {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+  font-size: var(--mantine-font-size-xs);
+  color: var(--ps-text-muted);
+}
+.ps-docs-folder-rename {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--mantine-radius-sm);
+  color: var(--ps-text-muted);
+  opacity: 0.35;
+}
+.ps-docs-folder:hover .ps-docs-folder-rename,
+.ps-docs-folder-rename:focus-visible {
+  opacity: 1;
+}
+.ps-docs-stale {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--mantine-spacing-xs);
+  border-top: 1px solid var(--ps-hairline);
+}
+.ps-docs-stale-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-xs);
+}
+.ps-docs-folder-toggle > svg {
+  flex-shrink: 0;
+}

@@ -56,5 +56,16 @@ meaningful content change, the same as `depends_on` or `related_documents`, so i
 make a recorded review stale; that is intended, because reclassifying work is something
 a reviewer should be told about.
 
+## Decision: Research and Documentation added (2026-09-25)
+
+At the user's request (ticket `a74a2e70-9bc6-4da2-85d1-5b51ef606397`) the field gained
+two more words, `research` and `documentation`, making five choices plus untyped.
+Research is investigation, comparison or evidence gathering; Documentation is creating,
+improving or maintaining written guides and reference. Task stays the catch-all for
+maintenance and other general work, so nothing that was a Task needs reclassifying, and
+no existing ticket was changed. The UI shows 🔎 Research and 📝 Documentation, with the
+word always beside the emoji. Still one optional type per ticket, not a tag list, and
+the version-increment rule above applies to every type.
+
 The internal-links recommendations in the first half of this document are still
 unimplemented, and are ticket `db7cff48-77cf-46c4-9173-62ee9d1b3490`.

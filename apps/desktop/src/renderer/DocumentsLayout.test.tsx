@@ -19,6 +19,7 @@ function listing(): DocumentListView {
       { path: 'docs/design.md', title: 'design', includedVia: 'docs', review: UNREVIEWED },
     ],
     problems: [],
+    folderTitles: [],
   }
 }
 
@@ -90,7 +91,7 @@ describe('documents states', () => {
     await openDocuments()
     const nav = await screen.findByRole('navigation', { name: 'Documents' })
 
-    const readme = within(nav).getByRole('button', { name: /^README README\.md/ })
+    const readme = within(nav).getByRole('button', { name: /^README/ })
     await waitFor(() => expect(readme.getAttribute('aria-current')).toBe('true'))
     expect(within(readme).getByText('Not reviewed')).toBeTruthy()
   })

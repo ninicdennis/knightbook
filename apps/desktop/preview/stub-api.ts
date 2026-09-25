@@ -270,6 +270,24 @@ export const stubApi: KnightbookApi = {
     record('readTicket', id)
     return stubTicketDetail(PROJECT, id)
   },
+  // Add ?createFails to the preview URL to see the form keep a failed write open.
+  createTicket: async (_root, input) => {
+    record('createTicket', input)
+    if (new URLSearchParams(window.location.search).has('createFails')) {
+      return {
+        ok: false,
+        code: 'locked',
+        message: 'Another Knightbook process is writing to this project. Try again.',
+      }
+    }
+    const id = `new-${PROJECT.tickets.length}`
+    PROJECT.tickets.splice(
+      PROJECT.tickets.filter((t) => t.status === 'backlog').length,
+      0,
+      ticket({ id, title: input.title, status: 'backlog', type: input.type }),
+    )
+    return { ok: true, value: { id, project: { ...PROJECT, tickets: [...PROJECT.tickets] } } }
+  },
   openTicketExternally: async (_root, id) => {
     record('openTicketExternally', id)
     return { ok: true, value: null }

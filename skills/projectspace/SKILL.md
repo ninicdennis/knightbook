@@ -97,11 +97,12 @@ its `checkout_id`.
   ticket rests on unaccepted work.
 - `blocker` is free text saying why a ticket cannot move. Keep it accurate. Set it
   when you are stuck, and clear it (`null`) when you are not.
-- `type` is `feature`, `bug`, `task`, or `null`. It says what kind of work a ticket
-  is and nothing about its state: it does not mean ready, reviewed, accepted, or
-  released. Most existing tickets are untyped, and that is not a gap to fill.
-  The words are borrowed from Conventional Commits only loosely — a breaking change
-  can be any of the three, so never derive a version bump or a release from a type.
+- `type` is `feature`, `bug`, `research`, `documentation`, `task`, or `null`. It
+  says what kind of work a ticket is and nothing about its state: it does not mean
+  ready, reviewed, accepted, or released. Most existing tickets are untyped, and
+  that is not a gap to fill. Feature and Bug are borrowed from Conventional Commits
+  only loosely — a breaking change can be any type, so never derive a version bump
+  or a release from a type.
 - A Done ticket with `completion_unattributed: true` has no decision the app or MCP
   recorded: its completion block is missing, or was edited into a combination no
   write path produces, and `completion` is then `null`. Do not describe it as
@@ -180,17 +181,19 @@ Constraints, decisions already made, links to the relevant documents.
 ```
 
 Links in a ticket body are ordinary Markdown, relative to the ticket file in
-`.projectspace/tickets/`: `[direction](../../docs/ui-ux-design-direction.md)` for a
+`.projectspace/tickets/`: `[direction](../../docs/research/ui-ux-design-direction.md)` for a
 document, `[other](<ticket id>.md)` for another ticket, and `#heading-slug` for a
 heading. `related_documents` is different: those are project-relative paths
-(`docs/ui-ux-design-direction.md`), not relative to the ticket.
+(`docs/research/ui-ux-design-direction.md`), not relative to the ticket.
 
 - One ticket, one verifiable outcome. If it has two, split it.
 - Put prerequisites in `depends_on` (ticket ids) and the documents that explain it in
   `related_documents` (project-relative paths).
 - Set `type` when the user has said what kind of work it is, or when it is plainly
-  one of the three: `feature` for a new or expanded capability, `bug` for existing
-  behaviour that is wrong, `task` for maintenance, investigation or documentation.
+  one of them: `feature` for a new or expanded capability, `bug` for existing
+  behaviour that is wrong, `research` for investigation, comparison or evidence
+  gathering, `documentation` for creating or maintaining written guides and
+  reference, and `task` for maintenance and other general work.
   Leave it out when it is not obvious — untyped is a valid state, and guessing puts
   a classification nobody made onto their board. Never bulk-classify old tickets.
 - New tickets always start in Backlog. `ticket_reorder_backlog` sets the manual
@@ -224,12 +227,17 @@ user's housekeeping decision, not a workflow step.
 - `document_read` returns the original Markdown and a `revision`. `document_write`
   needs that revision back and writes the **whole file**, so keep everything you did
   not mean to change, including existing frontmatter.
-- `document_write` edits an existing document. It cannot create one. To add a new
-  document, create the file with your own file tools if you have them, then
-  `documents_include` it. Otherwise ask the user to create it.
+- `document_write` edits an existing document. It cannot create one; use
+  `document_create` with a project-relative `.md` path and the full content. It
+  creates missing folders, includes the new file in the workspace, and never
+  overwrites: on `already_exists`, read the file and write it instead. There are no
+  templates or required sections, so give the document the structure the user wants.
 - Record decisions in the project's own documents (the ones `documents_list` shows),
   with the reasoning and the date, so the next session can find them. Do not bury a
   decision in a ticket note only.
+- `documents_list` also returns `folder_titles`: names the user gave document
+  folders in the app, such as "Documentation" for `docs`. Use them when you talk
+  about where a document is. They rename nothing on disk, and you cannot set them.
 - `documents_include` registers existing files or folders in place. It does not move,
   copy, or rewrite them, and it adds no frontmatter to them.
 - `documents_remove` drops one manifest entry. It un-includes a document; it never
@@ -286,8 +294,8 @@ When the user points you at a project that already has code and documentation:
 
 ## What you cannot do through MCP today
 
-Record a review, set Done with `ticket_update`, delete a ticket, create a new
-document, or enable or disable a project for AI access. On a shared connection you
+Record a review, set Done with `ticket_update`, delete a ticket or a document, or
+enable or disable a project for AI access. On a shared connection you
 also cannot create a project. If the user asks for one of these, say it is not
 available to you and, where the app offers it, point them to it.
 

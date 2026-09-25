@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DocumentListView, KnightbookApi, ReviewView } from '../shared/contract.js'
@@ -25,6 +25,7 @@ function listing(): DocumentListView {
       { path: 'docs/notes.md', title: 'notes', includedVia: 'docs', review: REVIEWED },
     ],
     problems: [{ path: 'docs/moved-away.md', reason: 'missing' }],
+    folderTitles: [],
   }
 }
 
@@ -91,7 +92,7 @@ describe('removing an entry', () => {
   it('removes the entry the manifest holds, not the document path', async () => {
     api.removeDocumentEntry = vi.fn().mockResolvedValue({
       ok: true,
-      value: { documents: [listing().documents[0]!], problems: [] },
+      value: { documents: [listing().documents[0]!], problems: [], folderTitles: [] },
     })
     await openDocuments()
 
@@ -134,9 +135,12 @@ describe('including documents', () => {
     await user.click(await screen.findByText('Markdown files…'))
 
     expect(api.includeDocumentFiles).toHaveBeenCalledWith(CHECKOUT)
-    // It appears twice on purpose: as a document to read, and as the manifest
-    // entry that can be removed again.
-    await waitFor(() => expect(screen.getAllByText('CONTRIBUTING.md')).toHaveLength(2))
+    // As a document to read, and as the manifest entry that can be removed again.
+    const nav = screen.getByRole('navigation', { name: 'Documents' })
+    await waitFor(() =>
+      expect(within(nav).getByRole('button', { name: /^CONTRIBUTING/ })).toBeTruthy(),
+    )
+    expect(screen.getByText('CONTRIBUTING.md')).toBeTruthy()
   })
 
   it('offers folders as their own action, because one dialog cannot do both', async () => {

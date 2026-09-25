@@ -98,6 +98,7 @@ beforeEach(() => {
     value: {
       documents: [{ path: 'README.md', title: 'README', includedVia: 'README.md', review: STALE }],
       problems: [],
+      folderTitles: [],
     },
   })
   api.readDocument = vi.fn().mockResolvedValue({
