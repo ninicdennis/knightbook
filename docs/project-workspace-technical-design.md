@@ -159,6 +159,7 @@ repository/
   .projectspace/
     project.md                      identity, included paths, board order
     tickets/<stable-id>.md           one canonical file per ticket
+    plans/<stable-id>.md             one file per plan: phases referencing tickets (D-022)
     documents/<stable-id>.md         metadata pointing to an existing document
     reviews/tickets/<ticket-id>/<reviewed-at>.md
     reviews/documents/<document path>/<reviewed-at>.md
@@ -173,6 +174,10 @@ Folder names are proposals. Project creation adds the reserved folder only when 
 - Review snapshots are historical evidence of what the user reviewed, not another editable source of current content. Create one on explicit human content review, not on every save. Preserve the source and enough metadata to identify the record, review time, and revision.
 - Review history is split by kind and named the way the records themselves are, so one record's history is findable by reading the repository: a ticket's snapshots sit under `reviews/tickets/<ticket id>/`, and a document's under `reviews/documents/` followed by that document's own project-relative path as real nested folders. Nothing in the path is percent-encoded. A ticket id must be a single plain folder name and a document path must stay inside `reviews/documents/`; a record id that cannot satisfy that is refused rather than written somewhere else. Because reviews of documents are keyed by path, renaming or moving a document still loses its review history — stable document ids remain a separate decision.
 - Store local checkout paths, window position, and recent-project preferences outside the repository as disposable app state. These are not project content and need not be Markdown. Runtime locks and temporary saves are likewise non-authoritative.
+
+### Showing a ticket's id as built (2026-09-24)
+
+The ticket dialog shows the id as its first eight characters, in the quietest style in the header, with the full id in a tooltip and on the copy control's accessible name. Eight characters is the form this project's own notes already use to name tickets, and it is the start of the filename in `.projectspace/tickets/`, so it can be read aloud and matched by eye. What is copied is always the whole id, because `depends_on` and the MCP tools take nothing shorter. So an abbreviation that ever collided could mislead a reader but could never reach another tool. Copying reports success, and says so when the clipboard refuses.
 
 `documents_include` updates only the manifest. Create per-document metadata later when an operation needs a stable document reference or review record, under the shared write lock. Find an existing mapping by canonical in-project path before creating one; repeated registration is idempotent. Persist metadata before emitting its stable ID or writing a ticket link to it. An interruption can leave unused metadata, but must not make included source files disappear. Report invalid/missing source paths without deleting metadata or touching the sources. Do not make manifest inclusion depend on successful creation of a second file.
 
@@ -475,6 +480,17 @@ The minimal read surface returns metadata/snippets by default and full content o
 
 Ship portable Markdown workflow guidance, with a skill package for clients that support it after validation. It explains: read context, distinguish observed facts from assumptions, choose/start work only when asked, leave results in Verification, record Done only on explicit user instruction, and preserve useful handoff notes. An MCP connection does not itself enforce that behavior. Keep guidance distinct from project evidence and data-validation rules.
 
+### Shipping the workflow skill as built (2026-09-24)
+
+The packaged app carries `skills/projectspace/` in `extraResources` as `resources/skills/projectspace/`, copied straight from the repository folder so there is one source. A packaging test compares the shipped folder with the source file by file. In development the host reads the repository copy directly.
+
+**Set up your AI tool** in the MCP panel installs into the four folders the clients document, re-checked on 2026-09-24: Claude Code's `~/.claude/skills/projectspace` and `.claude/skills/projectspace`, and Codex's `~/.agents/skills/projectspace` and `.agents/skills/projectspace`. The renderer names a target by id; the host resolves every path. Each target reads as absent, matching, outdated, or modified.
+
+- **Outdated needs evidence.** When Knightbook installs a folder it records the folder's content hash in `app-state.json` (`installedSkills`). A folder that differs from the shipped skill but still matches that hash is an unedited old install, and may be updated after the user confirms. Any other difference is reported as modified and never overwritten, because an older version and the user's own edits cannot be told apart without the record. Losing `app-state.json` therefore makes old installs read as modified, which errs toward not overwriting.
+- **The state is re-checked at write time**, so a folder edited after the dialog showed it is refused. New folders are built beside the target and moved into place, so a client never loads a half-written skill.
+- **Export** writes a new `projectspace` folder into a folder the user picks and refuses if one is already there. **Copy skill text** covers clients without skills.
+- **A file on disk is not activation.** The dialog says it can confirm placement only; whether a client loaded the skill is visible only in the client.
+
 ## 10. Formatted editor boundary
 
 Keep the source file as the canonical document. Retain original bytes, separate any existing frontmatter without rewriting it, and parse only for display/editing. Use one editor candidate initially.
@@ -486,6 +502,12 @@ Keep the source file as the canonical document. Retain original bytes, separate 
 - Keep a built-in source editor optional. The external-editor fallback is sufficient for the initial experiment.
 
 Unsupported-content detection itself must be tested. A parser producing an AST does not establish that the editor can serialize that content safely.
+
+### Opening a ticket's file as built (2026-09-24)
+
+Tickets get the same external-editor handoff as documents: **Edit externally** in the ticket dialog, beside the ticket's details rather than among Review and Accept, because opening a file is not a decision about the work. The renderer sends only the ticket id. The host accepts a plain id with no separators, builds `.projectspace/tickets/<id>.md`, confirms it is inside the tickets folder, and reads it through the project boundary before handing it to `shell.openPath`. A failure the shell reports is shown in the dialog.
+
+The file is read as raw text, not parsed as a ticket. A record broken by conflict markers or an unsupported schema is exactly the one a person most needs to fix by hand, and refusing it would send them looking for a UUID filename. Existence and containment are still proven. Returning to the window refreshes the ticket through the ordinary focus refresh; an outside edit never records a review or acceptance.
 
 ### Preservation research evidence
 

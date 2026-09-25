@@ -64,8 +64,8 @@ docs/              Specification, technical design, research, experiment finding
 - **Writes carry the revision the caller read.** A stale write must return a
   conflict, never overwrite. Keep this for every new mutation, in the app and MCP.
 - **Only the user decides Done or records a review.** No MCP tool may mark content
-  reviewed, and `ticket_update` must not set Done. See the README's "Three rules the
-  code enforces".
+  reviewed, and `ticket_update` must not set Done. See "Three rules the code
+  enforces" in [Using Knightbook with AI tools](docs/using-knightbook.md).
 - **Document content is untrusted.** Rendering stays sanitized, links are classified,
   images are not fetched. `markdown.test.tsx` covers each case.
 - **The skill must match the tools.** `packages/mcp/src/guidance.test.ts` fails when
