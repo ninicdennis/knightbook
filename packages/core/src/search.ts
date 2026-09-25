@@ -1,7 +1,5 @@
-import { readFile } from 'node:fs/promises'
-import { resolveInRoot } from './paths.js'
+import { readSearchableDocuments } from './document-search.js'
 import type { Project } from './project.js'
-import { listIncludedDocuments } from './documents.js'
 import type { TicketType } from './schema.js'
 import { listTicketRecords } from './tickets.js'
 
@@ -14,8 +12,6 @@ import { listTicketRecords } from './tickets.js'
 
 const MAX_RESULTS = 25
 const SNIPPET_RADIUS = 90
-/** Documents larger than this are searched by title only, to bound the work. */
-const MAX_SCANNED_BYTES = 512 * 1024
 
 export interface SearchHit {
   readonly kind: 'document' | 'ticket'
@@ -62,19 +58,13 @@ export async function searchProject(project: Project, query: string): Promise<Se
     })
   }
 
-  const { documents } = await listIncludedDocuments(project)
-  for (const document of documents) {
+  // The same scan the board's document search uses (document-search.ts), so the
+  // two agree on which documents exist, are too large, or could not be read.
+  const readable = await readSearchableDocuments(project)
+  unreadable.push(...readable.unreadable)
+  for (const document of readable.documents) {
     const inTitle = document.title.toLowerCase().includes(needle)
-
-    let content: string
-    try {
-      content = await readFile(resolveInRoot(project.root, document.path), 'utf8')
-    } catch {
-      unreadable.push(document.path)
-      continue
-    }
-
-    const match = content.length > MAX_SCANNED_BYTES ? null : findMatch(content, needle)
+    const match = document.content === null ? null : findMatch(document.content, needle)
     if (!match && !inTitle) continue
 
     hits.push({

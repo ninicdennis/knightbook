@@ -67,7 +67,7 @@ async function openSearch() {
   renderApp()
   await screen.findByText('Import dated records')
   await user.click(screen.getByRole('button', { name: /search tickets/i }))
-  return await screen.findByRole('textbox', { name: 'Search tickets' })
+  return await screen.findByRole('textbox', { name: 'Search tickets and documents' })
 }
 
 describe('opening search', () => {
@@ -77,11 +77,13 @@ describe('opening search', () => {
 
     await user.keyboard('{Escape}')
     await waitFor(() =>
-      expect(screen.queryByRole('textbox', { name: 'Search tickets' })).toBeNull(),
+      expect(screen.queryByRole('textbox', { name: 'Search tickets and documents' })).toBeNull(),
     )
 
     await user.keyboard('{Control>}k{/Control}')
-    expect(await screen.findByRole('textbox', { name: 'Search tickets' })).toBeTruthy()
+    expect(
+      await screen.findByRole('textbox', { name: 'Search tickets and documents' }),
+    ).toBeTruthy()
   })
 
   it('says what it searches before anything is typed, rather than listing everything', async () => {
@@ -103,7 +105,7 @@ describe('opening search', () => {
     await user.type(reason, 'Dates are off')
     await user.keyboard('{Control>}k{/Control}')
 
-    expect(screen.queryByRole('textbox', { name: 'Search tickets' })).toBeNull()
+    expect(screen.queryByRole('textbox', { name: 'Search tickets and documents' })).toBeNull()
     expect((reason as HTMLTextAreaElement).value).toBe('Dates are off')
   })
 })
@@ -112,7 +114,7 @@ describe('results', () => {
   it('finds a ticket by text that only appears in its body', async () => {
     api.searchTickets = vi.fn().mockResolvedValue({ ok: true, value: answer() })
     await openSearch()
-    await user.type(screen.getByRole('textbox', { name: 'Search tickets' }), 'import')
+    await user.type(screen.getByRole('textbox', { name: 'Search tickets and documents' }), 'import')
 
     const options = await screen.findAllByRole('option')
     expect(options).toHaveLength(2)
@@ -142,7 +144,7 @@ describe('results', () => {
       }),
     })
     await openSearch()
-    await user.type(screen.getByRole('textbox', { name: 'Search tickets' }), 'import')
+    await user.type(screen.getByRole('textbox', { name: 'Search tickets and documents' }), 'import')
 
     const option = await screen.findByRole('option')
     expect(option.textContent).toContain('<img src=x onerror=alert(1)>')
@@ -161,7 +163,7 @@ describe('results', () => {
       }),
     })
     await openSearch()
-    await user.type(screen.getByRole('textbox', { name: 'Search tickets' }), 'import')
+    await user.type(screen.getByRole('textbox', { name: 'Search tickets and documents' }), 'import')
 
     expect(await screen.findByText(/1 ticket file could not be read/)).toBeTruthy()
   })
@@ -169,7 +171,7 @@ describe('results', () => {
   it('says how many matches were withheld rather than silently cutting the list', async () => {
     api.searchTickets = vi.fn().mockResolvedValue({ ok: true, value: answer({ totalMatches: 34 }) })
     await openSearch()
-    await user.type(screen.getByRole('textbox', { name: 'Search tickets' }), 'import')
+    await user.type(screen.getByRole('textbox', { name: 'Search tickets and documents' }), 'import')
 
     expect(await screen.findByText(/Showing 2 of 34 matches/)).toBeTruthy()
   })
@@ -179,7 +181,7 @@ describe('results', () => {
       .fn()
       .mockResolvedValue({ ok: false, code: 'not_found', message: 'That project is gone.' })
     await openSearch()
-    await user.type(screen.getByRole('textbox', { name: 'Search tickets' }), 'import')
+    await user.type(screen.getByRole('textbox', { name: 'Search tickets and documents' }), 'import')
 
     expect(await screen.findByText(/That project is gone\./)).toBeTruthy()
     expect(screen.queryByRole('option')).toBeNull()
@@ -192,7 +194,7 @@ describe('results', () => {
       value: answer({ query: `${query}-stale` }),
     }))
     await openSearch()
-    await user.type(screen.getByRole('textbox', { name: 'Search tickets' }), 'import')
+    await user.type(screen.getByRole('textbox', { name: 'Search tickets and documents' }), 'import')
 
     await waitFor(() => expect(api.searchTickets).toHaveBeenCalled())
     expect(screen.queryByRole('option')).toBeNull()
@@ -203,7 +205,7 @@ describe('keyboard use', () => {
   it('moves through results and opens the highlighted one', async () => {
     api.searchTickets = vi.fn().mockResolvedValue({ ok: true, value: answer() })
     await openSearch()
-    await user.type(screen.getByRole('textbox', { name: 'Search tickets' }), 'import')
+    await user.type(screen.getByRole('textbox', { name: 'Search tickets and documents' }), 'import')
     await screen.findAllByRole('option')
 
     // The first result starts highlighted, so Enter alone opens it.
@@ -217,7 +219,7 @@ describe('keyboard use', () => {
   it('wraps around rather than stopping at the end', async () => {
     api.searchTickets = vi.fn().mockResolvedValue({ ok: true, value: answer() })
     await openSearch()
-    await user.type(screen.getByRole('textbox', { name: 'Search tickets' }), 'import')
+    await user.type(screen.getByRole('textbox', { name: 'Search tickets and documents' }), 'import')
     await screen.findAllByRole('option')
 
     await user.keyboard('{ArrowUp}')
@@ -230,7 +232,7 @@ describe('keyboard use', () => {
 
     await user.keyboard('{Escape}')
     await waitFor(() =>
-      expect(screen.queryByRole('textbox', { name: 'Search tickets' })).toBeNull(),
+      expect(screen.queryByRole('textbox', { name: 'Search tickets and documents' })).toBeNull(),
     )
     expect(document.activeElement).toBe(screen.getByRole('button', { name: /search tickets/i }))
   })

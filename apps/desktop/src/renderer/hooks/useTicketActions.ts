@@ -82,6 +82,23 @@ export function useTicketActions({
     [screen, apply],
   )
 
+  /** The blocker is written the same way as the type: straight away, dialog left open. */
+  const setBlocker = useCallback(
+    (ticketId: string, blocker: string | null) => {
+      if (screen.kind !== 'open') return
+      const ticket = screen.project.tickets.find((t) => t.id === ticketId)
+      if (!ticket) return
+
+      void apply(
+        ticketId,
+        () => window.knightbook.setTicketBlocker(screen.path, ticketId, blocker, ticket.revision),
+        'That ticket changed somewhere else, so the blocker was not saved. ' +
+          'This is the current version.',
+      )
+    },
+    [screen, apply],
+  )
+
   /**
    * Manual backlog order. The whole backlog is sent in its new order rather than
    * a single move, so the host writes one list and the window never has to guess
@@ -223,6 +240,7 @@ export function useTicketActions({
   return {
     move,
     setType,
+    setBlocker,
     reorder,
     review,
     restore,

@@ -11,7 +11,8 @@ import { plansStub } from './plans-stub.js'
 import { skillSetupStub } from './skill-setup-stub.js'
 import { stubReviewChanges } from './review-changes-stub.js'
 import { stubTicketDetail } from './ticket-detail-stub.js'
-import { stubTicketSearch } from './ticket-search-stub.js'
+import { stubDocumentSearch, stubTicketSearch } from './ticket-search-stub.js'
+import { SAMPLE_DOCUMENT } from './sample-document.js'
 
 /**
  * A stand-in host for the design preview. It serves the same shapes the real
@@ -242,6 +243,10 @@ export const stubApi: KnightbookApi = {
     record('setTicketType', id, type)
     return { ok: true, value: PROJECT }
   },
+  setTicketBlocker: async (_root, id, blocker) => {
+    record('setTicketBlocker', id, blocker)
+    return { ok: true, value: PROJECT }
+  },
   completeTicket: async (_root, id) => {
     record('completeTicket', id)
     return { ok: true, value: PROJECT }
@@ -295,6 +300,18 @@ export const stubApi: KnightbookApi = {
   reorderBacklog: async (_root, ticketIds) => {
     record('reorderBacklog', ticketIds)
     return { ok: true, value: PROJECT }
+  },
+  searchDocuments: async (root, query) => {
+    record('searchDocuments', query)
+    return stubDocumentSearch(
+      root,
+      query,
+      [
+        { path: 'README.md', title: 'README' },
+        { path: 'docs/architecture.md', title: 'architecture' },
+      ],
+      SAMPLE_DOCUMENT,
+    )
   },
   searchTickets: async (root, query) => {
     record('searchTickets', query)

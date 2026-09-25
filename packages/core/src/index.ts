@@ -119,6 +119,12 @@ export {
 } from './folder-titles.js'
 export { searchProject, type SearchHit, type SearchResult } from './search.js'
 export {
+  DOCUMENT_SEARCH_LIMIT,
+  searchDocuments,
+  type DocumentSearchHit,
+  type DocumentSearchResult,
+} from './document-search.js'
+export {
   searchTickets,
   TICKET_SEARCH_LIMIT,
   type Highlight,

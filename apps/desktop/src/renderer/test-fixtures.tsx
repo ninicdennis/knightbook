@@ -169,6 +169,7 @@ export function makeApi(): KnightbookApi {
     readProject: vi.fn().mockResolvedValue({ ok: true, value: project() }),
     setTicketStatus: boardUnchanged(),
     setTicketType: boardUnchanged(),
+    setTicketBlocker: boardUnchanged(),
     completeTicket: boardUnchanged(),
     recordVerificationIssue: boardUnchanged(),
     resolveVerificationIssue: boardUnchanged(),
@@ -179,6 +180,10 @@ export function makeApi(): KnightbookApi {
     openTicketExternally: vi.fn().mockResolvedValue({ ok: true, value: null }),
     createTicket: vi.fn(),
     reorderBacklog: boardUnchanged(),
+    searchDocuments: vi.fn().mockImplementation(async (_root: string, query: string) => ({
+      ok: true,
+      value: { checkoutPath: CHECKOUT, query, hits: [], totalMatches: 0, unsearchable: [] },
+    })),
     searchTickets: vi.fn().mockResolvedValue({
       ok: true,
       value: { checkoutPath: CHECKOUT, query: '', hits: [], totalMatches: 0, unsearchable: [] },

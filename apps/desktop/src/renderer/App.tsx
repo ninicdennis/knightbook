@@ -303,6 +303,7 @@ export function App() {
             actions.move(detailTicket.id, status)
           }}
           onSetType={(type) => actions.setType(detailTicket.id, type)}
+          onSetBlocker={(blocker) => actions.setBlocker(detailTicket.id, blocker)}
           onComplete={() => {
             setDetailId(null)
             actions.askToComplete(detailTicket.id)
@@ -367,6 +368,7 @@ export function App() {
           // Opening a result shows the ticket wherever the user was, because
           // the detail view is not part of either the board or the documents.
           onOpenTicket={openTicket}
+          onOpenDocument={openDocument}
         />
       )}
     </AppShell>

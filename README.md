@@ -94,7 +94,9 @@ pnpm pack:dir
 
 Builds the MCP server and the app, and produces an unpacked application under
 `apps/desktop/release/`. Close any copy of Knightbook running from that folder
-first: packaging replaces it.
+first, and stop any AI client running its bundled MCP server: packaging replaces
+it. On Windows, `pack:dir` checks this before building and refuses, listing the
+files in use, rather than leaving the folder half-deleted.
 
 ```bash
 pnpm start:packaged

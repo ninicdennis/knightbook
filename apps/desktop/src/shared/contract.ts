@@ -35,6 +35,8 @@ import type { DocumentsApi } from './documents-contract.js'
 import type { PlansApi } from './plans-contract.js'
 import type { SkillSetupApi } from './skill-setup-contract.js'
 import type { TicketCreateApi } from './ticket-create-contract.js'
+import type { TicketEditApi } from './ticket-edit-contract.js'
+import type { DocumentSearchApi } from './document-search-contract.js'
 
 export type TicketStatus = 'backlog' | 'in_progress' | 'verification' | 'done'
 
@@ -288,7 +290,14 @@ export interface WindowTitleProject {
 }
 
 export interface KnightbookApi
-  extends DocumentsApi, ReviewChangesApi, SkillSetupApi, PlansApi, TicketCreateApi {
+  extends
+    DocumentsApi,
+    ReviewChangesApi,
+    SkillSetupApi,
+    PlansApi,
+    TicketCreateApi,
+    TicketEditApi,
+    DocumentSearchApi {
   /** Projects this machine has opened, most recent first, each checked for availability. */
   rememberedProjects(): Promise<RememberedProject[]>
   /** Forgets one entry and returns the updated list. Deletes nothing on disk. */
