@@ -63,20 +63,37 @@ describe('safe write path', () => {
     })
   })
 
-  it('serializes concurrent writers instead of losing an update', async () => {
+  // The loser normally waits a few milliseconds for the lock, then fails the
+  // revision check. On a starved machine it can instead wait out the 5s lock
+  // timeout and be refused as `locked`. Both are refusals, so both are accepted;
+  // what must never happen is two successes, or a failure that is not ours.
+  // The test budget is well past the lock timeout, because Vitest's default
+  // (also 5s) would otherwise end the test before `locked` could be observed.
+  it('serializes concurrent writers instead of losing an update', { timeout: 30_000 }, async () => {
     await withFixtureProject(async (project) => {
       const path = reservedPaths.projectFile(project.root)
       const start = await readRecord(project.root, path)
+      const contents = ['writer a', 'writer b']
 
-      const results = await Promise.allSettled([
-        writeRecord(project.root, path, 'writer a', { expectedRevision: start.revision }),
-        writeRecord(project.root, path, 'writer b', { expectedRevision: start.revision }),
-      ])
+      const results = await Promise.allSettled(
+        contents.map((content) =>
+          writeRecord(project.root, path, content, { expectedRevision: start.revision }),
+        ),
+      )
 
-      const succeeded = results.filter((r) => r.status === 'fulfilled')
-      expect(succeeded).toHaveLength(1)
-      const rejected = results.find((r) => r.status === 'rejected')
-      expect((rejected as PromiseRejectedResult).reason.code).toBe('revision_conflict')
+      const winner = results.findIndex((r) => r.status === 'fulfilled')
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1)
+
+      const refusal = (results[1 - winner] as PromiseRejectedResult).reason
+      expect(isProjectError(refusal)).toBe(true)
+      expect(['revision_conflict', 'locked']).toContain(refusal.code)
+
+      // No silent loss: the file holds exactly what the winner was told it wrote.
+      const onDisk = await readRecord(project.root, path)
+      expect(onDisk.content).toBe(contents[winner])
+      expect(onDisk.revision).toBe(
+        (results[winner] as PromiseFulfilledResult<{ revision: string }>).value.revision,
+      )
     })
   })
 })
