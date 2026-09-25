@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
 import { parseRecord } from './frontmatter.js'
+import { TICKET_TYPES } from './schema.js'
 import { reservedPaths } from './paths.js'
 import { contentFingerprint } from './review.js'
 import { searchProject } from './search.js'
@@ -72,7 +73,7 @@ describe('records written before types existed', () => {
 describe('creating a ticket with a type', () => {
   it('stores the word, not a symbol', async () => {
     await withFixtureProject(async (project) => {
-      for (const type of ['feature', 'bug', 'task'] as const) {
+      for (const type of TICKET_TYPES) {
         const created = await createTicket(project, { title: type, type })
         expect(created.frontmatter.type).toBe(type)
 
@@ -198,7 +199,7 @@ describe('changing a type', () => {
   })
 })
 
-describe('a type that is not one of the three', () => {
+describe('a type that is not one of the known words', () => {
   it('makes the record invalid rather than being read as untyped', async () => {
     await withFixtureProject(async (project) => {
       const created = await createTicket(project, { title: 'A', type: 'bug' })

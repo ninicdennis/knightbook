@@ -18,7 +18,8 @@ if (typeof window !== 'undefined') {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: (query: string) => ({
-      matches: false,
+      // Reduced motion is on, so no Mantine transition leaves a timer behind.
+      matches: query.includes('prefers-reduced-motion: reduce'),
       media: query,
       onchange: null,
       addListener: () => {},
@@ -36,4 +37,7 @@ if (typeof window !== 'undefined') {
   }
 
   window.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
+
+  // Select scrolls its highlighted option into view from a timer.
+  Element.prototype.scrollIntoView = () => {}
 }

@@ -87,6 +87,22 @@ describe('showing the type', () => {
     expect(within(dialog).getByText('Backlog')).toBeTruthy()
   })
 
+  it('reads Research and Documentation the same way as the original three', async () => {
+    api.readProject = vi.fn().mockResolvedValue({
+      ok: true,
+      value: project({
+        tickets: [
+          ticket({ type: 'research' }),
+          ticket({ id: 'aaaaaaaa-0000-4000-8000-000000000002', title: 'B', type: 'documentation' }),
+        ],
+      }),
+    })
+    renderApp()
+
+    expect((await screen.findByText('Research')).textContent).toBe('Type: 🔎 Research')
+    expect(screen.getByText('Documentation').textContent).toBe('Type: 📝 Documentation')
+  })
+
   it('names it on a search result', async () => {
     const answer: TicketSearchView = {
       checkoutPath: CHECKOUT,
@@ -150,6 +166,26 @@ describe('choosing a type', () => {
     await waitFor(() => expect(api.setTicketType).toHaveBeenCalled())
     expect((await within(screen.getByRole('dialog')).findByText('Bug')).textContent).toBe(
       'Type: 🐛 Bug',
+    )
+  })
+
+  it('offers all five types and No type, and writes the new ones as plain words', async () => {
+    accepts()
+    renderApp()
+    const dialog = await openDetail()
+
+    await user.click(within(dialog).getByRole('button', { name: /^type$/i }))
+    const menu = await screen.findByRole('menu')
+    const names = within(menu)
+      .getAllByRole('menuitem')
+      .map((item) => item.textContent)
+    for (const word of ['Feature', 'Bug', 'Research', 'Documentation', 'Task', 'No type']) {
+      expect(names.some((name) => name?.includes(word))).toBe(true)
+    }
+
+    await user.click(within(menu).getByText('🔎 Research'))
+    await waitFor(() =>
+      expect(api.setTicketType).toHaveBeenCalledWith(CHECKOUT, TICKET_ID, 'research', 'rev-1'),
     )
   })
 

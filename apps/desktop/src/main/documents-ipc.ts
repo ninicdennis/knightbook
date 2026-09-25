@@ -2,12 +2,14 @@ import { dialog, ipcMain, shell } from 'electron'
 import {
   documentRecordId,
   includeDocuments,
+  listFolderTitles,
   listIncludedDocuments,
   openProject,
   readDocument,
   recordReview,
   removeFromWorkspace,
   resolveInRoot,
+  setFolderTitle,
   resolveLinkDestination,
   reviewStatus,
   type Project,
@@ -43,7 +45,7 @@ async function buildListing(project: Project): Promise<DocumentListView> {
       review: await documentReview(project, document.path),
     })
   }
-  return { documents, problems: listing.problems }
+  return { documents, problems: listing.problems, folderTitles: await listFolderTitles(project) }
 }
 
 /**
@@ -117,6 +119,22 @@ export function registerDocumentHandlers(): void {
 
         const project = await openProject(rootPath)
         return await buildListing(await removeFromWorkspace(project, entry))
+      }),
+  )
+
+  /** A folder's title is manifest metadata; the folder and its files are not touched. */
+  ipcMain.handle(
+    'documents:setFolderTitle',
+    async (_event, rootPath: unknown, folder: unknown, title: unknown) =>
+      await guard<DocumentListView>(async () => {
+        if (
+          typeof rootPath !== 'string' ||
+          typeof folder !== 'string' ||
+          !(title === null || typeof title === 'string')
+        ) {
+          throw new Error('A project, a folder, and a title or null are required.')
+        }
+        return await buildListing(await setFolderTitle(await openProject(rootPath), folder, title))
       }),
   )
 

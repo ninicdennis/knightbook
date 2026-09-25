@@ -23,7 +23,7 @@ inside the desktop app is a separate future decision.
 - `pnpm pack:dir` builds the MCP bundle and an unpacked desktop application.
   It does not produce an installer. `pnpm check` runs typechecks and tests.
 - Only Windows unpacked packaging has been validated. See the
-  [packaging findings](experiments/packaging-findings.md) for the limits.
+  [packaging findings](../experiments/packaging-findings.md) for the limits.
 - The staging script copies the build host's Node executable into the app.
   Release builds must supply the runtime matching each target OS and CPU.
 - Desktop and workspace package versions currently start at `0.0.0`.

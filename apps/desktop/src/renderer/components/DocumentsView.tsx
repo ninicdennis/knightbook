@@ -135,6 +135,17 @@ export function DocumentsView({
     setBusy(false)
   }, [])
 
+  /** A folder title changes only the manifest, so the listing it returns is the whole answer. */
+  const setFolderTitle = useCallback(
+    async (folder: string, title: string | null) => {
+      const result = await window.knightbook.setDocumentFolderTitle(rootPath, folder, title)
+      if (!result.ok) return result.message
+      setListing(result.value)
+      return null
+    },
+    [rootPath],
+  )
+
   /**
    * Reviews exactly the revision the reader showed. If the file moved on, the
    * host refuses; the reader is refreshed first so the explanation sits above
@@ -212,7 +223,10 @@ export function DocumentsView({
       {showNav && (
         <div ref={navRef} style={{ display: 'contents' }}>
           <DocumentNav
+            rootPath={rootPath}
             documents={listing.documents}
+            folderTitles={listing.folderTitles}
+            onSetFolderTitle={setFolderTitle}
             selected={selected}
             onSelect={choose}
             entries={entries}

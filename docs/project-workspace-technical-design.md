@@ -185,6 +185,16 @@ Use relative paths within project records. Resolve and validate real paths at ru
 
 Git operations remain external. Detect conflict markers and invalid records, preserve their bytes, and show an actionable problem. App writes to invalid records stop until the user resolves them. Rebuild views after external changes; do not infer a different branch is synchronized or approved.
 
+### Document folders and their titles as built (2026-09-25)
+
+The Documents list groups included files into the folders they really sit in. The tree is derived from paths on every read and stores nothing: a folder appears only because an included document is inside it, so inclusion, `includedVia`, removal scope and overlap deduplication are exactly what they were. Root files stay at the top level.
+
+A folder's title, such as "Documentation" for `docs`, is a sparse `folder_titles` map in `.projectspace/project.md`, keyed by normalized project-relative folder path, as the user chose on 2026-09-21. It is written key by key through the YAML document, so other manifest fields and unknown metadata survive. The path goes through the same boundary checks as inclusion, and the folder must exist when a title is set. A title never renames anything. A title whose folder was renamed or deleted outside the app is reported as missing and kept until the user clears it. A malformed map reads as no titles, so the project still opens; writing a title over one is refused rather than replacing it. MCP's `documents_list` returns the titles, so an AI tool sees the same names. Setting them is the app's job for now.
+
+Which folders are collapsed is this window's view state, kept in the renderer's local storage per checkout path. It is never written to the project. Collapsed folders are what is stored, so new folders and a first visit start open. Selecting a document, including through a link, expands every folder above it.
+
+Mantine's Tree was evaluated first, as the ticket asked. In 9.6.1 its nested nodes set no `aria-expanded`, Enter does nothing, and only the first node is ever in the tab order. Rather than patch around those gaps, the list follows the disclosure pattern WAI-ARIA recommends for navigation. Each folder is a button with `aria-expanded` and `aria-controls`, each document a button with `aria-current`, and Tab, Enter and Space do the rest. Naming a folder is a separate, labelled button beside it.
+
 ## 4. Project selection and checkout identity
 
 Persist a logical project UUID in `project.md`. A clone or worktree retains that UUID, but each local checkout has its own canonical root path and current files. Never silently combine two checkouts because their project UUID matches.
@@ -471,6 +481,7 @@ These are proposed operations, not finalized tool schemas:
 | `project_initialize` / `project_get` | Initialize the selected root or retrieve its identity and compact context index. |
 | `documents_include` | Register selected in-root documents/folders in place. |
 | `document_read` / `document_write` | Read original Markdown plus revision, or save with a revision precondition. |
+| `document_create` | Create a new `.md` document at a project-relative path and include it; never overwrites (D-023). |
 | `project_search` | Bounded text/title search across included docs and tickets. |
 | `ticket_list` | List filtered tickets, dependency reasons, or the next eligible candidate. |
 | `ticket_create` / `ticket_update` | Create or update task content and ordinary lifecycle fields with validation. |
@@ -537,7 +548,7 @@ These checks have not run. Use a small editor-preservation experiment and a pack
 
 ## 12. Next decisions
 
-For deferred distribution work, see [releases after merge](release-automation.md):
+For deferred distribution work, see [releases after merge](proposals/release-automation.md):
 current packaging evidence, tooling alternatives, a proposed GitHub Actions
 build-and-publish sequence, and release acceptance criteria. No workflow is
 enabled by that proposal.

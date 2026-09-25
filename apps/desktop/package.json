@@ -10,6 +10,7 @@
     "build": "electron-vite build && node scripts/stage-mcp-runtime.mjs",
     "pack:dir": "pnpm build && electron-builder --dir",
     "start:packaged": "node scripts/start-packaged.mjs",
+    "derive:icon": "electron scripts/derive-icon.cjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

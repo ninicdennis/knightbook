@@ -308,6 +308,7 @@ describe('following a document from a ticket', () => {
           },
         ],
         problems: [],
+        folderTitles: [],
       },
     })
     api.readDocument = vi.fn().mockResolvedValue({

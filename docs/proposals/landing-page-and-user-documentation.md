@@ -12,7 +12,7 @@ are proposals until implementation.
 ## Accepted name and logo
 
 On 2026-09-20, the user selected **Knightbook** to replace the **Projectspace**
-placeholder. See decision D-020 in the [product specification](project-workspace-spec.md).
+placeholder. See decision D-020 in the [product specification](../project-workspace-spec.md).
 Knightbook is a documentation and Kanban workspace that preserves written context
 and work status under human direction. It supplements the user's external AI tools;
 it is not an AI assistant or model.
@@ -20,7 +20,7 @@ it is not an AI assistant or model.
 “Book” emphasizes the durable written record; “Knight” gives the product a distinct
 identity. On 2026-09-20, the user approved the white chess knight on a navy book
 cover, with a solid white page block and no horizontal line inside the pages.
-Use [the approved logo](assets/knightbook-logo.png) as the canonical asset. It is a
+Use [the approved logo](../assets/knightbook-logo.png) as the canonical asset. It is a
 generated PNG and the only approved source artwork; the SVG attempts were rejected
 and removed. Application icons are derived from it rather than drawn separately.
 **Your project, remembered.** remains a proposed tagline.
@@ -53,9 +53,9 @@ Connecting an AI tool is a separate onboarding milestone, not a download gate.
 
 ## 2. Product truth and public claims
 
-Use the [README](../README.md) for the current implementation overview, the
-[product specification](project-workspace-spec.md) for intended behavior, and the
-[technical design](project-workspace-technical-design.md) for architecture.
+Use the [README](../../README.md) for the current implementation overview, the
+[product specification](../project-workspace-spec.md) for intended behavior, and the
+[technical design](../project-workspace-technical-design.md) for architecture.
 Verify public claims against the release being offered, rather than treating every
 specification requirement as shipped.
 
@@ -311,7 +311,7 @@ files. Verify preservation rather than assuming every installer behaves alike.
 ### Connecting an AI tool
 
 Explain MCP as optional connectivity, the bundled server, and the companion
-[workflow skill](../skills/projectspace/SKILL.md). Tools expose capabilities;
+[workflow skill](../../skills/projectspace/SKILL.md). Tools expose capabilities;
 guidance teaches the expected workflow. They are separate setup steps.
 
 Use the configuration copied by the installed app as the source of paths, not a
@@ -380,7 +380,7 @@ responsible maintainer before publishing its link.
 
 Carry the desktop application's restrained surface hierarchy, system typography,
 and muted blue accent into the site. Use the
-[UI direction](ui-ux-design-direction.md) as a reference, not as a requirement to
+[UI direction](../research/ui-ux-design-direction.md) as a reference, not as a requirement to
 ship the desktop component library in a static website. The main visual should
 be the working application, with generous space and readable explanatory copy.
 

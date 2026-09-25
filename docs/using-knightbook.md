@@ -210,7 +210,7 @@ reaches `## Acceptance criteria`, in the same file or another one.
 | From | To | Write |
 | --- | --- | --- |
 | `docs/overview.md` | `docs/spec.md` | `[spec](spec.md)` |
-| a ticket | `docs/ui-ux-design-direction.md` | `[direction](../../docs/ui-ux-design-direction.md)` |
+| a ticket | `docs/research/ui-ux-design-direction.md` | `[direction](../../docs/research/ui-ux-design-direction.md)` |
 | a ticket | another ticket | `[other](<other ticket id>.md)` |
 | `README.md` | a ticket | `[ticket](.projectspace/tickets/<id>.md)` |
 

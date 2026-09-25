@@ -45,7 +45,7 @@ export interface DocumentListing {
 }
 
 /** Normalizes a user- or AI-supplied path to the manifest's stored form. */
-function toManifestPath(project: Project, candidate: string): string {
+export function toManifestPath(project: Project, candidate: string): string {
   const absolute = resolveInRoot(project.root, candidate)
   const relative = toProjectRelative(project.root, absolute)
 
@@ -200,6 +200,43 @@ export async function readDocument(project: Project, path: string): Promise<Docu
   const absolute = resolveInRoot(project.root, relative)
   const { content, revision } = await readRecord(project.root, absolute)
   return { path: relative, content, revision }
+}
+
+export interface CreatedDocument extends DocumentContent {
+  /** The manifest entry that now covers it: the file itself, or a folder already included. */
+  readonly includedVia: string
+}
+
+/**
+ * Creates a new Markdown document and makes it part of the workspace, so a tool
+ * with no filesystem access of its own can still capture an idea as a document.
+ *
+ * It never overwrites: the existence check and the write happen under the write
+ * lock. Intermediate folders are created. A file inside a folder that is already
+ * included is covered by that entry, so no second, overlapping entry is added.
+ * The content is written exactly as given; no template or frontmatter is imposed
+ * (D-010, D-023).
+ */
+export async function createDocument(
+  project: Project,
+  path: string,
+  content: string,
+): Promise<{ project: Project; document: CreatedDocument }> {
+  const relative = toManifestPath(project, path)
+  if (!relative.toLowerCase().endsWith('.md')) {
+    throw new ProjectError('invalid_path', `A document must be a Markdown (.md) file: ${relative}`)
+  }
+  const absolute = resolveInRoot(project.root, relative)
+  const { revision } = await writeRecord(project.root, absolute, content, { mustNotExist: true })
+
+  const coveringEntry = project.frontmatter.documents_include.find(
+    (entry) => entry === relative || relative.startsWith(`${entry}/`),
+  )
+  const updated = coveringEntry ? project : await includeDocuments(project, [relative])
+  return {
+    project: updated,
+    document: { path: relative, content, revision, includedVia: coveringEntry ?? relative },
+  }
 }
 
 /**

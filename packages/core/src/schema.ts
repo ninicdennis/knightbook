@@ -22,12 +22,15 @@ export const mutableStatusSchema = z.enum(['backlog', 'in_progress', 'verificati
  * What kind of work a ticket is, independent of where it sits on the board. The
  * vocabulary is borrowed lightly from GitHub's default issue types, and Feature
  * and Bug read like Conventional Commits' `feat` and `fix`. It stops there: a
- * breaking change can belong to any of the three, so a type never implies a
- * version increment, and nothing derives one from it.
+ * breaking change can belong to any type, so a type never implies a version
+ * increment, and nothing derives one from it.
+ *
+ * Research and documentation were split out of Task so that investigation and
+ * written guides can be told apart at a glance; Task stays the catch-all.
  *
  * The stable word is what the file stores. Any emoji belongs to presentation.
  */
-export const TICKET_TYPES = ['feature', 'bug', 'task'] as const
+export const TICKET_TYPES = ['feature', 'bug', 'task', 'research', 'documentation'] as const
 export type TicketType = (typeof TICKET_TYPES)[number]
 
 export const ticketTypeSchema = z.enum(TICKET_TYPES)
@@ -165,6 +168,13 @@ export const projectFrontmatterSchema = z.object({
   name: z.string().min(1),
   documents_include: z.array(z.string()).default([]),
   backlog_order: z.array(uuidSchema).default([]),
+  /**
+   * The user's names for document folders, keyed by project-relative folder
+   * path. A label renames nothing on disk. A malformed map reads as no labels
+   * rather than making the whole project unreadable; writing one refuses instead
+   * (folder-titles.ts), so it is reported, never silently replaced.
+   */
+  folder_titles: z.record(z.string(), z.string()).optional().catch(undefined),
 })
 
 export type ProjectFrontmatter = z.infer<typeof projectFrontmatterSchema>

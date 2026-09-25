@@ -7,7 +7,7 @@ import { registerTools } from './tools.js'
 /**
  * The MCP surface for the optional work type. The desktop window and this server
  * both go through the same core library, so what has to be checked here is that
- * the tool inputs agree with it: the same three words, untyped still allowed, and
+ * the tool inputs agree with it: the same five words, untyped still allowed, and
  * clearing expressed as an explicit null rather than an omission.
  */
 
@@ -32,8 +32,8 @@ function inputSchemaOf(tool: string): AnySchema {
 describe('ticket_create', () => {
   const schema = inputSchemaOf('ticket_create')
 
-  it('accepts each of the three types', () => {
-    for (const type of ['feature', 'bug', 'task']) {
+  it('accepts each of the five types', () => {
+    for (const type of ['feature', 'bug', 'task', 'research', 'documentation']) {
       expect(schema.safeParse({ title: 'A', type }).success).toBe(true)
     }
   })
@@ -42,7 +42,7 @@ describe('ticket_create', () => {
     expect(schema.safeParse({ title: 'A' }).success).toBe(true)
   })
 
-  it('refuses a word that is not one of the three', () => {
+  it('refuses a word that is not one of the five', () => {
     const result = schema.safeParse({ title: 'A', type: 'chore' })
 
     expect(result.success).toBe(false)
@@ -64,8 +64,8 @@ describe('ticket_update', () => {
     expect(schema.safeParse(base).success).toBe(true)
   })
 
-  it('takes each of the three types', () => {
-    for (const type of ['feature', 'bug', 'task']) {
+  it('takes each of the five types', () => {
+    for (const type of ['feature', 'bug', 'task', 'research', 'documentation']) {
       expect(schema.safeParse({ ...base, type }).success).toBe(true)
     }
   })

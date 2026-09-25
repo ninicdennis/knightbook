@@ -217,8 +217,10 @@ export function registerTools(server: McpServer, scope: ProjectScope): void {
           .optional()
           .describe(
             'What kind of work this is: feature (new capability), bug (incorrect ' +
-              'behaviour), or task (maintenance, research, documentation). Leave it ' +
-              'out when the user has not said; untyped is a valid state.',
+              'behaviour), research (investigation, comparison, evidence gathering), ' +
+              'documentation (written guides and reference), or task (maintenance and ' +
+              'other general work). Leave it out when the user has not said; untyped ' +
+              'is a valid state.',
           ),
       }),
     },

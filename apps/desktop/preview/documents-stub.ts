@@ -35,14 +35,21 @@ function defaultListing(): DocumentListView {
       },
     ],
     problems: [{ path: 'docs/moved-away.md', reason: 'missing' }],
+    folderTitles: folderTitles.map((entry) => ({ ...entry })),
   }
 }
+
+/** Titles set in this preview session, so naming a folder can be tried. */
+let folderTitles: { path: string; title: string; missing: boolean }[] = [
+  { path: 'docs', title: 'Documentation', missing: false },
+  { path: 'docs/old-name', title: 'Renamed outside the app', missing: true },
+]
 
 function manyListing(): DocumentListView {
   const listing = defaultListing()
   for (let n = 1; n <= 24; n += 1) {
     listing.documents.push({
-      path: `docs/research/2026/september/very-long-folder-name-for-testing/finding-${n}.md`,
+      path: `docs/research/${n % 2 ? 'september' : 'a-very-long-folder-name-for-wrapping-tests'}/finding-${n}.md`,
       title: `A research finding with a long descriptive title, number ${n}`,
       includedVia: 'docs',
       review:
@@ -58,7 +65,7 @@ async function listDocuments(): Promise<Result<DocumentListView>> {
   if (want === 'list-error') {
     return { ok: false, code: 'io_error', message: 'The manifest could not be read.' }
   }
-  if (want === 'none') return { ok: true, value: { documents: [], problems: [] } }
+  if (want === 'none') return { ok: true, value: { documents: [], problems: [], folderTitles: [] } }
   return { ok: true, value: want === 'many' ? manyListing() : defaultListing() }
 }
 
@@ -76,6 +83,12 @@ export const documentsStub: DocumentsApi & Pick<ReviewChangesApi, 'documentChang
     return await documentsStub.listDocuments(root)
   },
   listDocuments,
+  setDocumentFolderTitle: async (root, folder, title) => {
+    record('setDocumentFolderTitle', folder, title)
+    folderTitles = folderTitles.filter((entry) => entry.path !== folder)
+    if (title !== null) folderTitles.push({ path: folder, title: title.trim(), missing: false })
+    return await listDocuments()
+  },
   // architecture.md reads as changed since review, so its Changes view can be
   // looked at; the README stays unreviewed and offers no comparison.
   readDocument: async (_root, path) =>

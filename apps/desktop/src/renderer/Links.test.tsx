@@ -62,6 +62,7 @@ beforeEach(() => {
         review: UNREVIEWED,
       })),
       problems: [],
+      folderTitles: [],
     },
   })
   api.readDocument = vi.fn().mockImplementation(async (_root: string, path: string) => ({

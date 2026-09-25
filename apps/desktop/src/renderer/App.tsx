@@ -9,6 +9,7 @@ import { CompletionDialog } from './components/CompletionDialog.js'
 import { DocumentsView } from './components/DocumentsView.js'
 import { PlansView } from './components/PlansView.js'
 import { McpStatusFooter } from './components/McpStatusFooter.js'
+import { NewTicketDialog } from './components/NewTicketDialog.js'
 import { ProjectHeader, type View } from './components/ProjectHeader.js'
 import { LoadingProject, ProjectLoadFailed } from './components/ProjectStatusScreens.js'
 import { SetupFolder } from './components/SetupFolder.js'
@@ -17,6 +18,7 @@ import { TicketSearch } from './components/TicketSearch.js'
 import { VerificationIssueDialog } from './components/VerificationIssueDialog.js'
 import { Welcome } from './components/Welcome.js'
 import { useArchiveActions } from './hooks/useArchiveActions.js'
+import { useNewTicket } from './hooks/useNewTicket.js'
 import { useLinkNavigation, type LinkPlace, type ScrollTarget } from './hooks/useLinkNavigation.js'
 import { useProjectScreen } from './hooks/useProjectScreen.js'
 import { useRefreshOnFocus } from './hooks/useRefreshOnFocus.js'
@@ -95,9 +97,15 @@ export function App() {
 
   useRefreshOnFocus(refresh, screen.kind === 'open')
 
+  const openTicket = useCallback((id: string, scrollTo: ScrollTarget | null = null) => {
+    setDetailId(id)
+    setDetailScroll(scrollTo)
+  }, [])
+  const newTicket = useNewTicket(controls, openTicket)
+
   useSearchShortcut(
     screen.kind === 'open',
-    detailId !== null || actions.completion.opened || actions.issue.opened,
+    detailId !== null || actions.completion.opened || actions.issue.opened || newTicket.opened,
     search.open,
   )
 
@@ -140,11 +148,6 @@ export function App() {
     setDetailId(null)
     setView('plans')
     setPlanTarget({ id, nonce: Date.now() })
-  }, [])
-
-  const openTicket = useCallback((id: string, scrollTo: ScrollTarget | null = null) => {
-    setDetailId(id)
-    setDetailScroll(scrollTo)
   }, [])
 
   const links = useLinkNavigation({
@@ -271,6 +274,7 @@ export function App() {
                   onOpen={openTicket}
                   onArchive={archive.archiveOne}
                   onArchiveColumn={archive.askToArchiveColumn}
+                  onNewTicket={newTicket.open}
                 />
               )}
             </div>
@@ -327,6 +331,14 @@ export function App() {
         tickets={archive.archiveColumn.tickets}
         onClose={archive.archiveColumn.close}
         onConfirm={archive.archiveColumn.confirm}
+      />
+
+      <NewTicketDialog
+        opened={newTicket.opened}
+        saving={newTicket.saving}
+        error={newTicket.error}
+        onClose={newTicket.close}
+        onCreate={newTicket.create}
       />
 
       <CompletionDialog

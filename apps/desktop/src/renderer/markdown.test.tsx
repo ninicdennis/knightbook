@@ -26,9 +26,9 @@ describe('link classification', () => {
 
   it('resolves links from a ticket file to documents and to a sibling ticket', () => {
     const ticket = '.projectspace/tickets/5be60610.md'
-    expect(classifyLink('../../docs/ui-ux-design-direction.md', ticket)).toEqual({
+    expect(classifyLink('../../docs/research/ui-ux-design-direction.md', ticket)).toEqual({
       kind: 'internal',
-      path: 'docs/ui-ux-design-direction.md',
+      path: 'docs/research/ui-ux-design-direction.md',
       fragment: null,
     })
     expect(classifyLink('db7cff48.md', ticket)).toEqual({
