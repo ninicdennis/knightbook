@@ -66,6 +66,17 @@ export function stubTicketDetail(project: ProjectView, id: string): Result<Ticke
     value: {
       ...found,
       body: BODY,
+      plans:
+        id === 'board' || id === 'writes'
+          ? [
+              {
+                planId: '7c1e0f52-4b8a-4c1d-9e0f-3a5b6c7d8e9f',
+                planTitle: 'MVP',
+                phaseId: 'p2',
+                phaseTitle: 'The board',
+              },
+            ]
+          : [],
       createdAt: '2026-09-19T15:00:00Z',
       updatedAt: '2026-09-19T16:30:00Z',
       relatedDocuments: [

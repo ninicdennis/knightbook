@@ -3,6 +3,7 @@ import type { TicketView } from '../../shared/contract.js'
 import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
 import { BackToSource, type BackTarget } from './BackToSource.js'
 import { ReviewBadge } from './ReviewBadge.js'
+import { TicketRecordRow } from './TicketRecordRow.js'
 import { TicketTypeBadge } from './TicketTypeBadge.js'
 
 /** The ticket dialog's fixed header: the way back, the title, and its badges. */
@@ -10,10 +11,12 @@ export function TicketDetailHeader({
   ticket,
   isNext,
   back,
+  rootPath,
 }: {
   ticket: TicketView
   isNext: boolean
   back: BackTarget | null
+  rootPath: string
 }) {
   return (
     <Modal.Header
@@ -42,6 +45,7 @@ export function TicketDetailHeader({
           )}
           <ReviewBadge review={ticket.review} />
         </Group>
+        <TicketRecordRow rootPath={rootPath} ticketId={ticket.id} />
       </Stack>
       <Modal.CloseButton aria-label="Close" style={{ flexShrink: 0 }} />
     </Modal.Header>

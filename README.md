@@ -2,305 +2,159 @@
 
 <img src="docs/assets/knightbook-logo.png" alt="Knightbook: a white chess knight on a navy book cover" width="192" />
 
-Knightbook is the product name, replacing the Projectspace placeholder
-([naming decision D-020](docs/project-workspace-spec.md#accepted-decisions)).
-The application, the workspace packages and the MCP server were renamed with it.
+Knightbook is a desktop workspace where a person and their AI tools share one
+project: its Markdown documents and a Kanban board of tickets, kept as ordinary
+files in the repository. AI clients reach it through a bundled MCP server; the
+person decides what is done.
 
-Two names deliberately did not change. Each project's records live in a
-`.projectspace/` folder, and that folder exists in every project anyone has already
-made — renaming it would be a migration of the user's own files, not of this
-product. The bundled workflow skill keeps its `skills/projectspace/` path and
-`projectspace` name for the same reason: tools that already load it refer to it by
-that name.
+## What it does
 
-A desktop workspace for developing project ideas, preserving decisions, and
-tracking implementation on a Kanban board, where humans and different AI tools
-share durable context through ordinary Markdown files.
+- **A board of tickets** in Backlog, In progress, Verification and Done, with
+  dependencies, a manual backlog order, archiving, and search. Only the user can
+  accept work as Done, and each acceptance records who decided.
+- **Plans** such as an MVP or a launch, whose phases group existing tickets, with
+  progress read from the tickets themselves. The app shows them; your AI tool, or
+  your editor, writes them for now.
+- **Documents where they already are.** Existing Markdown is included by path and
+  rendered read-only, with links between documents and tickets. Editing happens in
+  your own editor.
+- **Review you can trust.** Tickets and documents show whether you reviewed them,
+  and what changed since. Only a person can record a review.
+- **AI access you control.** One MCP configuration reaches the projects you allow,
+  and a workflow skill ships with the app to teach AI tools how to work the board.
+- **Plain files.** Records live in a `.projectspace/` folder and are safe to commit.
+  Every write checks what the writer last read, so a stale write is refused rather
+  than overwriting newer work.
 
-Built from [the product specification](docs/project-workspace-spec.md) and
-[technical design](docs/project-workspace-technical-design.md). Those documents
-are authoritative; this README describes what exists so far.
+The [specification](docs/project-workspace-spec.md) and
+[technical design](docs/project-workspace-technical-design.md) are authoritative for
+behaviour and decisions.
 
-## Status
+## Getting started
 
-The two experiments technical design section 11 asks for before building out the
-product are complete. The shared core library and the MCP server work end to end
-against a real packaged build, and the board is built on Mantine around that
-verified path.
-
-| Area | State |
-| --- | --- |
-| Editor preservation experiment | Complete — [findings](docs/experiments/editor-preservation-findings.md) |
-| Packaging smoke test | Complete on Windows — [findings](docs/experiments/packaging-findings.md) |
-| Shared core library | Safe writes, records, dependencies, completion, documents, search, review |
-| MCP surface | Fourteen project tools (the ten section 9 operations plus ticket_next, ticket_read, documents_list and review_status) and projects_list. One shared configuration reaches every project the user allows; the older one-project-per-entry form still works. Packaged and validated |
-| Desktop board | Four columns, drag and menu moves, a ticket detail dialog, a project switcher, one-click setup for a folder with no project yet, completion and review with provenance, refresh (button, and whenever the window regains focus); a malformed ticket or merge conflict is listed instead of blocking the board |
-| Document viewer | Read-only rendering of included documents, in-app review, external-editor handoff |
-| AI workflow guidance | A portable skill file plus rules sent by the server on connect; not yet exercised in a real AI session |
-| Continuous integration | A GitHub Actions workflow lints, format-checks, typechecks, tests, builds and packages every pull request on Windows, Linux and macOS; green on all three. It reports results but is not yet a required check |
-| Human review tracking | Tracked and surfaced for both tickets and documents, in the app and through MCP |
-| Document editing | Not started — the formatted editor is blocked on the Milkdown finding; reading works now |
-| macOS and Linux | Built, packaged and tested in CI, including the bundled MCP server run from the package. The app window has not been launched on either, and no installer has been built |
-
-## Continuous integration
-
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request to
-`main` and every push to `main`, on Windows, Linux and macOS. In order, it installs
-with the frozen lockfile, builds the MCP bundle, runs `pnpm check` (lint, formatting,
-typecheck, every test suite), packages the desktop app, and reruns the packaging tests
-against that real package with `REQUIRE_PACKAGED_APP=1`, so they fail rather than
-skip if the package is missing. To run the same steps locally:
+You need **Node 24 or newer** and **pnpm 12.4.2**, the version pinned in
+`package.json`. Corepack, which ships with Node, provides that pnpm:
 
 ```bash
-pnpm install --frozen-lockfile && pnpm build:mcp && pnpm check && pnpm pack:dir
-REQUIRE_PACKAGED_APP=1 pnpm --filter @knightbook/experiment-packaging test
+corepack enable
+pnpm install --frozen-lockfile
 ```
 
-The workflow has read-only access, no secrets, and publishes nothing; actions are
-pinned to commit SHAs. It reports results but cannot stop a merge by itself. Making it
-required is a branch-protection setting in the repository's GitHub settings.
+The same commands work in PowerShell and in a POSIX shell.
 
-Future delivery work: [releases after merge](docs/release-automation.md) compares
-GitHub release tooling and proposes an automated build-and-publish workflow.
-It is deferred; no release automation is enabled yet.
-
-The [landing page and user documentation plan](docs/landing-page-and-user-documentation.md)
-covers the public download site, draft page copy, getting-started guides, and launch
-requirements. It is a documentation proposal; no site has been published.
-
-## Requirements
-
-Node 24 and pnpm. `corepack enable` provides pnpm.
-
-## Commands
+### Run the app
 
 ```bash
-pnpm install
-pnpm check
+pnpm --filter @knightbook/desktop dev
 ```
 
-`pnpm check` runs the linter (Oxlint), the formatting check (Prettier), typecheck, and
-every test suite. `pnpm format` rewrites files to the project style; it leaves Markdown
-and the `.projectspace/` records alone. Other useful commands:
+Starts the real Electron app with hot reload. It opens your most recent project, or
+a welcome screen where you can open a folder or set one up.
+
+For the MCP status and **Set up your AI tool** to find the bundled server in
+development, build it and stage it beside the app once, and again after changing
+`packages/mcp`:
 
 ```bash
-pnpm pack:dir
+pnpm build:mcp
+pnpm --filter @knightbook/desktop build
 ```
 
-Builds the MCP server and produces an unpacked desktop application under
-`apps/desktop/release/`. The packaging tests use it when present and skip
-themselves when it is absent.
-
-```bash
-pnpm start:packaged
-```
-
-Opens that packaged app, so there is no need to find the executable in the output
-folder. It starts whatever was last packaged and rebuilds nothing, so it prints the
-path and when it was packaged; run `pnpm pack:dir` first after a change.
-
-```bash
-pnpm experiment:editor
-```
-
-Prints the Markdown preservation evidence table for the pinned Milkdown version.
+### Preview the board without Electron
 
 ```bash
 pnpm preview:board
 ```
 
-Serves the board against stub data at `http://localhost:5199`, for reviewing
-layout without packaging the app. Not part of any shipped build.
+Serves the board against **stub data** at `http://localhost:5199`, for reviewing
+layout in a browser. It reads no project and writes nothing. Add `?light` to the
+URL for the light scheme.
+
+## Checks
+
+```bash
+pnpm check
+```
+
+Runs the linter (Oxlint), the formatting check (Prettier), typecheck, and every
+test suite. Run it before handing off a change. `pnpm format` rewrites code to the
+project style; it leaves Markdown and `.projectspace/` alone on purpose.
+
+[CI](.github/workflows/ci.yml) runs install, `pnpm build:mcp`, `pnpm check` and
+`pnpm pack:dir` on Windows, Linux and macOS for every pull request, then reruns the
+packaging tests against the real package with `REQUIRE_PACKAGED_APP=1`, so they
+fail rather than skip when no package exists. Locally they skip without one.
+
+## Packaging
+
+```bash
+pnpm pack:dir
+```
+
+Builds the MCP server and the app, and produces an unpacked application under
+`apps/desktop/release/`. Close any copy of Knightbook running from that folder
+first: packaging replaces it.
+
+```bash
+pnpm start:packaged
+```
+
+Opens the last packaged app and rebuilds nothing; it prints the path and when it
+was packaged.
+
+To run the packaging tests against that package the way CI does:
+
+```bash
+REQUIRE_PACKAGED_APP=1 pnpm --filter @knightbook/experiment-packaging test
+```
+
+In PowerShell, set the variable first:
+
+```powershell
+$env:REQUIRE_PACKAGED_APP = '1'
+pnpm --filter @knightbook/experiment-packaging test
+```
+
+## Connecting an AI tool
+
+In the app, click the MCP status in the bar along the bottom of the window and
+choose **Set up your AI tool**. It copies the one configuration your client needs,
+lets you allow each project, and installs or exports the workflow skill for Claude
+Code, Codex, or any other client. [Using Knightbook with AI tools](docs/using-knightbook.md)
+covers what each step does, what the status bar can observe, and the rules the code
+enforces.
 
 ## Layout
 
 ```text
-packages/core      Records, safe writes, dependencies, completion, documents, search, review
-packages/mcp       The separately launchable stdio MCP server
-apps/desktop       Electron app: main process, preload bridge, Mantine board
-skills/            The workflow skill that teaches AI tools how to use the MCP tools
-experiments/       The two section 11 experiments, kept as regression tests
-docs/              Specification, technical design, and experiment findings
+packages/core        Records, safe writes, dependencies, completion, documents, search, review
+packages/mcp         The stdio MCP server; bundles packages/core
+apps/desktop         Electron app: main process, preload bridge, Mantine board
+skills/projectspace  The workflow skill shipped with the app
+experiments/         Editor-preservation and packaging experiments, kept as regression tests
+docs/                Specification, technical design, guides, research, experiment findings
 ```
 
-`packages/core` is loaded by both the desktop host and the MCP server, which is
-what keeps the two from validating the same records differently. The renderer
-reaches the host only through the named operations in `src/shared/contract.ts`;
-it has no filesystem or shell access.
+`packages/core` is used by both the desktop host and the MCP server, so the two
+cannot validate records differently. The renderer reaches the host only through
+the named operations in `apps/desktop/src/shared/contract.ts`.
 
-## Connecting an AI tool
+The `.projectspace/` folder and the `projectspace` skill keep an earlier name on
+purpose, because renaming them would migrate files in every existing project
+([D-020](docs/project-workspace-spec.md#accepted-decisions)).
 
-You add Knightbook to your AI client **once**, and then choose in the app which
-projects it may reach.
+## Documentation
 
-1. Open a project, and click the MCP indicator in the status bar along the bottom.
-2. Turn on **Allow AI access through MCP** for that project. Do the same in every
-   project you want the AI to reach. Opening a project, or its appearing in recent
-   projects, never turns this on by itself.
-3. Use **Copy MCP configuration** and add it to your AI client. In a packaged install
-   it points at the runtime shipped beside the application and at the app's list of
-   allowed projects:
-
-```json
-{
-  "command": "<installed-resources>/mcp/node.exe",
-  "args": ["<installed-resources>/mcp/server.mjs", "--registry", "<app-data>/Knightbook/mcp-access.json"]
-}
-```
-
-**This broadens what the client can reach.** Any AI client using that configuration
-can read and change every project you have allowed, not only the one on screen. Turn
-the setting off for a project to take it back; running clients lose it on their next
-call, without restarting. Allowing a new project later needs no change in the client.
-
-The AI client starts the server itself, so access does not depend on the desktop
-window being open. The AI picks a project with `projects_list`, passes its
-`checkout_id` on every call, and each answer names the project it acted on. Clones and
-worktrees of one project are listed separately by path. A folder that moved is reported
-as unavailable, never quietly swapped for another copy; allow it again at its new
-location. Technical design section 4 has the full model.
-
-### Moving from one entry per project
-
-Older setups added one client entry per project, each with `--root <folder>`. Those
-keep working exactly as before, and each still reaches only its own folder. To move
-to the single connection:
-
-1. In the app, allow AI access for each project those entries pointed at.
-2. Add the configuration from **Copy MCP configuration** as one new client entry.
-3. Remove the old per-project entries from your client yourself, once the new one
-   works. The app never edits your client's configuration.
-
-**After the Knightbook rename, re-copy that configuration.** The installed folder
-is named after the product, so a command saved while this was Projectspace points
-at a path the new install does not use, and the client will fail to start the
-server rather than silently talk to the wrong one. Open the status bar, use **Copy
-MCP configuration**, and replace the old entry. The name you give the entry in your
-client's own config is yours and does not have to change. The server now reports
-itself as `knightbook`.
-
-### What the status bar can and cannot tell you
-
-The client starts and stops the server, so the app has no Start or Stop to offer
-and does not pretend otherwise. What it does have is evidence: a server started for
-one project writes a heartbeat into that project's `.projectspace/runtime/`
-(coordination state, ignored by Git); a shared server writes its heartbeat beside
-the app's list of allowed projects, and leaves a small "last used" record in each
-project it actually works on. The window reads both.
-
-| Indicator | What was observed |
+| Document | What it covers |
 | --- | --- |
-| **MCP connected** | A server started for this project alone (`--root`) is running, and a client has opened a connection to it |
-| **MCP available** | A client is connected through the shared configuration and this project is allowed. That is not proof it is working on this project; the details say when it last did |
-| **MCP not allowed here** | A client is connected through the shared configuration, but this project is not allowed, so it cannot reach it |
-| **MCP access unknown** | The list of allowed projects could not be read, so the shared connection reaches nothing. The file is left untouched |
-| **MCP server running** | A server process is up, but no client has connected to it yet |
-| **MCP not connected** | No running server was observed — not the same as one being stopped |
-| **MCP runtime missing** | The bundled server is not where it should be, so the copied configuration would start nothing |
-| **MCP status unknown** | The folder could not be read, so nothing could be observed at all |
+| [Using Knightbook with AI tools](docs/using-knightbook.md) | Connecting a client, the status bar, the workflow skill, enforced rules, documents and links |
+| [Specification](docs/project-workspace-spec.md) | What the product does, and every accepted decision |
+| [Technical design](docs/project-workspace-technical-design.md) | Architecture, storage, MCP, and how each part was built |
+| [UI and UX direction](docs/ui-ux-design-direction.md) | Visual and interaction principles for the app |
+| [Packaging findings](docs/experiments/packaging-findings.md) | How the bundled runtime and MCP server ship, and what was tested where |
+| [Editor preservation findings](docs/experiments/editor-preservation-findings.md) | Why the formatted editor is blocked, and what would unblock it |
+| [Release automation](docs/release-automation.md) | A proposal for building and publishing releases; not enabled |
+| [AGENTS.md](AGENTS.md) | Working agreement for AI tools changing this repository |
 
-Only a server from this build is visible. A client running a different build
-against the same folder shows as no connection, which is why the wording is
-about what was observed rather than about what is true.
-
-## Teaching an AI tool the workflow
-
-Connecting the server gives an AI the tools. [`skills/projectspace/SKILL.md`](skills/projectspace/SKILL.md)
-tells it how to use them: read the board, start work only when asked, hand off in
-Verification, and never decide Done. It is plain Markdown, so it works in any client.
-
-- **Claude Code:** copy the `skills/projectspace` folder into your personal skills
-  folder (`~/.claude/skills/`), or into a project's `.claude/skills/`. It is used
-  automatically when the `knightbook` tools are connected.
-- **Any other client:** paste the file into that project's instructions
-  (`AGENTS.md`, `CLAUDE.md`, a system prompt).
-- **With nothing installed:** the server sends a short version of the core rules to
-  every client when it connects, so an AI still learns the Done and review rules.
-
-None of this enforces the rules; MCP alone cannot. See the three rules below for
-what the code does enforce. `packages/mcp/src/guidance.test.ts` fails if the skill
-and the real tool list drift apart.
-
-## Three rules the code enforces
-
-**Only the user decides completion.** `ticket_update` cannot set a ticket to
-Done, and Done is absent from the board's move menu. Recording completion goes
-through `ticket_record_user_completion`, which is valid only from Verification
-and requires an explicit assertion that the user instructed it. The provenance is
-honest: an agent-written update records `decision_source: reported_user_instruction`
-and the card reads "Recorded by AI", never "Accepted by you".
-
-This is a cooperative rule backed by provenance, not a tamper-proof gate. A
-file-writing agent can edit the Markdown directly. A Done status with no recorded
-decision is shown as **Unattributed** rather than silently trusted.
-
-**Only the user records a review.** There is no MCP tool to mark content
-human-validated — the capability does not exist, rather than existing behind an
-instruction not to use it. `review_status` is read-only, so an AI can report
-review accurately but never claim it.
-
-Review never blocks work: an unreviewed ticket moves through implementation and
-completion normally. What it cannot do is look reviewed. Content is
-**Unreviewed**, **Changed since review**, or quiet, and those are three different
-things. A meaningful edit returns reviewed content to "changed" while keeping the
-earlier review; reformatting and status changes do not. The system reports that
-the content changed and explicitly declines to say whether the meaning did.
-
-**Writes are checked against what the caller read.** Every mutation re-reads the
-file under a lock shared by the app and the MCP process, compares exact bytes
-against the caller's revision, and replaces through a temporary file. A stale
-write returns a conflict with the current revision instead of overwriting newer
-content, and the board reloads and says the move was not applied. External
-editors and Git do not honor the lock; the revision check is what actually
-prevents a lost update.
-
-## Existing documents stay where they are
-
-Including a file or folder records a project-relative path in the manifest. It
-never copies, moves, or rewrites the document, and it does not add frontmatter to
-one just to register it. Removing something from the workspace deletes nothing —
-it drops a manifest entry. A path that stops resolving is reported as a problem
-rather than quietly disappearing from the list.
-
-## Reading documents safely
-
-The Documents view renders included Markdown for reading. It is deliberately
-read-only for now — editing stays in your own editor via the **Edit externally**
-button, which hands the file to the OS-registered handler rather than executing
-anything itself.
-
-Document content is untrusted input, per technical design section 1:
-
-- Markdown is parsed, then sanitized with DOMPurify. Scripts, event handlers,
-  `iframe`/`object`/`embed`/`form`, and inline styles are stripped before
-  anything reaches the DOM.
-- Every link is classified before rendering. An `http(s)` link becomes an
-  external-open action gated on an explicit click. Every other scheme —
-  `file:`, `javascript:`, `data:`, protocol-relative, or an absolute path — is
-  shown as inert text with a visible note, never as a clickable `href`.
-  `markdown.test.tsx` asserts each of these cases directly.
-- A relative link opens in the app. It is read the way any Markdown editor reads
-  it, relative to the file it is written in, and the host then checks what it
-  reaches: an included document opens under Documents, a ticket file opens that
-  ticket, and anything else (outside the project, not included, not Markdown,
-  missing) says why instead of doing nothing. Following a link includes nothing
-  and changes no status or review. After following one, **Back to …** returns to
-  where you were.
-- Link to a heading with a GitHub-style fragment: lowercase, punctuation dropped,
-  spaces as hyphens, and `-1`, `-2` for a repeated heading. `#acceptance-criteria`
-  reaches `## Acceptance criteria`, in the same file or another one.
-
-  | From | To | Write |
-  | --- | --- | --- |
-  | `docs/overview.md` | `docs/spec.md` | `[spec](spec.md)` |
-  | a ticket | `docs/ui-ux-design-direction.md` | `[direction](../../docs/ui-ux-design-direction.md)` |
-  | a ticket | another ticket | `[other](<other ticket id>.md)` |
-  | `README.md` | a ticket | `[ticket](.projectspace/tickets/<id>.md)` |
-
-  Ticket files live in `.projectspace/tickets/`, which is why a ticket reaches
-  the repository root with `../../`. A bare ticket id in prose stays prose; it is
-  not turned into a link.
-- Images are not fetched. A document cannot cause a network request just by
-  being opened.
-- Frontmatter is shown separately from the rendered body, never treated as
-  prose.
+This repository tracks its own work in Knightbook: open this folder in the app to
+see its board.

@@ -80,8 +80,9 @@ its `checkout_id`.
      `.projectspace` folder and keeps existing files. The person can also set it up
      from the app. A shared connection cannot create projects; new ones are set up
      and enabled in the app.
-   - Tools missing entirely: the server is not connected. Tell the user to use the
-     plug button in the app header (Copy MCP configuration) and add it to this client.
+   - Tools missing entirely: the server is not connected. Tell the user to open the
+     MCP status at the bottom of the app window and use **Set up your AI tool** (or
+     **Copy MCP configuration**), then add it to this client.
 2. Call `ticket_list` for the board, and `documents_list` for the documents.
 3. To find something specific, use `project_search` before reading whole files.
 4. Read only what the task needs: `ticket_read` for one ticket, `document_read` for
@@ -236,6 +237,29 @@ user's housekeeping decision, not a workflow step.
   which for a document inside an included folder is the folder, not the file — so
   removing it takes every document in that folder out of the workspace. Say so before
   you do it.
+
+## Plans
+
+A plan is a named roadmap, such as an MVP or a launch: freeform Markdown for goals,
+ideas and notes, plus ordered phases that group existing tickets by id. The user can
+have several.
+
+- `plan_list` shows every plan with its phases, linked tickets and progress.
+  `plan_read` returns one in full, with the `revision` that `plan_update` needs.
+- `plan_create` needs only a title; a plan can start as ideas in its body. When the
+  user asks you to break a plan into phases, give each phase a title and, where it
+  helps, its `scope` and `value` (why it matters or comes in this order).
+- `plan_update` replaces **all** phases when you pass `phases`. Read first, keep each
+  existing phase's `id`, and keep phases and tickets you did not mean to change. Omit
+  `id` only for a new phase. `body` replaces the whole body, like `ticket_update`.
+- Attaching a ticket to a phase changes nothing on the ticket: not its status, its
+  dependencies, or its backlog place. To add work, `ticket_create` it first, then
+  attach its id.
+- Progress is read from the tickets. Each ticket counts once per plan, a missing or
+  unreadable reference is never counted as done, and a plan or phase with no tickets
+  is `empty`, not complete. Report missing references to the user rather than
+  quietly dropping them. A plan reaching `complete` is not a decision either: only
+  the user accepts each ticket.
 
 ## Conflicts
 

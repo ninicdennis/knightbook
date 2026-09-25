@@ -19,6 +19,7 @@ import {
   AuditDetails,
   CompletionRecord,
   Dependencies,
+  PlanMemberships,
   RelatedDocuments,
   ReopenedRecord,
 } from './TicketDetailSections.js'
@@ -61,6 +62,8 @@ interface Props {
   scrollTo?: ScrollTarget | null
   /** Back to where the link that opened this ticket was followed from. */
   back?: BackTarget | null
+  /** Shows a plan this ticket belongs to, in the Plans tab. */
+  onOpenPlan: (planId: string) => void
 }
 
 export function TicketDetailModal({
@@ -77,6 +80,7 @@ export function TicketDetailModal({
   onFollowLink,
   scrollTo = null,
   back = null,
+  onOpenPlan,
 }: Props) {
   const [detail, setDetail] = useState<TicketDetailView | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -163,7 +167,7 @@ export function TicketDetailModal({
         className="ps-reading"
         style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}
       >
-        <TicketDetailHeader ticket={ticket} isNext={isNext} back={back} />
+        <TicketDetailHeader ticket={ticket} isNext={isNext} back={back} rootPath={rootPath} />
 
         {/*
          * Mantine drops the body's top padding when a header sits above it, which
@@ -274,6 +278,7 @@ export function TicketDetailModal({
                     void onFollowLink({ path, fragment: null }).then(setRelatedNotice)
                   }
                 />
+                <PlanMemberships plans={detail.plans} onOpen={onOpenPlan} />
                 <ReopenedRecord previous={detail.previousCompletions} />
                 <AuditDetails detail={detail} lastReviewedAt={ticket.review.lastReviewedAt} />
               </>

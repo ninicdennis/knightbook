@@ -11,6 +11,7 @@ import type {
   TicketDetailView,
   TicketView,
 } from '../shared/contract.js'
+import type { SkillSetupView } from '../shared/skill-setup-contract.js'
 
 /** Shared by the component tests so each file states only what it is about. */
 
@@ -62,6 +63,7 @@ export function detail(overrides: Partial<TicketDetailView> = {}): TicketDetailV
     relatedDocuments: [],
     dependencies: [],
     previousCompletions: [],
+    plans: [],
     ...overrides,
   }
 }
@@ -80,6 +82,45 @@ export function mcpStatus(overrides: Partial<McpStatusView> = {}): McpStatusView
     access: { checkoutPath: CHECKOUT, enabled: false, checkoutId: null, problem: null },
     shared: [],
     lastActivityAt: null,
+    ...overrides,
+  }
+}
+
+/** Nothing installed anywhere yet. */
+export function skillSetup(overrides: Partial<SkillSetupView> = {}): SkillSetupView {
+  return {
+    files: ['SKILL.md'],
+    skillText: '---\nname: projectspace\n---\n\n# Working in a Knightbook project\n',
+    targets: [
+      {
+        id: 'claude-personal',
+        client: 'Claude Code',
+        scope: 'personal',
+        path: String.raw`C:\Users\me\.claude\skills\projectspace`,
+        state: 'absent',
+      },
+      {
+        id: 'claude-project',
+        client: 'Claude Code',
+        scope: 'project',
+        path: String.raw`${CHECKOUT}\.claude\skills\projectspace`,
+        state: 'absent',
+      },
+      {
+        id: 'codex-personal',
+        client: 'Codex',
+        scope: 'personal',
+        path: String.raw`C:\Users\me\.agents\skills\projectspace`,
+        state: 'absent',
+      },
+      {
+        id: 'codex-project',
+        client: 'Codex',
+        scope: 'project',
+        path: String.raw`${CHECKOUT}\.agents\skills\projectspace`,
+        state: 'absent',
+      },
+    ],
     ...overrides,
   }
 }
@@ -135,6 +176,7 @@ export function makeApi(): KnightbookApi {
     archiveTickets: vi.fn(),
     restoreTicket: boardUnchanged(),
     readTicket: vi.fn().mockResolvedValue({ ok: true, value: detail() }),
+    openTicketExternally: vi.fn().mockResolvedValue({ ok: true, value: null }),
     reorderBacklog: boardUnchanged(),
     searchTickets: vi.fn().mockResolvedValue({
       ok: true,
@@ -149,6 +191,11 @@ export function makeApi(): KnightbookApi {
     readSettings: vi.fn().mockResolvedValue({ colorScheme: 'auto' }),
     saveSettings: vi.fn().mockResolvedValue({ ok: true, value: { colorScheme: 'auto' } }),
     showProjectInWindowTitle: vi.fn().mockResolvedValue(undefined),
+    skillSetup: vi.fn().mockResolvedValue({ ok: true, value: skillSetup() }),
+    installSkill: vi.fn(),
+    exportSkill: vi.fn().mockResolvedValue({ ok: true, value: null }),
+    listPlans: vi.fn().mockResolvedValue({ ok: true, value: { plans: [], problems: [] } }),
+    openPlanExternally: vi.fn().mockResolvedValue({ ok: true, value: null }),
     listDocuments: vi.fn().mockResolvedValue({ ok: true, value: { documents: [], problems: [] } }),
     includeDocumentFiles: vi
       .fn()

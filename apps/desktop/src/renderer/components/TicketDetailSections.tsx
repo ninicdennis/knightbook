@@ -1,7 +1,7 @@
 import { Badge, Button, Group, Stack, Text } from '@mantine/core'
-import { IconFileText } from '@tabler/icons-react'
+import { IconFileText, IconMap } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
-import type { TicketDetailView, TicketView } from '../../shared/contract.js'
+import type { TicketDetailView, TicketPlanView, TicketView } from '../../shared/contract.js'
 import { STATUS_COLOR, STATUS_LABEL } from '../theme.js'
 
 /**
@@ -116,6 +116,42 @@ export function RelatedDocuments({
             }}
           >
             {path}
+          </Button>
+        ))}
+      </Stack>
+    </Section>
+  )
+}
+
+/**
+ * The plan phases this ticket is part of. Membership is read from the plans, so
+ * nothing here is written on the ticket itself; opening one shows the plan.
+ */
+export function PlanMemberships({
+  plans,
+  onOpen,
+}: {
+  plans: TicketPlanView[]
+  onOpen: (planId: string) => void
+}) {
+  if (plans.length === 0) return null
+
+  return (
+    <Section title="Plans">
+      <Stack gap={2} align="flex-start" style={{ maxWidth: '100%' }}>
+        {plans.map((membership) => (
+          <Button
+            key={`${membership.planId}:${membership.phaseId}`}
+            variant="subtle"
+            size="compact-sm"
+            leftSection={<IconMap size={14} />}
+            onClick={() => onOpen(membership.planId)}
+            style={{ maxWidth: '100%', height: 'auto', paddingBlock: 4 }}
+            styles={{
+              label: { whiteSpace: 'normal', textAlign: 'left', overflowWrap: 'anywhere' },
+            }}
+          >
+            {membership.planTitle} · {membership.phaseTitle}
           </Button>
         ))}
       </Stack>

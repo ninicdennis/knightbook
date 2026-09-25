@@ -30,6 +30,7 @@ const api: KnightbookApi = {
   restoreTicket: (rootPath, id, revision) =>
     ipcRenderer.invoke('ticket:restore', rootPath, id, revision),
   readTicket: (rootPath, id) => ipcRenderer.invoke('ticket:read', rootPath, id),
+  openTicketExternally: (rootPath, id) => ipcRenderer.invoke('ticket:openExternally', rootPath, id),
   searchTickets: (rootPath, query, scope) =>
     ipcRenderer.invoke('ticket:search', rootPath, query, scope),
   reorderBacklog: (rootPath, ticketIds) =>
@@ -40,6 +41,12 @@ const api: KnightbookApi = {
   readSettings: () => ipcRenderer.invoke('app:readSettings'),
   saveSettings: (patch) => ipcRenderer.invoke('app:saveSettings', patch),
   showProjectInWindowTitle: (project) => ipcRenderer.invoke('window:showProjectInTitle', project),
+  skillSetup: (rootPath) => ipcRenderer.invoke('skill:setup', rootPath),
+  installSkill: (rootPath, target, expected) =>
+    ipcRenderer.invoke('skill:install', rootPath, target, expected),
+  exportSkill: () => ipcRenderer.invoke('skill:export'),
+  listPlans: (rootPath) => ipcRenderer.invoke('plans:list', rootPath),
+  openPlanExternally: (rootPath, id) => ipcRenderer.invoke('plan:openExternally', rootPath, id),
 
   listDocuments: (rootPath) => ipcRenderer.invoke('documents:list', rootPath),
   includeDocumentFiles: (rootPath) => ipcRenderer.invoke('documents:includeFiles', rootPath),

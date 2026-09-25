@@ -22,12 +22,32 @@ export interface AppState {
   readonly settings: AppSettings
   /** Null until a window has been saved, or when the stored one was unusable. */
   readonly window: StoredWindowState | null
+  /**
+   * Skill folder path to the fingerprint Knightbook wrote there. It is the only
+   * evidence that a differing copy is an old install rather than the user's edit.
+   */
+  readonly installedSkills: Readonly<Record<string, string>>
 }
 
 /** Following the operating system is the only choice that needs no prior decision. */
 export const DEFAULT_SETTINGS: AppSettings = { colorScheme: 'auto' }
 
-const EMPTY: AppState = { recentProjects: [], settings: DEFAULT_SETTINGS, window: null }
+const EMPTY: AppState = {
+  recentProjects: [],
+  settings: DEFAULT_SETTINGS,
+  window: null,
+  installedSkills: {},
+}
+
+/** Entries that are not a path and a hash are dropped; losing one only means "modified". */
+function parseInstalledSkills(stored: unknown): Record<string, string> {
+  if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) return {}
+  return Object.fromEntries(
+    Object.entries(stored).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string',
+    ),
+  )
+}
 
 const COLOR_SCHEMES: ColorSchemeChoice[] = ['light', 'dark', 'auto']
 
@@ -75,11 +95,13 @@ export async function readAppState(): Promise<AppState> {
       recentProjects?: unknown
       settings?: unknown
       window?: unknown
+      installedSkills?: unknown
     }
     return {
       recentProjects: parseRememberedEntries(parsed.recentProjects).slice(0, MAX_REMEMBERED),
       settings: parseSettings(parsed.settings),
       window: parseWindowState(parsed.window),
+      installedSkills: parseInstalledSkills(parsed.installedSkills),
     }
   } catch {
     // Absent or unreadable state is not an error: it is simply a first run.
@@ -169,5 +191,19 @@ export function forgetProject(checkoutPath: string): Promise<AppState> {
 export function saveWindowState(window: StoredWindowState): Promise<void> {
   return changeAppState(async () => {
     await writeAppState({ ...(await readAppState()), window })
+  })
+}
+
+/**
+ * Remembers what was written to a skill folder. Throws on failure, unlike the
+ * window: without the record a later update would be refused as "modified".
+ */
+export function recordInstalledSkill(dir: string, fingerprint: string): Promise<void> {
+  return changeAppState(async () => {
+    const current = await readAppState()
+    const installedSkills = { ...current.installedSkills, [dir]: fingerprint }
+    if (!(await writeAppState({ ...current, installedSkills }))) {
+      throw new Error('The skill was installed, but the app could not record it.')
+    }
   })
 }

@@ -123,6 +123,42 @@ export const ticketFrontmatterSchema = z.object({
 
 export type TicketFrontmatter = z.infer<typeof ticketFrontmatterSchema>
 
+/**
+ * A plan's phase. Its id is the phase's identity inside its plan, so renaming or
+ * reordering a phase never changes which tickets it holds. Plain words only,
+ * because an AI supplies it and a person reads it in the file.
+ */
+export const planPhaseSchema = z.object({
+  id: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/, 'a phase id is letters, digits, - or _'),
+  title: z.string().min(1),
+  /** What the phase covers, in the author's words. Optional Markdown. */
+  scope: z.string().optional(),
+  /** Why it matters or comes in this order. Optional Markdown. */
+  value: z.string().optional(),
+  /**
+   * References to canonical tickets. A plan never copies a ticket's title,
+   * status or body, so progress is always read from the tickets themselves.
+   */
+  tickets: z.array(uuidSchema).default([]),
+})
+
+export type PlanPhase = z.infer<typeof planPhaseSchema>
+
+/**
+ * A plan groups existing tickets into ordered phases. Goals, ideas and notes
+ * live in the Markdown body, with no required headings.
+ */
+export const planFrontmatterSchema = z.object({
+  schema_version: z.int().positive(),
+  id: uuidSchema,
+  title: z.string().min(1),
+  phases: z.array(planPhaseSchema).default([]),
+  created_at: z.iso.datetime(),
+  updated_at: z.iso.datetime(),
+})
+
+export type PlanFrontmatter = z.infer<typeof planFrontmatterSchema>
+
 export const projectFrontmatterSchema = z.object({
   schema_version: z.int().positive(),
   id: uuidSchema,

@@ -52,7 +52,8 @@ export function useLinkNavigation({ rootPath, openDocument, openTicket }: Option
   }, [rootPath])
 
   const follow = useCallback(
-    async (from: LinkPlace, request: LinkRequest): Promise<string | null> => {
+    // `from` is null for a place with no way back to it, such as a plan.
+    async (from: LinkPlace | null, request: LinkRequest): Promise<string | null> => {
       if (!rootPath) return null
       const attempt = (latest.current += 1)
       const result = await window.knightbook.resolveLink(rootPath, request.path)
@@ -66,7 +67,7 @@ export function useLinkNavigation({ rootPath, openDocument, openTicket }: Option
       const at = keyOf(destination)
       // Following a link to where you already are only scrolls; there is no
       // earlier place to go back to.
-      if (at !== keyOf(from)) setBack({ from, at })
+      if (from && at !== keyOf(from)) setBack({ from, at })
 
       if (destination.kind === 'ticket') openTicket(destination.id, scrollTo)
       else openDocument(destination.path, scrollTo)

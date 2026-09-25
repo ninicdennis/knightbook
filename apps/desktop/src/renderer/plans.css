@@ -1,0 +1,48 @@
+/* The Plans pane reuses the Documents layout (documents.css); these are the
+   parts only a plan has: its phases and the tickets listed under each. */
+
+.ps-plan-phase {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  border: 1px solid var(--ps-hairline);
+  border-radius: var(--mantine-radius-md);
+  background: var(--ps-card-bg);
+}
+
+.ps-plan-tickets {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ps-plan-ticket[data-problem] {
+  padding: 4px var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+  border: 1px dashed var(--mantine-color-red-4);
+}
+
+.ps-plan-ticket-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-xs);
+  width: 100%;
+  padding: 4px var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+  text-align: left;
+  color: inherit;
+}
+
+.ps-plan-ticket-button:hover {
+  background: var(--ps-column-bg-active);
+}
+
+.ps-plan-ticket-button:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 1px;
+}

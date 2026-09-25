@@ -52,6 +52,26 @@ export {
 } from './completion.js'
 export { selectNextTicket, type Candidate, type SelectionResult } from './selection.js'
 export {
+  createPlan,
+  listPlanRecords,
+  phasesContaining,
+  readPlan,
+  updatePlan,
+  type CreatePlanInput,
+  type PhaseInput,
+  type PhaseMembership,
+  type Plan,
+  type PlanListing,
+  type PlanProblem,
+  type UpdatePlanInput,
+} from './plans.js'
+export {
+  planProgress,
+  type PlanProgress,
+  type Progress,
+  type ProgressState,
+} from './plan-progress.js'
+export {
   describeReason,
   evaluateReadiness,
   failedPrerequisites,
@@ -71,6 +91,8 @@ export {
   ticketTypeSchema,
   TICKET_STATUSES,
   TICKET_TYPES,
+  type PlanFrontmatter,
+  type PlanPhase,
   type ProjectFrontmatter,
   type TicketFrontmatter,
   type TicketStatus,

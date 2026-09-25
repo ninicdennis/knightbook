@@ -20,6 +20,9 @@ import {
 import type { WindowPlacement } from './window-placement.js'
 import { PLAIN_WINDOW_TITLE } from './window-title.js'
 import { registerWindowTitleHandler } from './window-title-ipc.js'
+import { registerSkillSetupHandlers } from './skill-setup-ipc.js'
+import { registerTicketFileHandler } from './ticket-file-ipc.js'
+import { registerPlanHandlers } from './plans-ipc.js'
 
 /**
  * Technical design section 1: the renderer receives narrow operations through
@@ -121,6 +124,9 @@ void app.whenReady().then(async () => {
   registerSettingsHandlers()
   registerMcpAccessHandlers()
   registerWindowTitleHandler()
+  registerSkillSetupHandlers()
+  registerTicketFileHandler()
+  registerPlanHandlers()
   process.stdout.write(`MCP launch command: ${JSON.stringify(mcpLaunchCommand())}\n`)
 
   /*
