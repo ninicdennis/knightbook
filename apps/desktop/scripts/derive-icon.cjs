@@ -1,5 +1,6 @@
 /*
- * Derives build/icon.png from the approved logo (D-021). Run with Electron, not
+ * Derives build/icon.png from the approved logo (D-021), and from it the small
+ * mark the title bar shows (src/renderer/app/knightbook-mark.png). Run with Electron, not
  * Node, because it uses Electron's own image resampler:
  *
  *   pnpm --filter @knightbook/desktop derive:icon
@@ -24,6 +25,12 @@ const { join } = require('node:path')
 const SOURCE = join(__dirname, '..', '..', '..', 'docs', 'assets', 'knightbook-logo.png')
 const OUTPUT = join(__dirname, '..', 'build', 'icon.png')
 const SIZE = 1024
+/**
+ * Shown at 20 CSS pixels in the title bar. 96 covers display scaling up to
+ * 400% without shipping the megabyte-sized icon to the renderer.
+ */
+const MARK_OUTPUT = join(__dirname, '..', 'src', 'renderer', 'app', 'knightbook-mark.png')
+const MARK_SIZE = 96
 /** Margin on each side of the longer dimension, so the edge is not clipped by an OS mask. */
 const MARGIN = 20
 const ALPHA_THRESHOLD = 4
@@ -74,6 +81,10 @@ void app.whenReady().then(() => {
   })
   const icon = centreOnSquare(fitted)
   writeFileSync(OUTPUT, icon.toPNG())
+  writeFileSync(
+    MARK_OUTPUT,
+    icon.resize({ width: MARK_SIZE, height: MARK_SIZE, quality: 'best' }).toPNG(),
+  )
 
   const result = alphaBounds(icon)
   const sourceSize = source.getSize()
@@ -81,6 +92,7 @@ void app.whenReady().then(() => {
     JSON.stringify(
       {
         source: `${sourceSize.width}x${sourceSize.height}, artwork ${art.width}x${art.height} at ${art.x},${art.y}`,
+        mark: `${MARK_SIZE}x${MARK_SIZE}`,
         output: `${SIZE}x${SIZE}, artwork ${result.width}x${result.height} at ${result.x},${result.y}`,
         occupancy: `${((result.width / SIZE) * 100).toFixed(1)}% wide, ${((result.height / SIZE) * 100).toFixed(1)}% tall`,
       },

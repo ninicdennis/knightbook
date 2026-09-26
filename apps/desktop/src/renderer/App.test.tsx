@@ -25,9 +25,11 @@ beforeEach(() => {
 describe('opening a project', () => {
   it('reopens the most recent project and shows its checkout path', async () => {
     renderApp()
-    expect(await screen.findByText('Demo')).toBeTruthy()
-    // Technical design section 4: two clones share an id, so the path must show.
-    expect(screen.getByText('C:\\projects\\demo')).toBeTruthy()
+    // Technical design section 4: two clones share an id, so the path must be
+    // one click away, in the project menu the name opens (D-029).
+    await user.click(await screen.findByRole('button', { name: 'Demo' }))
+    const menu = await screen.findByRole('dialog')
+    expect(within(menu).getAllByText('C:\\projects\\demo')).not.toHaveLength(0)
   })
 
   it('reports a load failure and says the files were left alone', async () => {

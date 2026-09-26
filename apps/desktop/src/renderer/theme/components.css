@@ -96,3 +96,17 @@
 .ps-search-column > [role='listbox'] {
   flex-shrink: 1;
 }
+
+/*
+ * Tooltips in dark mode. Mantine inverts them to near-white there, which flashed
+ * the brightest thing on screen over a dark window for a one-line hint. They
+ * stay dark instead, one step lighter than a card so they still lift off
+ * whatever they cover, with the overlays' hairline and shadow. Light mode keeps
+ * Mantine's dark tooltip, which already stands apart from a light page.
+ */
+:root[data-mantine-color-scheme='dark'] .mantine-Tooltip-tooltip {
+  --tooltip-bg: var(--mantine-color-dark-5);
+  --tooltip-color: var(--mantine-color-text);
+  border: 1px solid var(--ps-hairline);
+  box-shadow: var(--ps-overlay-shadow);
+}

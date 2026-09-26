@@ -1,9 +1,11 @@
-import { Alert, AppShell, Stack } from '@mantine/core'
+import { Alert, AppShell, Group, Stack } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconAlertTriangle } from '@tabler/icons-react'
 import { useState } from 'react'
 import { ProjectDialogs } from './app/ProjectDialogs.js'
 import { ProjectHeader } from './app/ProjectHeader.js'
+import { RefreshControl } from './app/RefreshControl.js'
+import { TitleStrip } from './app/TitleBar.js'
 import { LoadingProject, ProjectLoadFailed } from './projects/ProjectStatusScreens.js'
 import { ProjectViewSwitch } from './app/ProjectViewSwitch.js'
 import { SetupFolder } from './projects/SetupFolder.js'
@@ -23,11 +25,14 @@ import { useNewTicket } from './tickets/useNewTicket.js'
 import { useTicketActions } from './tickets/useTicketActions.js'
 
 /**
- * Below `md` the header reflows onto two rows (shell.css). AppShell offsets the
- * main area by this height rather than measuring the header, so the two
- * breakpoints must match.
+ * Two rows at every width (shell.css): 48px for project, search and settings,
+ * 40px for the view tabs, and the 1px hairline. AppShell offsets the main area
+ * by this height rather than measuring the header, so they must agree.
  */
-const HEADER_HEIGHT = { base: 104, md: 60 }
+const HEADER_HEIGHT = 89
+
+/** Every other screen still needs a title bar to drag the window by (D-030). */
+const TITLE_STRIP_HEIGHT = 48
 
 /**
  * The window's root: which screen is showing, which view of an open project,
@@ -86,19 +91,17 @@ export function App() {
     <AppShell
       {...(screen.kind === 'open'
         ? { header: { height: HEADER_HEIGHT }, footer: { height: 32 } }
-        : {})}
+        : { header: { height: TITLE_STRIP_HEIGHT } })}
       padding="md"
     >
       {screen.kind === 'open' && (
-        <AppShell.Header className="ps-shell-chrome" px="md" py="xs">
+        <AppShell.Header className="ps-shell-chrome" px="md">
           <ProjectHeader
             name={screen.project.name}
             checkoutPath={screen.project.checkoutPath}
             view={view}
             onViewChange={navigation.setView}
             archivedCount={screen.project.archivedTickets.length}
-            refreshing={refreshing}
-            onRefresh={() => void refresh()}
             switchBlockedReason={
               archive.archiving
                 ? 'Tickets are being archived. Switching is available once that finishes.'
@@ -110,6 +113,12 @@ export function App() {
             onOpenFolder={() => void choose()}
             onOpenSearch={search.open}
           />
+        </AppShell.Header>
+      )}
+
+      {screen.kind !== 'open' && (
+        <AppShell.Header className="ps-shell-chrome" px="md" withBorder={false}>
+          <TitleStrip />
         </AppShell.Header>
       )}
 
@@ -176,7 +185,10 @@ export function App() {
 
       {screen.kind === 'open' && (
         <AppShell.Footer className="ps-shell-chrome">
-          <McpStatusFooter checkoutPath={screen.project.checkoutPath} />
+          <Group h="100%" justify="space-between" wrap="nowrap" pe="xs">
+            <McpStatusFooter checkoutPath={screen.project.checkoutPath} />
+            <RefreshControl refreshing={refreshing} onRefresh={refresh} />
+          </Group>
         </AppShell.Footer>
       )}
 

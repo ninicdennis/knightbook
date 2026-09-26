@@ -74,7 +74,7 @@ const MVP: PlanView = {
 
 async function openPlans() {
   await screen.findByText('A ticket')
-  await user.click(screen.getByRole('radio', { name: 'Plans' }))
+  await user.click(screen.getByRole('tab', { name: 'Plans' }))
 }
 
 describe('the Plans pane', () => {

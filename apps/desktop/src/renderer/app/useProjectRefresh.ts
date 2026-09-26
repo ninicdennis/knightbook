@@ -21,10 +21,11 @@ export function useProjectRefresh({ screen, setScreen, setActionError, busyTicke
   /**
    * Re-reads the project without the loading screen, so the user keeps their
    * place. A failure keeps the last version that loaded and says so, rather than
-   * swapping the board for an error page.
+   * swapping the board for an error page. Resolves to whether it read the
+   * project, so a caller can confirm success without guessing from state.
    */
-  const refresh = useCallback(async () => {
-    if (screen.kind !== 'open' || busyTicketId !== null) return
+  const refresh = useCallback(async (): Promise<boolean> => {
+    if (screen.kind !== 'open' || busyTicketId !== null) return false
     const path = screen.path
     setRefreshing(true)
 
@@ -43,6 +44,7 @@ export function useProjectRefresh({ screen, setScreen, setActionError, busyTicke
       )
     }
     setRefreshing(false)
+    return result.ok
   }, [screen, busyTicketId, setScreen, setActionError])
 
   useRefreshOnFocus(refresh, screen.kind === 'open')

@@ -161,7 +161,7 @@ describe('the MCP status footer', () => {
     renderApp()
     await screen.findByText('MCP connected')
 
-    await user.click(screen.getByRole('button', { name: /open project menu/i }))
+    await user.click(screen.getByRole('button', { name: 'Demo' }))
     const menu = await screen.findByRole('dialog')
     await user.click(within(menu).getByRole('button', { name: /switch to other/i }))
 

@@ -85,6 +85,36 @@ user followed another link or switched project is dropped. One step back is kept
 for the place the last link was followed from, offered only on that link's
 destination; it is not browser history.
 
+### Custom title bar (2026-09-25, D-030)
+
+The window has no operating-system title bar. The first row of the header (48px) is
+the title bar: the Knightbook mark, the project menu, search and Settings. Screens
+with no project open show a strip of the same height with the mark and the product
+name. The window keeps the platform's own controls. `titleBarStyle: 'hidden'` with
+`titleBarOverlay` is set in `src/main/window/title-bar.ts`, and no title-bar library
+or hand-drawn buttons are used.
+
+| | Windows | Linux | macOS |
+| --- | --- | --- | --- |
+| Window controls | Native minimize, maximize and close, top right, drawn over the page in the app's colours | Native, top right; `symbolColor` is Windows-only, so the symbols follow the desktop theme | Native traffic lights, top left, moved to the middle of the row |
+| Colours follow the scheme and dim when inactive | Yes, `setTitleBarOverlay` on theme change, focus and blur | Background only | Drawn by macOS |
+| Safe area | `env(titlebar-area-*)` in shell.css | Same | Same (`titleBarOverlay: true`) |
+| Checked | In the packaged app, 2026-09-25 | Not launched | Not launched |
+
+Empty space in the row is `-webkit-app-region: drag`, and buttons, links and inputs
+opt out. So the operating system, not the app, provides dragging, snapping,
+double-click to maximize and the top resize edge. On Windows, `WM_NCHITTEST` on the
+packaged window returned CAPTION for empty space, CLIENT for the name, search and
+Settings, the native button codes for the three controls, and TOP for the upper edge.
+Electron computes drag regions from the page without regard to what is drawn above
+them, so anything layered over the row would move the window instead of taking the
+click. Drawers therefore open below the row and dialogs keep at least 56px from the
+top. The window title (`window-title.ts`) is still set for the taskbar, Alt+Tab and
+the Dock, although no title text is drawn. The mark shown is a 96px derivative of the
+approved logo, written by `derive:icon` beside the application icon (D-021). The
+host copies the overlay colours from the page's stylesheets, and `title-bar.test.ts`
+fails if they drift.
+
 ## 2. Accepted stack and supporting packages
 
 The user accepted **Electron + TypeScript + React**, with a separately launched Node-based MCP host sharing the project logic. Milkdown remains the selected editor candidate, subject to the Markdown-preservation check. Desktop framework selection is settled; packaging is routine implementation and release-validation work.

@@ -12,6 +12,12 @@ import { mcpLaunchCommand } from './mcp/mcp-resources.js'
 import { applicationMenuTemplate, menuBarIsVisible } from './window/app-menu.js'
 import { followSystemChanges, windowBackground } from './window/window-theme.js'
 import {
+  currentScheme,
+  followThemeForTitleBars,
+  followWindowFocus,
+  titleBarOptions,
+} from './window/title-bar.js'
+import {
   finishSavingBeforeQuit,
   placementOptions,
   rememberedPlacement,
@@ -54,6 +60,7 @@ function createWindow(placement: WindowPlacement): BrowserWindow {
     show: false,
     // Follows the user's colour-scheme setting, which is applied before this runs.
     backgroundColor: windowBackground(),
+    ...titleBarOptions(process.platform, currentScheme()),
     webPreferences: {
       preload: join(HERE, '..', 'preload', 'index.cjs'),
       contextIsolation: true,
@@ -69,6 +76,7 @@ function createWindow(placement: WindowPlacement): BrowserWindow {
    * bring the bar back. macOS has no per-window menu bar to hide.
    */
   if (!menuBarIsVisible(process.platform)) window.setMenuBarVisibility(false)
+  followWindowFocus(window)
 
   window.once('ready-to-show', () => {
     if (placement.maximized) window.maximize()
@@ -153,6 +161,7 @@ void app.whenReady().then(async () => {
   // Before the first window, so it is not painted in the other scheme first.
   await applyStoredColorScheme()
   followSystemChanges()
+  followThemeForTitleBars()
   finishSavingBeforeQuit()
   createWindow(await rememberedPlacement())
 
