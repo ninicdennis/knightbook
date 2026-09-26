@@ -16,7 +16,8 @@ covered here.
   the MCP runtime and can fetch it for `win32-x64`, `darwin-x64`, `darwin-arm64`,
   `linux-x64` and `linux-arm64`.
 - CI runs on `windows-latest`, `ubuntu-latest` and `macos-latest`. The last is an
-  Apple silicon runner.
+  Apple silicon runner. Since D-031 (2026-09-26), pull requests run on Linux only;
+  all three run on merge to `main` and on a manual run.
 
 ## Minimum OS versions
 

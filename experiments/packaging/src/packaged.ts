@@ -142,6 +142,10 @@ async function resourcesOf(candidate: string): Promise<StagedResources | null> {
  * CI sets REQUIRE_PACKAGED_APP=1, which turns "absent" into a failure: a check
  * that quietly skips is not a check. Elsewhere, a missing build is simply a
  * machine that has not run `pnpm pack:dir`, and the suite skips.
+ *
+ * CI's package job runs only files named `packaged-*.test.ts` (the `test:packaged`
+ * script), so a new suite that needs the real package must follow that naming or
+ * it will only ever run, skipped, in `pnpm check`.
  */
 export function requireWhenAsked(found: StagedResources | null, what: string): void {
   if (found || !process.env['REQUIRE_PACKAGED_APP']) return

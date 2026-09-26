@@ -1,11 +1,17 @@
 import { mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright-core'
 import { call, connect } from './client.js'
 import { packagedApp, requireWhenAsked } from './packaged.js'
 import { removeWorkspace } from './stage.js'
+import {
+  collectAppOutput,
+  saveEvidence,
+  summarizeWindow,
+  type AppOutput,
+} from './window-evidence.js'
 
 /**
  * The real Electron window of the packaged app. Every other suite here stops at
@@ -53,7 +59,8 @@ let projectRoot: string
 let userDataDir: string
 let ticketId: string
 let electronApp: ElectronApplication
-let page: Page
+let page: Page | undefined
+let appOutput: AppOutput | undefined
 
 beforeAll(async () => {
   if (!app) return
@@ -80,14 +87,26 @@ beforeAll(async () => {
 
   await seedUserData(userDataDir, projectRoot)
 
-  electronApp = await electron.launch({
-    executablePath: app.executablePath,
-    // Keeps the run off the developer's real recent-projects list and settings.
-    args: [`--user-data-dir=${userDataDir}`],
-  })
-  page = await electronApp.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  try {
+    electronApp = await electron.launch({
+      executablePath: app.executablePath,
+      // Keeps the run off the developer's real recent-projects list and settings.
+      args: [`--user-data-dir=${userDataDir}`],
+      // Sends the renderer's console to stderr, so a failure's evidence includes it.
+      env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1' },
+    })
+    appOutput = collectAppOutput(electronApp)
+    page = await electronApp.firstWindow()
+    await page.waitForLoadState('domcontentloaded')
+  } catch (error) {
+    await saveEvidence('launch', page, appOutput)
+    throw error
+  }
 }, 120_000)
+
+beforeEach(({ task, onTestFailed }) => {
+  onTestFailed(() => saveEvidence(task.name, page, appOutput))
+})
 
 afterAll(async () => {
   await electronApp?.close().catch(() => {})
@@ -95,11 +114,14 @@ afterAll(async () => {
 })
 
 describeWindow('the packaged window', () => {
+  // beforeAll either opened the window or failed the suite.
+  const openedPage = (): Page => page!
+
   it('opens the remembered project and shows its board', async () => {
     await expect
       .poll(
         () =>
-          page
+          openedPage()
             .getByText('Window smoke test')
             .first()
             .isVisible()
@@ -110,7 +132,9 @@ describeWindow('the packaged window', () => {
       )
       .toBe(true)
 
-    expect(await page.getByText('Move me with the card menu').first().isVisible()).toBe(true)
+    expect(await openedPage().getByText('Move me with the card menu').first().isVisible()).toBe(
+      true,
+    )
   })
 
   it('captures a screenshot of the running window', async () => {
@@ -118,7 +142,7 @@ describeWindow('the packaged window', () => {
     // taken in the environment used so far. Failing to produce one is a real
     // result, so it is asserted rather than attempted and ignored.
     const file = join(workspace, 'packaged-window.png')
-    await page.screenshot({ path: file })
+    await openedPage().screenshot({ path: file })
     expect((await stat(file)).size).toBeGreaterThan(1000)
   })
 
@@ -132,13 +156,21 @@ describeWindow('the packaged window', () => {
      * menu button's own label and matches too. Without `exact` this is a strict
      * mode violation, not a wrong click.
      */
-    await page
+    await openedPage()
       .getByRole('button', { name: 'Actions for Move me with the card menu', exact: true })
       .click()
-    await page.getByRole('menuitem', { name: 'In progress', exact: true }).click()
+    await openedPage().getByRole('menuitem', { name: 'In progress', exact: true }).click()
 
-    await expect
-      .poll(() => statusOnDisk(projectRoot, ticketId), { timeout: 20_000 })
-      .toBe('in_progress')
+    try {
+      await expect
+        .poll(() => statusOnDisk(projectRoot, ticketId), { timeout: 20_000 })
+        .toBe('in_progress')
+    } catch (error) {
+      // The file alone cannot say whether the move was refused, shown as moved but
+      // never written, or never happened. What the window shows can.
+      const summary = await summarizeWindow(openedPage())
+      const reason = error instanceof Error ? error.message : String(error)
+      throw new Error(`${reason}\n${summary}`, { cause: error })
+    }
   })
 })
