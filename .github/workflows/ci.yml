@@ -1,13 +1,26 @@
 name: CI
 
-# Validates every pull request and every push to main. It has no secrets, no
-# publishing and read-only repository access. Releases are a separate, deferred
-# piece of work (docs/proposals/release-automation.md) and must stay separate from this.
+# Validates pull requests and pushes to main. It has no secrets, no publishing and
+# read-only repository access. Releases are a separate, deferred piece of work
+# (docs/proposals/release-automation.md) and must stay separate from this.
+#
+# Two jobs: `check` (lint, format, typecheck, every test suite) and `package`
+# (build the real app, then test it). `package` waits for `check`, so a broken
+# lint or test costs no packaging minutes.
+#
+# Platforms follow the trigger, to stay inside the free Actions allowance:
+# - pull requests run on Linux only;
+# - pushes to main (merges) run on Windows, Linux and macOS;
+# - a manual run ("Run workflow" on the Actions tab) runs all three on any branch.
+# So a Windows- or macOS-only break shows up at merge, not on the pull request.
+# Start a manual run on the branch before merging anything platform-sensitive:
+# window chrome, paths, packaging.
 on:
   pull_request:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 # A newer push to the same pull request makes the older run pointless. Runs on
 # main are never cancelled, so every merge gets a complete result.
@@ -20,57 +33,79 @@ permissions:
 
 jobs:
   check:
-    name: Check and build (${{ matrix.os }})
+    name: Check (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
-    strategy:
-      # Windows is the platform validated so far. Linux and macOS are run so
-      # their failures are visible; one platform failing must not hide the others.
+    # Defined once here and reused by `package` through the YAML anchor, so the
+    # two jobs cannot disagree about platforms.
+    strategy: &platforms # One platform failing must not hide the others.
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["windows-latest", "ubuntu-latest", "macos-latest"]') }}
 
     steps:
       # External actions are pinned to reviewed commit SHAs; the comment names the
       # release each one was resolved from.
-      - name: Check out the code
+      - &checkout
+        name: Check out the code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       # Reads the pinned pnpm version from the packageManager field.
-      - name: Set up pnpm
+      - &setup-pnpm
+        name: Set up pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           cache: true
 
-      - name: Set up Node
+      - &setup-node
+        name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
 
-      - name: Install dependencies
+      - &install
+        name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # The packaging tests stage this bundle, so it has to exist before the tests.
+      # The staging tests in experiments/packaging copy this bundle, so it has to
+      # exist before the tests.
       - name: Build the MCP server bundle
         run: pnpm build:mcp
 
+      # This includes experiments/packaging. Its staging suites run here for real;
+      # the two packaged-app suites skip, because no package exists yet. That skip
+      # is expected and is not coverage: `package` runs those suites.
       - name: Lint, format check, typecheck and test
         run: pnpm check
 
+  package:
+    name: Package and test the app (${{ matrix.os }})
+    needs: check
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy: *platforms
+
+    steps:
+      - *checkout
+      - *setup-pnpm
+      - *setup-node
+      - *install
+
+      # Builds the MCP bundle itself before packaging.
       - name: Build and package the desktop app
         run: pnpm pack:dir
 
-      # The first run skipped the packaged-app tests because the app did not exist
-      # yet. Run them again now that it does, and fail if they are still skipped.
+      # Only the packaged-* suites; `check` already ran the rest. With
+      # REQUIRE_PACKAGED_APP set they fail rather than skip if the package is missing.
       #
       # One of these launches the real Electron window. The Linux runner has no
       # display, so it gets a virtual one; without it the window test would fail
       # on Linux alone. Windows and macOS runners already have a display session.
       - name: Test the packaged app
         if: runner.os != 'Linux'
-        run: pnpm --filter @knightbook/experiment-packaging test
+        run: pnpm --filter @knightbook/experiment-packaging test:packaged
         env:
           REQUIRE_PACKAGED_APP: '1'
 
@@ -79,6 +114,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y xvfb
-          xvfb-run --auto-servernum pnpm --filter @knightbook/experiment-packaging test
+          xvfb-run --auto-servernum pnpm --filter @knightbook/experiment-packaging test:packaged
         env:
           REQUIRE_PACKAGED_APP: '1'
+
+      # A failing window test leaves a screenshot and the app's stdout and stderr
+      # here. Nothing is written when the tests pass.
+      - name: Keep the packaged-window evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: packaged-window-${{ matrix.os }}
+          path: experiments/packaging/test-results/
+          if-no-files-found: ignore
+          retention-days: 14

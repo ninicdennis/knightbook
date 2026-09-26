@@ -81,10 +81,12 @@ Runs the linter (Oxlint), the formatting check (Prettier), typecheck, and every
 test suite. Run it before handing off a change. `pnpm format` rewrites code to the
 project style; it leaves Markdown and `.projectspace/` alone on purpose.
 
-[CI](.github/workflows/ci.yml) runs install, `pnpm build:mcp`, `pnpm check` and
-`pnpm pack:dir` on Windows, Linux and macOS for every pull request, then reruns the
-packaging tests against the real package with `REQUIRE_PACKAGED_APP=1`, so they
-fail rather than skip when no package exists. Locally they skip without one.
+[CI](.github/workflows/ci.yml) runs install, `pnpm build:mcp` and `pnpm check`
+first. Only when those pass does it run `pnpm pack:dir` and the packaged-app tests
+against the real package with `REQUIRE_PACKAGED_APP=1`, so they fail rather than
+skip when no package exists. Locally they skip without one. Pull requests run on
+Linux only; pushes to `main` and manual runs (Actions tab, "Run workflow") run on
+Windows, Linux and macOS.
 
 ## Packaging
 
@@ -105,17 +107,18 @@ pnpm start:packaged
 Opens the last packaged app and rebuilds nothing; it prints the path and when it
 was packaged.
 
-To run the packaging tests against that package the way CI does:
+To run the packaged-app tests against that package the way CI does (a failing
+window test leaves a screenshot and log in `experiments/packaging/test-results/`):
 
 ```bash
-REQUIRE_PACKAGED_APP=1 pnpm --filter @knightbook/experiment-packaging test
+REQUIRE_PACKAGED_APP=1 pnpm --filter @knightbook/experiment-packaging test:packaged
 ```
 
 In PowerShell, set the variable first:
 
 ```powershell
 $env:REQUIRE_PACKAGED_APP = '1'
-pnpm --filter @knightbook/experiment-packaging test
+pnpm --filter @knightbook/experiment-packaging test:packaged
 ```
 
 ## Connecting an AI tool

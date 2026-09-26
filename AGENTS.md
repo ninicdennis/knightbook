@@ -37,10 +37,16 @@ Node 24 and pnpm (the version pinned in `package.json`, via corepack).
 | `pnpm preview:board` | Board against stub data at `http://localhost:5199`, for layout review |
 | `pnpm --filter <package> test` | One package's tests, e.g. `@knightbook/core` |
 
-CI (`.github/workflows/ci.yml`) runs install, `build:mcp`, `check` and `pack:dir` on
-Windows, Linux and macOS, then reruns the packaging tests with
-`REQUIRE_PACKAGED_APP=1`. Locally those tests skip when no package exists; say so
-if you did not package.
+CI (`.github/workflows/ci.yml`) has two jobs. `check` runs install, `build:mcp` and
+`check`; only if it passes, `package` runs `pack:dir` and then the packaged-app tests
+(`test:packaged` in `experiments/packaging`) with `REQUIRE_PACKAGED_APP=1`, keeping a
+screenshot and the app's output when the window test fails. Pull requests run on
+Linux only. Windows and macOS are checked on merge to `main` and on a manual run
+("Run workflow" on the Actions tab), not on every pull request, to stay inside the
+free Actions allowance. Windows is where the app is used, so start a manual run on
+the branch before merging anything platform-sensitive (window chrome, paths,
+packaging). Locally the packaged-app tests skip when no package exists; say so if
+you did not package.
 
 ## Layout
 

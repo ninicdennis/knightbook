@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
+    "test:packaged": "vitest run packaged-",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
