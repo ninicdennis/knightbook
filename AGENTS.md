@@ -16,7 +16,12 @@ start only when asked, hand off in Verification with a handoff note, and never
 decide Done or claim a review.
 
 - Never hand-edit files in `.projectspace/`. The app and the MCP server write them
-  byte for byte under a shared lock and revision check; go through the tools.
+  byte for byte under a shared lock and revision check; go through the tools. In
+  Claude Code a hook in `.claude/settings.json` blocks such edits, and another flags
+  code files past 300 and 400 lines.
+- Before handing off, follow the `handoff` skill (`.claude/skills/handoff/`). It runs
+  the `verifier` agent (`.claude/agents/verifier.md`), which checks each acceptance
+  criterion against a test whose data actually triggers it.
 - `.projectspace/runtime/` and `.projectspace/.write-lock` are coordination state,
   ignored by Git. Everything else in `.projectspace/` is project content and is
   committed.
