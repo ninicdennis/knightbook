@@ -31,7 +31,7 @@ beforeEach(() => {
 /** Switches to the Archive tab the way a user does. */
 async function openArchive() {
   await screen.findByText('Demo')
-  await user.click(screen.getByRole('radio', { name: /archive/i }))
+  await user.click(screen.getByRole('tab', { name: /archive/i }))
 }
 
 describe('the Archive tab', () => {
@@ -45,7 +45,7 @@ describe('the Archive tab', () => {
     })
     renderApp()
 
-    expect(await screen.findByRole('radio', { name: 'Archive 1' })).toBeTruthy()
+    expect(await screen.findByRole('tab', { name: 'Archive, 1 ticket' })).toBeTruthy()
     // The board shows only active work; the archived one is not a card.
     expect(screen.queryByText('Put away last week')).toBeNull()
   })
@@ -301,7 +301,7 @@ describe('archiving a whole column', () => {
      * would leave the rest of them pointed at a project the user is no longer
      * looking at, so the switcher has to say it is unavailable and why.
      */
-    await user.click(await screen.findByRole('button', { name: /open project menu/i }))
+    await user.click(await screen.findByRole('button', { name: 'Demo' }))
     expect(await screen.findByText(/tickets are being archived/i)).toBeTruthy()
   })
 

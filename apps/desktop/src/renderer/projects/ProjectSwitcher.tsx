@@ -15,20 +15,24 @@ import { useDisclosure } from '@mantine/hooks'
 import {
   IconAlertTriangle,
   IconFolderOpen,
+  IconChevronDown,
   IconInfoCircle,
-  IconMenu2,
   IconX,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
 import type { RememberedProject } from '../../shared/project-setup-contract.js'
+import { CurrentProject } from './CurrentProject.js'
 
 /**
- * The way to move between projects. The list is read each time the drawer opens,
- * so a folder that disappeared since last time is shown as unavailable rather
- * than trusted from an earlier look.
+ * The project menu, opened from the project's name in the header. It says
+ * which checkout is open, with its full path, and is the way to move between
+ * projects. The list is read each time the drawer opens, so a folder that
+ * disappeared since last time is shown as unavailable rather than trusted from
+ * an earlier look.
  */
 
 interface Props {
+  name: string
   currentPath: string
   /** Set while switching would be unsafe; the reason is shown instead of the list being hidden. */
   blockedReason: string | null
@@ -36,7 +40,13 @@ interface Props {
   onOpenFolder: () => void
 }
 
-export function ProjectSwitcher({ currentPath, blockedReason, onSwitch, onOpenFolder }: Props) {
+export function ProjectSwitcher({
+  name,
+  currentPath,
+  blockedReason,
+  onSwitch,
+  onOpenFolder,
+}: Props) {
   const [opened, drawer] = useDisclosure(false)
   const [projects, setProjects] = useState<RememberedProject[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -74,20 +84,32 @@ export function ProjectSwitcher({ currentPath, blockedReason, onSwitch, onOpenFo
 
   return (
     <>
-      <Tooltip label="Projects" withArrow>
-        <ActionIcon
-          className="ps-shell-control"
-          variant="default"
-          size="lg"
-          onClick={drawer.open}
-          aria-label="Open project menu"
+      {/* The name is the page heading and the trigger at once. Its accessible
+          name stays the project's name; aria-haspopup says it opens something. */}
+      <h1 className="ps-shell-name">
+        {/* Hover only: focus returns here when the drawer closes, and a tooltip
+            that opened then would sit over the tabs until focus moved on. */}
+        <Tooltip
+          label="Project menu: path, switch or open a folder"
+          openDelay={500}
+          withArrow
+          events={{ hover: true, focus: false, touch: false }}
         >
-          <IconMenu2 size={18} />
-        </ActionIcon>
-      </Tooltip>
+          <UnstyledButton
+            className="ps-shell-project"
+            onClick={drawer.open}
+            aria-haspopup="dialog"
+            aria-expanded={opened}
+          >
+            <span className="ps-shell-name-text">{name}</span>
+            <IconChevronDown size={16} opacity={0.6} style={{ flexShrink: 0 }} aria-hidden />
+          </UnstyledButton>
+        </Tooltip>
+      </h1>
 
       <Drawer opened={opened} onClose={drawer.close} title="Projects" size="sm" padding="md">
         <Stack gap="md" style={{ minHeight: '100%' }}>
+          <CurrentProject name={name} path={currentPath} />
           {blockedReason && (
             <Alert color="orange" variant="light" icon={<IconAlertTriangle size={16} />}>
               {blockedReason}

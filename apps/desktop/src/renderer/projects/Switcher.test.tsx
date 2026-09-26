@@ -32,7 +32,7 @@ beforeEach(() => {
 
 async function openMenu() {
   await screen.findByText('A ticket')
-  await user.click(screen.getByRole('button', { name: /open project menu/i }))
+  await user.click(screen.getByRole('button', { name: 'Demo' }))
   return await screen.findByRole('dialog')
 }
 
@@ -43,7 +43,7 @@ describe('the project menu', () => {
 
     const current = await within(menu).findByRole('button', { name: /switch to demo/i })
     expect(current.getAttribute('aria-current')).toBe('true')
-    expect(within(menu).getByText(CHECKOUT)).toBeTruthy()
+    expect(within(menu).getAllByText(CHECKOUT)).toHaveLength(2)
     expect(within(menu).getByText('Second app')).toBeTruthy()
     expect(within(menu).getByText(SECOND)).toBeTruthy()
     expect(
@@ -87,7 +87,7 @@ describe('the project menu', () => {
     renderApp()
     await screen.findByText('A ticket')
     await user.click(screen.getByText('Documents'))
-    await user.click(screen.getByRole('button', { name: /open project menu/i }))
+    await user.click(screen.getByRole('button', { name: 'Demo' }))
     await user.click(
       within(await screen.findByRole('dialog')).getByRole('button', {
         name: /switch to second app/i,
@@ -188,7 +188,7 @@ describe('when the list cannot be read', () => {
     renderApp()
     await screen.findByText('A ticket')
     api.rememberedProjects = vi.fn().mockRejectedValue(new Error('boom'))
-    await user.click(screen.getByRole('button', { name: /open project menu/i }))
+    await user.click(screen.getByRole('button', { name: 'Demo' }))
     const menu = await screen.findByRole('dialog')
 
     expect(await within(menu).findByText(/could not read the list/i)).toBeTruthy()
@@ -205,7 +205,7 @@ describe('switching while a move is in flight', () => {
     await user.click(within(await screen.findByRole('menu')).getByText('In progress'))
     await waitFor(() => expect(api.setTicketStatus).toHaveBeenCalled())
 
-    await user.click(screen.getByRole('button', { name: /open project menu/i }))
+    await user.click(screen.getByRole('button', { name: 'Demo' }))
     const menu = await screen.findByRole('dialog')
 
     expect(within(menu).getByText(/a ticket is being updated/i)).toBeTruthy()

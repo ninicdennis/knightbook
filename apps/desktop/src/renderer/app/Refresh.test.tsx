@@ -39,6 +39,23 @@ describe('refreshing', () => {
     expect(screen.queryByText(/reading project files/i)).toBeNull()
   })
 
+  it('confirms a refresh the user asked for, and only once it succeeded', async () => {
+    renderApp()
+    await screen.findByText('A ticket')
+
+    await user.click(screen.getByRole('button', { name: /refresh from disk/i }))
+    expect(await screen.findByText('Refreshed from disk')).toBeTruthy()
+  })
+
+  it('shows no confirmation for a refresh on focus', async () => {
+    renderApp()
+    await screen.findByText('A ticket')
+
+    window.dispatchEvent(new Event('focus'))
+    await waitFor(() => expect(api.readProject).toHaveBeenCalledTimes(2))
+    expect(screen.queryByText('Refreshed from disk')).toBeNull()
+  })
+
   it('reloads when the window regains focus', async () => {
     renderApp()
     await screen.findByText('A ticket')
@@ -75,6 +92,7 @@ describe('refreshing', () => {
 
     expect(await screen.findByText(/could not refresh/i)).toBeTruthy()
     expect(screen.getByText(/last version that loaded/i)).toBeTruthy()
+    expect(screen.queryByText('Refreshed from disk')).toBeNull()
     expect(screen.getByText('A ticket')).toBeTruthy()
   })
 })

@@ -7,107 +7,156 @@
  * Controls in the shell use the card layer, the same raised surface as a ticket,
  * so an interactive thing looks the same wherever it is.
  *
- * The narrow layout below starts at Mantine's `md` breakpoint, and App.tsx gives
- * the header a taller height from the same breakpoint. They must agree, because
- * AppShell offsets the main area by the height it is told, not the one it
- * measures.
+ * The header is two rows at every width, so its height never changes with the
+ * window. App.tsx tells AppShell that height (HEADER_HEIGHT); AppShell offsets
+ * the main area by the height it is told, not the one it measures, so the rows
+ * below must add up to it.
  */
+
+/*
+ * The title bar (D-030). The window has no operating-system title bar; the
+ * header's first row takes its place, and on screens with no project open a
+ * strip of the same height does. The main process sets the same height for the
+ * native window controls (title-bar.ts), and title-bar.test.ts checks they agree.
+ *
+ * The controls sit over the page: top right on Windows and Linux, top left on
+ * macOS. `env(titlebar-area-*)` gives the part of the row they leave free, and
+ * falls back to the whole row where there are no controls to avoid (a browser
+ * preview). The header already has --mantine-spacing-md of padding, so only
+ * what the controls take beyond that is added.
+ *
+ * Empty space in the row drags the window, so the operating system provides
+ * dragging, double-click to maximize and snapping. Anything that can be clicked
+ * opts out, or it would move the window instead of responding.
+ */
+:root {
+  --ps-titlebar-height: 48px;
+  --ps-titlebar-start: env(titlebar-area-x, 0px);
+  --ps-titlebar-end: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+}
+
+.ps-titlebar {
+  -webkit-app-region: drag;
+  user-select: none;
+  height: var(--ps-titlebar-height);
+  padding-inline-start: max(0px, calc(var(--ps-titlebar-start) - var(--mantine-spacing-md) + 4px));
+  padding-inline-end: max(0px, calc(var(--ps-titlebar-end) - var(--mantine-spacing-md) + 8px));
+}
+
+.ps-titlebar :where(button, a, input, [role='button']) {
+  -webkit-app-region: no-drag;
+}
+
+/* Drawers and dialogs open below the title bar. Otherwise a right-hand drawer's
+   close button lands under the native close button on Windows, and a click
+   meant to close the drawer closes the window. The dimmed overlay still covers
+   the row, so the page behind it cannot be clicked. */
+.mantine-Drawer-inner {
+  top: var(--ps-titlebar-height);
+  height: calc(100% - var(--ps-titlebar-height));
+}
+
+.mantine-Modal-root {
+  --modal-y-offset: max(calc(var(--ps-titlebar-height) + 8px), 5dvh);
+}
+
+.ps-titlebar-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+}
+
+.ps-titlebar-mark {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
 
 .ps-shell-chrome {
   background: var(--ps-app-bg);
   border-color: var(--ps-hairline);
 }
 
-/* Wide: identity left, search centred, navigation and utilities right. The two
-   outer columns share the leftover space equally so search stays centred on the
-   window. The controls never shrink below their own width; the identity column
-   gives way first, and its name and path truncate. */
 .ps-shell-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(12rem, 22.5rem) minmax(max-content, 1fr);
-  grid-template-areas: 'identity search actions';
-  align-items: center;
-  column-gap: var(--mantine-spacing-md);
-  row-gap: var(--mantine-spacing-xs);
+  display: flex;
+  flex-direction: column;
   height: 100%;
 }
 
-.ps-shell-identity {
-  grid-area: identity;
+/* First row: project menu at the start, search in the middle, settings at the
+   end. The two ends grow equally from their own widths, so search sits near
+   the centre. When space runs short, search gives way first (down to 12rem),
+   then the project name truncates. A strict centre would truncate the name
+   while the settings end of the row stood empty, because the window controls
+   already make that end wider than it looks. */
+.ps-shell-top {
   display: flex;
   align-items: center;
-  gap: var(--mantine-spacing-sm);
+  gap: var(--mantine-spacing-md);
+  flex-shrink: 0;
+}
+
+.ps-shell-identity {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
   min-width: 0;
 }
 
-.ps-shell-identity-text {
-  min-width: 0;
-}
-
-.ps-shell-search {
-  grid-area: search;
-  min-width: 0;
-}
-
-.ps-shell-actions {
-  grid-area: actions;
+.ps-shell-utilities {
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: var(--mantine-spacing-xs);
 }
 
-.ps-shell-utilities {
-  grid-area: utilities;
+/* The project name is the menu trigger. It is drawn as a heading with a
+   chevron rather than as a boxed control, so it reads as "you are here" first
+   and "click to change" second. */
+.ps-shell-project {
   display: flex;
   align-items: center;
-  gap: var(--mantine-spacing-xs);
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: var(--mantine-radius-sm);
+  font: inherit;
+  color: inherit;
 }
 
-/* Narrow: identity keeps the first row with the utilities beside it, and
-   navigation and search share a second row, where search takes whatever
-   navigation leaves. The actions wrapper steps aside so its two groups can be
-   placed on different rows. */
-@mixin smaller-than $mantine-breakpoint-md {
-  .ps-shell-header {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      'identity identity utilities'
-      'views search search';
-    column-gap: var(--mantine-spacing-sm);
-  }
-
-  .ps-shell-actions {
-    display: contents;
-  }
+.ps-shell-project:where(:hover) {
+  background: var(--ps-column-bg);
 }
 
 .ps-shell-name {
+  display: flex;
+  margin: 0;
+  min-width: 0;
   font-size: var(--mantine-font-size-lg);
   font-weight: 600;
   line-height: 1.3;
+}
+
+/* Truncation is on the text, not the heading, so the button's focus ring is
+   not clipped along with it. */
+.ps-shell-name-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* The end of a checkout path is what tells two clones apart, so it is the part
-   kept when the path does not fit. Right-to-left direction puts the ellipsis at
-   the start; the inner element keeps the path itself reading left to right. */
-.ps-shell-path {
-  font-size: var(--mantine-font-size-xs);
-  line-height: 1.35;
-  color: var(--ps-text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  direction: rtl;
-  text-align: left;
-}
-
-.ps-shell-path > span {
-  direction: ltr;
-  unicode-bidi: isolate;
+.ps-shell-search {
+  display: flex;
+  flex: 0 4 22.5rem;
+  align-items: center;
+  gap: 8px;
+  min-width: 12rem;
+  padding-inline: 10px;
+  border-radius: var(--mantine-radius-md);
 }
 
 /* One height for every control in the header, so the row lines up. */
@@ -123,16 +172,91 @@
   background: var(--ps-card-bg-quiet);
 }
 
-/* View navigation: the shared segmented style (components.css) at the header's
-   control height. */
-.ps-shell-views {
-  grid-area: views;
-  height: 2.125rem;
-  padding: 2px;
-  flex-shrink: 0;
+/* Second row: plain tabs. Inactive labels use body text at reduced weight
+   rather than the muted grey, so they stay easy to read; the active one is
+   marked by an accent underline that sits on the header's bottom hairline. */
+.ps-shell-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: var(--mantine-spacing-lg);
+  height: 2.5rem;
 }
 
-.ps-shell-views-label {
-  padding-block: 0;
-  line-height: calc(2.125rem - 6px);
+.ps-shell-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 2px;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+  color: var(--ps-text-muted);
+  border-radius: var(--mantine-radius-xs);
+}
+
+.ps-shell-tab:where(:hover) {
+  color: var(--mantine-color-text);
+}
+
+.ps-shell-tab[data-active] {
+  color: var(--mantine-color-text);
+  font-weight: 600;
+}
+
+.ps-shell-tab[data-active]::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--mantine-primary-color-filled);
+}
+
+.ps-shell-tab:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
+.ps-shell-tab-archive {
+  margin-inline-start: auto;
+}
+
+/* Quiet on purpose: the archive holds work that is put away, not waiting. */
+.ps-shell-count {
+  min-width: 1.25rem;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ps-column-bg);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 500;
+  line-height: 1.25rem;
+  text-align: center;
+  color: var(--ps-text-muted);
+}
+
+/* Narrow: search folds to its icon so the project name keeps the room. */
+@mixin smaller-than $mantine-breakpoint-sm {
+  .ps-shell-top {
+    gap: var(--mantine-spacing-xs);
+  }
+
+  .ps-shell-utilities {
+    flex: 0 0 auto;
+  }
+
+  .ps-shell-search {
+    flex: 0 0 2.125rem;
+    min-width: 0;
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .ps-shell-search-label {
+    display: none;
+  }
+
+  .ps-shell-tabs {
+    gap: var(--mantine-spacing-md);
+  }
 }
