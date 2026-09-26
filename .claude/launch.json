@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "board-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["preview:board"],
+      "port": 5199
+    }
+  ]
+}
