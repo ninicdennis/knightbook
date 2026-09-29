@@ -1,5 +1,6 @@
 import { MantineProvider } from '@mantine/core'
-import { render } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import { App } from '../App.js'
 import type {
@@ -170,6 +171,8 @@ export function makeApi(): KnightbookApi {
     setTicketStatus: boardUnchanged(),
     setTicketType: boardUnchanged(),
     setTicketBlocker: boardUnchanged(),
+    editTicketContent: boardUnchanged(),
+    setTicketLinks: boardUnchanged(),
     completeTicket: boardUnchanged(),
     recordVerificationIssue: boardUnchanged(),
     resolveVerificationIssue: boardUnchanged(),
@@ -242,4 +245,17 @@ export function renderApp() {
       <App />
     </MantineProvider>,
   )
+}
+
+/**
+ * Opens the ticket dialog's Edit menu and picks one entry. The menu renders in
+ * a portal, so its items are found on the whole screen, not inside the dialog.
+ */
+export async function chooseEdit(
+  user: ReturnType<typeof userEvent.setup>,
+  dialog: HTMLElement,
+  item: string,
+) {
+  await user.click(within(dialog).getByRole('button', { name: 'Edit ticket' }))
+  await user.click(await screen.findByRole('menuitem', { name: item }))
 }

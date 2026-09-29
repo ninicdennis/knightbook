@@ -2,7 +2,15 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { KnightbookApi } from '../../shared/contract.js'
-import { CHECKOUT, TICKET_ID, makeApi, project, renderApp, ticket } from '../test/test-fixtures.js'
+import {
+  CHECKOUT,
+  TICKET_ID,
+  chooseEdit,
+  makeApi,
+  project,
+  renderApp,
+  ticket,
+} from '../test/test-fixtures.js'
 
 /**
  * Setting and clearing a blocker from the detail view. The host turns blank
@@ -35,7 +43,7 @@ describe('the blocker in the detail view', () => {
     renderApp()
     const dialog = await openDetail()
 
-    await user.click(within(dialog).getByRole('button', { name: 'Add a blocker' }))
+    await chooseEdit(user, dialog, 'Add a blocker')
     await user.type(
       within(dialog).getByLabelText(/why this ticket cannot move/i),
       '  Waiting on design. ',
@@ -80,6 +88,27 @@ describe('the blocker in the detail view', () => {
     )
   })
 
+  it('offers the existing blocker as "Edit the blocker" in the Edit menu, starting from its text', async () => {
+    api.readProject = vi.fn().mockResolvedValue(boardWithBlocker('Old reason.'))
+    renderApp()
+    const dialog = await openDetail()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Edit ticket' }))
+    expect(screen.queryByRole('menuitem', { name: 'Add a blocker' })).toBeNull()
+    await user.click(await screen.findByRole('menuitem', { name: 'Edit the blocker' }))
+
+    const field = within(dialog).getByLabelText(/why this ticket cannot move/i)
+    expect((field as HTMLTextAreaElement).value).toBe('Old reason.')
+  })
+
+  it('shows nothing in the reading area when there is no blocker and no edit open', async () => {
+    renderApp()
+    const dialog = await openDetail()
+
+    expect(within(dialog).queryByText('Blocked')).toBeNull()
+    expect(within(dialog).queryByRole('button', { name: /blocker/i })).toBeNull()
+  })
+
   it('clears it as null, from the button or by saving empty text', async () => {
     api.readProject = vi.fn().mockResolvedValue(boardWithBlocker('A reason.'))
     // The host answers with the blocker still there, so both ways can be tried in turn.
@@ -103,11 +132,11 @@ describe('the blocker in the detail view', () => {
     renderApp()
     const dialog = await openDetail()
 
-    await user.click(within(dialog).getByRole('button', { name: 'Add a blocker' }))
+    await chooseEdit(user, dialog, 'Add a blocker')
     await user.type(within(dialog).getByLabelText(/why this ticket cannot move/i), 'Draft{Escape}')
 
     expect(screen.getByRole('dialog')).toBeTruthy()
-    expect(within(dialog).getByRole('button', { name: 'Add a blocker' })).toBeTruthy()
+    expect(within(dialog).queryByLabelText(/why this ticket cannot move/i)).toBeNull()
     expect(api.setTicketBlocker).not.toHaveBeenCalled()
   })
 
@@ -120,7 +149,7 @@ describe('the blocker in the detail view', () => {
     renderApp()
     const dialog = await openDetail()
 
-    await user.click(within(dialog).getByRole('button', { name: 'Add a blocker' }))
+    await chooseEdit(user, dialog, 'Add a blocker')
     await user.type(within(dialog).getByLabelText(/why this ticket cannot move/i), 'Reason')
     await user.click(within(dialog).getByRole('button', { name: 'Save blocker' }))
 

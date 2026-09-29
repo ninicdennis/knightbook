@@ -17,6 +17,10 @@ const api: KnightbookApi = {
     ipcRenderer.invoke('ticket:setStatus', rootPath, id, status, revision),
   setTicketBlocker: (rootPath, id, blocker, revision) =>
     ipcRenderer.invoke('ticket:setBlocker', rootPath, id, blocker, revision),
+  editTicketContent: (rootPath, id, content, revision) =>
+    ipcRenderer.invoke('ticket:editContent', rootPath, id, content, revision),
+  setTicketLinks: (rootPath, id, links, revision) =>
+    ipcRenderer.invoke('ticket:setLinks', rootPath, id, links, revision),
   setTicketType: (rootPath, id, type, revision) =>
     ipcRenderer.invoke('ticket:setType', rootPath, id, type, revision),
   completeTicket: (rootPath, id, revision) =>

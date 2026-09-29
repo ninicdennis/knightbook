@@ -1,6 +1,7 @@
 import { useDisclosure } from '@mantine/hooks'
 import { useCallback, useState } from 'react'
 import type { MovableStatus, ProjectView, Result, TicketType } from '../../shared/contract.js'
+import type { TicketContentEdit, TicketLinksEdit } from '../../shared/ticket-edit-contract.js'
 import type { ScreenControls } from '../projects/screen.js'
 
 /**
@@ -97,6 +98,40 @@ export function useTicketActions({
       )
     },
     [screen, apply],
+  )
+
+  /**
+   * Saves from an editor in the detail dialog. Unlike the other edits this hands
+   * the result back, because a refused save must keep the user's draft in the
+   * editor and explain itself there rather than in a board-level message behind
+   * the dialog. On a conflict the board is reloaded so the dialog shows the
+   * version that won.
+   */
+  const saveFromDialog = useCallback(
+    async (run: (rootPath: string) => Promise<Result<ProjectView>>) => {
+      if (screen.kind !== 'open') {
+        return { ok: false as const, code: 'not_open', message: 'No project is open.' }
+      }
+      const result = await run(screen.path)
+      if (result.ok) setScreen({ kind: 'open', path: screen.path, project: result.value })
+      else if (result.code === 'revision_conflict') await load(screen.path)
+      return result
+    },
+    [screen, load, setScreen],
+  )
+
+  const editContent = useCallback(
+    (ticketId: string, content: TicketContentEdit, revision: string) =>
+      saveFromDialog((path) =>
+        window.knightbook.editTicketContent(path, ticketId, content, revision),
+      ),
+    [saveFromDialog],
+  )
+
+  const editLinks = useCallback(
+    (ticketId: string, links: TicketLinksEdit, revision: string) =>
+      saveFromDialog((path) => window.knightbook.setTicketLinks(path, ticketId, links, revision)),
+    [saveFromDialog],
   )
 
   /**
@@ -241,6 +276,8 @@ export function useTicketActions({
     move,
     setType,
     setBlocker,
+    editContent,
+    editLinks,
     reorder,
     review,
     restore,

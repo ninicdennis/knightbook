@@ -208,6 +208,11 @@ export function App() {
           }}
           onSetType={(type) => actions.setType(detailTicket.id, type)}
           onSetBlocker={(blocker) => actions.setBlocker(detailTicket.id, blocker)}
+          onSaveContent={(content, revision) =>
+            actions.editContent(detailTicket.id, content, revision)
+          }
+          onSaveLinks={(links, revision) => actions.editLinks(detailTicket.id, links, revision)}
+          tickets={screen.project.tickets}
           onComplete={() => {
             closeTicket()
             actions.askToComplete(detailTicket.id)

@@ -1,6 +1,6 @@
-import { Badge, Button, Group, Stack, Text } from '@mantine/core'
-import { IconFileText, IconMap } from '@tabler/icons-react'
-import type { ReactNode } from 'react'
+import { Alert, Badge, Button, Group, Stack, Text } from '@mantine/core'
+import { IconAlertTriangle, IconFileText, IconMap } from '@tabler/icons-react'
+import { useState, type ReactNode } from 'react'
 import type { TicketDetailView, TicketPlanView, TicketView } from '../../shared/contract.js'
 import { STATUS_COLOR, STATUS_LABEL } from '../theme/theme.js'
 
@@ -90,36 +90,53 @@ export function RelatedDocuments({
   onOpen,
 }: {
   paths: string[]
-  onOpen: (path: string) => void
+  /** Opens one; resolves to why it could not be opened, or null. */
+  onOpen: (path: string) => Promise<string | null>
 }) {
+  /** Why a related-document button did not open anything. */
+  const [notice, setNotice] = useState<string | null>(null)
   if (paths.length === 0) return null
 
   return (
-    <Section title="Related documents">
-      <Stack gap={2} align="flex-start" style={{ maxWidth: '100%' }}>
-        {paths.map((path) => (
-          <Button
-            key={path}
-            variant="subtle"
-            size="compact-sm"
-            leftSection={<IconFileText size={14} />}
-            onClick={() => onOpen(path)}
-            style={{ maxWidth: '100%', height: 'auto', paddingBlock: 4 }}
-            styles={{
-              inner: { alignItems: 'flex-start' },
-              /*
-               * `anywhere` rather than `break-word`: only the former lets the
-               * path count as narrow when the dialog measures its contents, so
-               * a long one wraps instead of making the dialog wider.
-               */
-              label: { whiteSpace: 'normal', textAlign: 'left', overflowWrap: 'anywhere' },
-            }}
-          >
-            {path}
-          </Button>
-        ))}
-      </Stack>
-    </Section>
+    <>
+      {notice && (
+        <Alert
+          icon={<IconAlertTriangle size={16} />}
+          color="orange"
+          variant="light"
+          withCloseButton
+          closeButtonLabel="Dismiss"
+          onClose={() => setNotice(null)}
+        >
+          {notice}
+        </Alert>
+      )}
+      <Section title="Related documents">
+        <Stack gap={2} align="flex-start" style={{ maxWidth: '100%' }}>
+          {paths.map((path) => (
+            <Button
+              key={path}
+              variant="subtle"
+              size="compact-sm"
+              leftSection={<IconFileText size={14} />}
+              onClick={() => void onOpen(path).then(setNotice)}
+              style={{ maxWidth: '100%', height: 'auto', paddingBlock: 4 }}
+              styles={{
+                inner: { alignItems: 'flex-start' },
+                /*
+                 * `anywhere` rather than `break-word`: only the former lets the
+                 * path count as narrow when the dialog measures its contents, so
+                 * a long one wraps instead of making the dialog wider.
+                 */
+                label: { whiteSpace: 'normal', textAlign: 'left', overflowWrap: 'anywhere' },
+              }}
+            >
+              {path}
+            </Button>
+          ))}
+        </Stack>
+      </Section>
+    </>
   )
 }
 
