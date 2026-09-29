@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { KnightbookApi } from '../../shared/contract.js'
-import { TICKET_ID, makeApi, renderApp } from '../test/test-fixtures.js'
+import type { KnightbookApi } from '../../../shared/contract.js'
+import { TICKET_ID, makeApi, renderApp } from '../../test/test-fixtures.js'
 
 /**
  * A ticket's id is how it is named everywhere outside the board, so it has to

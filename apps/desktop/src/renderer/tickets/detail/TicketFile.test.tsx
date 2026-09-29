@@ -1,8 +1,8 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { KnightbookApi } from '../../shared/contract.js'
-import { CHECKOUT, TICKET_ID, makeApi, renderApp } from '../test/test-fixtures.js'
+import type { KnightbookApi } from '../../../shared/contract.js'
+import { CHECKOUT, TICKET_ID, makeApi, renderApp } from '../../test/test-fixtures.js'
 
 /**
  * Opening a ticket's own file in the user's editor. The host resolves the path

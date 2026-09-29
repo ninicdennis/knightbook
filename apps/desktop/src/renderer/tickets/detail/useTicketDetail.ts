@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { TicketDetailView, TicketView } from '../../shared/contract.js'
+import type { TicketDetailView, TicketView } from '../../../shared/contract.js'
 
 /**
  * A fresh read of one ticket for its detail view. It re-reads whenever the board

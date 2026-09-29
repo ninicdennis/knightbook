@@ -1,10 +1,10 @@
 import { Badge, Group, Modal, Stack } from '@mantine/core'
-import type { TicketView } from '../../shared/contract.js'
-import { STATUS_COLOR, STATUS_LABEL } from '../theme/theme.js'
-import { BackToSource, type BackTarget } from '../markdown/BackToSource.js'
-import { ReviewBadge } from '../review/ReviewBadge.js'
+import type { TicketView } from '../../../shared/contract.js'
+import { STATUS_COLOR, STATUS_LABEL } from '../../theme/theme.js'
+import { BackToSource, type BackTarget } from '../../markdown/BackToSource.js'
+import { ReviewBadge } from '../../review/ReviewBadge.js'
 import { TicketRecordRow } from './TicketRecordRow.js'
-import { TicketTypeBadge } from './TicketTypeBadge.js'
+import { TicketTypeBadge } from '../TicketTypeBadge.js'
 
 /** The ticket dialog's fixed header: the way back, the title, and its badges. */
 export function TicketDetailHeader({

@@ -10,9 +10,9 @@ import {
   IconUserCheck,
 } from '@tabler/icons-react'
 import { useState, type ReactNode } from 'react'
-import type { MovableStatus, TicketType, TicketView } from '../../shared/contract.js'
-import { STATUS_LABEL } from '../theme/theme.js'
-import { TICKET_TYPES, TICKET_TYPE_EMOJI, TICKET_TYPE_LABEL } from './ticket-types.js'
+import type { MovableStatus, TicketType, TicketView } from '../../../shared/contract.js'
+import { STATUS_LABEL } from '../../theme/theme.js'
+import { TICKET_TYPES, TICKET_TYPE_EMOJI, TICKET_TYPE_LABEL } from '../ticket-types.js'
 
 /**
  * The ticket's action bar. It sits in its own row at the foot of the dialog,
