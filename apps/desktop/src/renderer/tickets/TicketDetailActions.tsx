@@ -3,6 +3,7 @@ import {
   IconArrowsExchange,
   IconCheck,
   IconEye,
+  IconPencil,
   IconRotateClockwise,
   IconTag,
   IconThumbDown,
@@ -18,8 +19,9 @@ import { TICKET_TYPES, TICKET_TYPE_EMOJI, TICKET_TYPE_LABEL } from './ticket-typ
  * outside the scrolling reading area, so a long ticket never hides its own
  * controls.
  *
- * Two things are kept apart on purpose. Changing a ticket's place or its type is
- * bookkeeping anyone can undo, so those are quiet controls on the left. Review
+ * Two things are kept apart on purpose. Changing a ticket's place, its type, or
+ * its wording, links and blocker (the Edit menu) is bookkeeping anyone can undo,
+ * so those are quiet controls on the left. Review
  * and acceptance are decisions only the user can make (D-003, D-015), so they
  * are grouped on the right, and recording a review is separated from accepting
  * the work: having read something is not the same as accepting it.
@@ -31,6 +33,9 @@ import { TICKET_TYPES, TICKET_TYPE_EMOJI, TICKET_TYPE_LABEL } from './ticket-typ
  */
 
 const MOVABLE: MovableStatus[] = ['backlog', 'in_progress', 'verification']
+
+/** What the Edit menu can open: the ticket's own text, its links, or its blocker. */
+export type EditTarget = 'content' | 'links' | 'blocker'
 /** Matches the height of the `sm` buttons beside them. */
 const ICON_SIZE = 36
 
@@ -45,6 +50,14 @@ interface Props {
   onReview: () => void
   /** False while the content to be reviewed is still loading, so it cannot be approved unseen. */
   canReview?: boolean
+  /** Opens one of the dialog's editors in the reading area. */
+  onEdit: (target: EditTarget) => void
+  /**
+   * Which editors can open now. The text and links editors need the ticket's
+   * fresh read, and only one draft is open at a time so neither can drop the
+   * other's. The blocker can always be edited.
+   */
+  editable: { content: boolean; links: boolean }
 }
 
 export function TicketDetailActions({
@@ -56,6 +69,8 @@ export function TicketDetailActions({
   onResolveIssue,
   onReview,
   canReview = true,
+  onEdit,
+  editable,
 }: Props) {
   const inVerification = ticket.status === 'verification'
   /*
@@ -64,6 +79,7 @@ export function TicketDetailActions({
    */
   const [moveOpen, setMoveOpen] = useState(false)
   const [typeOpen, setTypeOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
   return (
     /*
@@ -108,6 +124,22 @@ export function TicketDetailActions({
               current={ticket.type === null}
               onChoose={() => onSetType(null)}
             />
+          </Menu.Dropdown>
+        </Menu>
+
+        <Menu position="top-start" withinPortal opened={editOpen} onChange={setEditOpen}>
+          <MenuIconTarget label="Edit ticket" opened={editOpen} icon={<IconPencil size={18} />} />
+          <Menu.Dropdown>
+            <Menu.Label>Edit</Menu.Label>
+            <Menu.Item disabled={!editable.content} onClick={() => onEdit('content')}>
+              Title and text
+            </Menu.Item>
+            <Menu.Item disabled={!editable.links} onClick={() => onEdit('links')}>
+              Prerequisites and documents
+            </Menu.Item>
+            <Menu.Item onClick={() => onEdit('blocker')}>
+              {ticket.blocker === null ? 'Add a blocker' : 'Edit the blocker'}
+            </Menu.Item>
           </Menu.Dropdown>
         </Menu>
       </Group>

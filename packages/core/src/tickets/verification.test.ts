@@ -4,7 +4,7 @@ import { setBacklogOrder, type Project } from '../records/project.js'
 import { selectNextTicket } from './selection.js'
 import { createTicket, listTickets, readTicket, updateTicket } from './tickets.js'
 import { recordVerificationIssue, resolveVerificationIssue } from './verification.js'
-import { withFixtureProject } from '../test/fixture-project.js'
+import { setDependenciesByHand, withFixtureProject } from '../test/fixture-project.js'
 import type { TicketFrontmatter } from '../records/schema.js'
 
 /**
@@ -253,11 +253,7 @@ describe('affected dependent work', () => {
     await withFixtureProject(async (project) => {
       const a = await createTicket(project, { title: 'A' })
       const b = await createTicket(project, { title: 'B', dependsOn: [a.frontmatter.id] })
-      const rereadA = await readTicket(project, a.frontmatter.id)
-      await updateTicket(project, a.frontmatter.id, {
-        expectedRevision: rereadA.revision,
-        dependsOn: [b.frontmatter.id],
-      })
+      await setDependenciesByHand(project, a.frontmatter.id, [b.frontmatter.id])
       await moveToVerification(project, b.frontmatter.id)
       await fail(project, b.frontmatter.id, 'Wrong shape.')
 

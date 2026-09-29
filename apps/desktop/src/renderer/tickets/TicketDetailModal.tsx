@@ -1,12 +1,13 @@
-import { Alert, Box, Group, Loader, Modal, Stack, Text } from '@mantine/core'
-import { IconAlertTriangle } from '@tabler/icons-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Box, Group, Modal, Stack } from '@mantine/core'
+import { useMemo, useState } from 'react'
 import type {
   MovableStatus,
-  TicketDetailView,
+  ProjectView,
+  Result,
   TicketType,
   TicketView,
 } from '../../shared/contract.js'
+import type { TicketContentEdit, TicketLinksEdit } from '../../shared/ticket-edit-contract.js'
 import type { LinkRequest, ScrollTarget } from '../markdown/useLinkNavigation.js'
 import { useReviewChanges } from '../review/useReviewChanges.js'
 import { renderMarkdown } from '../markdown/markdown.js'
@@ -14,17 +15,21 @@ import { MarkdownBody } from '../markdown/MarkdownBody.js'
 import type { BackTarget } from '../markdown/BackToSource.js'
 import { ReadingModeSwitch, ReviewChanges, type ReadingMode } from '../review/ReviewChanges.js'
 import { TicketBlocker } from './TicketBlocker.js'
-import { TicketDetailActions } from './TicketDetailActions.js'
+import { TicketDetailActions, type EditTarget } from './TicketDetailActions.js'
 import { TicketDetailHeader } from './TicketDetailHeader.js'
+import { TicketSourceEditor, TicketSourceEditorActions } from './TicketSourceEditor.js'
+import { TicketLinksEditor } from './TicketLinksEditor.js'
+import { useReturnFocusToCard } from './useReturnFocusToCard.js'
+import { useTicketDetail } from './useTicketDetail.js'
+import { useTicketSourceEdit } from './useTicketSourceEdit.js'
+import { TicketDetailNotices } from './TicketDetailNotices.js'
 import {
   AuditDetails,
-  CompletionRecord,
   Dependencies,
   PlanMemberships,
   RelatedDocuments,
   ReopenedRecord,
 } from './TicketDetailSections.js'
-import { VerificationIssueNotice } from '../verification/VerificationIssueNotice.js'
 
 /**
  * Everything written on one ticket. The specification asks the app to let a
@@ -53,6 +58,12 @@ interface Props {
   onSetType: (type: TicketType | null) => void
   /** Records why the ticket cannot move; null clears it. */
   onSetBlocker: (blocker: string | null) => void
+  /** Saves an edited title and body against the revision the editor read. */
+  onSaveContent: (content: TicketContentEdit, revision: string) => Promise<Result<ProjectView>>
+  /** Saves the prerequisites and related documents against the revision the editor read. */
+  onSaveLinks: (links: TicketLinksEdit, revision: string) => Promise<Result<ProjectView>>
+  /** The board's tickets, offered as prerequisites. */
+  tickets: TicketView[]
   onComplete: () => void
   /** D-017: the user says this did not pass verification, and why. */
   onReportIssue: () => void
@@ -77,6 +88,9 @@ export function TicketDetailModal({
   onMove,
   onSetType,
   onSetBlocker,
+  onSaveContent,
+  onSaveLinks,
+  tickets,
   onComplete,
   onReportIssue,
   onResolveIssue,
@@ -86,55 +100,25 @@ export function TicketDetailModal({
   back = null,
   onOpenPlan,
 }: Props) {
-  const [detail, setDetail] = useState<TicketDetailView | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  /** Why a related-document button did not open anything. */
-  const [relatedNotice, setRelatedNotice] = useState<string | null>(null)
+  const { detail, error } = useTicketDetail(rootPath, ticket)
+  const edit = useTicketSourceEdit(onSaveContent)
   const [chosenMode, setMode] = useState<ReadingMode>('read')
   // Never-reviewed content has nothing to compare against, so it only reads.
   const canCompare = ticket.review.state !== 'unreviewed'
   const mode: ReadingMode = canCompare ? chosenMode : 'read'
-  /** Whatever had focus when the dialog opened, as a fallback for closing. */
-  const returnTo = useRef<HTMLElement | null>(null)
+  const [editingLinks, setEditingLinks] = useState(false)
+  const [editingBlocker, setEditingBlocker] = useState(false)
+  useReturnFocusToCard(ticket.id)
 
-  // Re-read whenever the board says this ticket changed, including a review
-  // recorded from this very dialog.
-  const version = `${ticket.revision}|${ticket.review.state}|${ticket.review.lastReviewedAt ?? ''}`
-
-  useEffect(() => {
-    let cancelled = false
-    setError(null)
-    void window.knightbook.readTicket(rootPath, ticket.id).then((result) => {
-      if (cancelled) return
-      if (result.ok) setDetail(result.value)
-      else {
-        setDetail(null)
-        setError(result.message)
-      }
-    })
-    return () => {
-      cancelled = true
+  /** The footer's Edit menu opens each editor where its content is shown. */
+  const openEditor = (target: EditTarget): void => {
+    if (target === 'blocker') setEditingBlocker(true)
+    else if (target === 'links') setEditingLinks(true)
+    else if (detail) {
+      setMode('read')
+      edit.start({ title: detail.title, body: detail.body, revision: detail.revision })
     }
-  }, [rootPath, ticket.id, version])
-
-  /*
-   * Closing hands focus back to the card this ticket was opened from, whichever
-   * way it was opened: clicking a card leaves focus on the document body, and a
-   * result opened from search belongs to a dialog that has already closed, so
-   * the modal's own focus return has nothing useful to give back. The card's own
-   * control is a real target in both cases. Done here rather than left to
-   * Mantine so the behaviour is the same however the dialog closes.
-   */
-  useEffect(() => {
-    const opener = document.activeElement
-    returnTo.current = opener instanceof HTMLElement ? opener : null
-
-    return () => {
-      const card = document.querySelector<HTMLElement>(`[data-ticket-handle="${ticket.id}"]`)
-      const target = card ?? returnTo.current
-      if (target?.isConnected) target.focus()
-    }
-  }, [ticket.id])
+  }
 
   const rendered = useMemo(
     // Links resolve from where the ticket file really is, so `../../docs/x.md`
@@ -160,7 +144,15 @@ export function TicketDetailModal({
   return (
     /* `lg` padding rather than the default: the reading text, the badges and the
        action bar were all sitting too close to the dialog's edges. */
-    <Modal.Root opened onClose={onClose} size="xl" centered padding="lg" returnFocus={false}>
+    <Modal.Root
+      opened
+      // Escape, the close button and a click outside all ask before losing a draft.
+      onClose={() => edit.leave('close', onClose)}
+      size="xl"
+      centered
+      padding="lg"
+      returnFocus={false}
+    >
       <Modal.Overlay />
       {/*
        * A column, so the body below can be the only part that scrolls. The zero
@@ -171,7 +163,13 @@ export function TicketDetailModal({
         className="ps-reading"
         style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}
       >
-        <TicketDetailHeader ticket={ticket} isNext={isNext} back={back} rootPath={rootPath} />
+        {/* Going back would leave the ticket, so it waits until the edit is saved or cancelled. */}
+        <TicketDetailHeader
+          ticket={ticket}
+          isNext={isNext}
+          back={edit.editing ? null : back}
+          rootPath={rootPath}
+        />
 
         {/*
          * Mantine drops the body's top padding when a header sits above it, which
@@ -186,99 +184,70 @@ export function TicketDetailModal({
             paddingTop: 'var(--mantine-spacing-lg)',
           }}
         >
-          <Stack gap="lg">
-            <TicketBlocker blocker={ticket.blocker} onSave={onSetBlocker} />
+          {edit.editing ? (
+            <TicketSourceEditor edit={edit} />
+          ) : (
+            <Stack gap="lg">
+              <TicketBlocker
+                blocker={ticket.blocker}
+                onSave={onSetBlocker}
+                editing={editingBlocker}
+                onEditingChange={setEditingBlocker}
+              />
 
-            <VerificationIssueNotice ticket={ticket} />
+              <TicketDetailNotices ticket={ticket} error={error} loading={!detail && !error} />
 
-            {ticket.completionUnattributed && (
-              <Alert
-                icon={<IconAlertTriangle size={16} />}
-                color="orange"
-                variant="light"
-                title="Unattributed"
-              >
-                This was set to Done outside the app, with no recorded decision from the app or an
-                AI tool. Nothing here shows who accepted it.
-              </Alert>
-            )}
+              {detail && rendered && (
+                <>
+                  <Dependencies ticket={ticket} detail={detail} />
+                  {editingLinks && (
+                    <TicketLinksEditor
+                      rootPath={rootPath}
+                      ticket={ticket}
+                      detail={detail}
+                      candidates={tickets}
+                      onSave={onSaveLinks}
+                      onDone={() => setEditingLinks(false)}
+                    />
+                  )}
+                  {canCompare && (
+                    <Group justify="flex-end">
+                      <ReadingModeSwitch mode={mode} onChange={setMode} />
+                    </Group>
+                  )}
+                  {/*
+                   * The reading region. It is deliberately one element holding only
+                   * the ticket's own prose, so a formatted editor and its toolbar
+                   * can take this space later without touching the header, the
+                   * action bar, or how the dialog scrolls.
+                   */}
+                  {mode === 'read' ? (
+                    <MarkdownBody
+                      compact
+                      html={rendered.html}
+                      onFollowLink={onFollowLink}
+                      scrollTo={scrollTo}
+                    />
+                  ) : (
+                    <ReviewChanges
+                      load={changes.load}
+                      heldRevision={ticket.revision}
+                      onReload={changes.reload}
+                    />
+                  )}
 
-            {ticket.completion && <CompletionRecord completion={ticket.completion} />}
-
-            {error && (
-              <Alert
-                icon={<IconAlertTriangle size={16} />}
-                color="orange"
-                variant="light"
-                title="Could not read this ticket"
-              >
-                {error} Nothing was changed.
-              </Alert>
-            )}
-
-            {!detail && !error && (
-              <Group gap="xs">
-                <Loader size="sm" />
-                <Text size="sm" c="dimmed">
-                  Reading the ticket…
-                </Text>
-              </Group>
-            )}
-
-            {detail && rendered && (
-              <>
-                <Dependencies ticket={ticket} detail={detail} />
-                {canCompare && (
-                  <Group justify="flex-end">
-                    <ReadingModeSwitch mode={mode} onChange={setMode} />
-                  </Group>
-                )}
-                {/*
-                 * The reading region. It is deliberately one element holding only
-                 * the ticket's own prose, so a formatted editor and its toolbar
-                 * can take this space later without touching the header, the
-                 * action bar, or how the dialog scrolls.
-                 */}
-                {mode === 'read' ? (
-                  <MarkdownBody
-                    compact
-                    html={rendered.html}
-                    onFollowLink={onFollowLink}
-                    scrollTo={scrollTo}
+                  {/* Structured related documents are project-relative, not body-relative. */}
+                  <RelatedDocuments
+                    paths={detail.relatedDocuments}
+                    onOpen={(path) => onFollowLink({ path, fragment: null })}
                   />
-                ) : (
-                  <ReviewChanges
-                    load={changes.load}
-                    heldRevision={ticket.revision}
-                    onReload={changes.reload}
-                  />
-                )}
-
-                {relatedNotice && (
-                  <Alert
-                    icon={<IconAlertTriangle size={16} />}
-                    color="orange"
-                    variant="light"
-                    withCloseButton
-                    closeButtonLabel="Dismiss"
-                    onClose={() => setRelatedNotice(null)}
-                  >
-                    {relatedNotice}
-                  </Alert>
-                )}
-                {/* Structured related documents are project-relative, not body-relative. */}
-                <RelatedDocuments
-                  paths={detail.relatedDocuments}
-                  onOpen={(path) =>
-                    void onFollowLink({ path, fragment: null }).then(setRelatedNotice)
-                  }
-                />
-                <PlanMemberships plans={detail.plans} onOpen={onOpenPlan} />
-                <ReopenedRecord previous={detail.previousCompletions} />
-                <AuditDetails detail={detail} lastReviewedAt={ticket.review.lastReviewedAt} />
-              </>
-            )}
-          </Stack>
+                  <PlanMemberships plans={detail.plans} onOpen={onOpenPlan} />
+                  <ReopenedRecord previous={detail.previousCompletions} />
+                  <AuditDetails detail={detail} lastReviewedAt={ticket.review.lastReviewedAt} />
+                </>
+              )}
+            </Stack>
+          )}
         </Modal.Body>
 
         <Box
@@ -287,16 +256,25 @@ export function TicketDetailModal({
             padding: 'var(--mantine-spacing-md) var(--mantine-spacing-lg)',
           }}
         >
-          <TicketDetailActions
-            ticket={ticket}
-            onMove={onMove}
-            onSetType={onSetType}
-            onComplete={onComplete}
-            onReportIssue={onReportIssue}
-            onResolveIssue={onResolveIssue}
-            onReview={() => shownRevision && onReview(shownRevision)}
-            canReview={shownRevision !== null}
-          />
+          {/* While editing, only the editor's controls show: a move or a type change would
+              close the dialog or change the revision the draft is saved against. */}
+          {edit.editing ? (
+            <TicketSourceEditorActions edit={edit} onClose={onClose} />
+          ) : (
+            <TicketDetailActions
+              ticket={ticket}
+              onMove={onMove}
+              onSetType={onSetType}
+              onComplete={onComplete}
+              onReportIssue={onReportIssue}
+              onResolveIssue={onResolveIssue}
+              onReview={() => shownRevision && onReview(shownRevision)}
+              canReview={shownRevision !== null}
+              onEdit={openEditor}
+              // One draft at a time: opening the text editor would drop the links draft.
+              editable={{ content: detail !== null && !editingLinks, links: detail !== null }}
+            />
+          )}
         </Box>
       </Modal.Content>
     </Modal.Root>

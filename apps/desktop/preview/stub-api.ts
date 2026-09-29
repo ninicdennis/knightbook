@@ -243,6 +243,14 @@ export const stubApi: KnightbookApi = {
     record('setTicketBlocker', id, blocker)
     return { ok: true, value: PROJECT }
   },
+  editTicketContent: async (_root, id, content) => {
+    record('editTicketContent', id, content.title)
+    return { ok: true, value: PROJECT }
+  },
+  setTicketLinks: async (_root, id, links) => {
+    record('setTicketLinks', id, links.dependsOn.length, links.relatedDocuments.length)
+    return { ok: true, value: PROJECT }
+  },
   completeTicket: async (_root, id) => {
     record('completeTicket', id)
     return { ok: true, value: PROJECT }
