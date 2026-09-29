@@ -122,6 +122,64 @@ target list, the host-reuse rule, a checksum that is absent, a checksum that doe
 not match, and a download that 404s; the one that really fetches from nodejs.org is
 off unless `STAGE_RUNTIME_NETWORK=1`.
 
+## One runtime per architecture (2026-09-29)
+
+The mac target packages arm64 and x64 in one electron-builder run, and staging used
+to fill one `resources/mcp/` folder that both packages copied. On the Apple silicon
+runner both DMGs would have carried the arm64 Node, so the Intel app could not start
+its MCP server (ticket `41d9ba34`, option 1 in `docs/proposals/platform-support.md`).
+
+Staging now writes each architecture to its own folder, `resources/mcp-<arch>/`,
+and `extraResources` reads `resources/mcp-${arch}`, which electron-builder expands
+for each architecture it packages. The installed folder is still `mcp`, so the
+command a user saved in their client does not change. A macOS stage fills both
+folders unless `--arch` names one (`--arch` now takes a comma-separated list), and
+`--out` now names the resources folder the `mcp-<arch>` folders go in. The mac
+architecture list lives in `MAC_ARCHES` in `scripts/node-runtime.mjs`, and a test
+fails if it and the mac target in `electron-builder.yml` disagree. The unpackaged
+app reads `resources/mcp-<its own arch>`. An old `resources/mcp/` folder from
+earlier builds is left where it is, since an AI client may be running from it; it
+is ignored by Git and no longer packaged.
+
+The CPU is read from the executable header (`scripts/binary-architecture.mjs`:
+Mach-O, ELF and PE), because the file is called `node` either way. Staging refuses
+a runtime whose header names another CPU. `packaged-architecture.test.ts` compares
+each packaged app's Node with the app's own executable, which Electron builds per
+architecture, and `architecture.test.ts` runs the same rule on fake Mach-O packages
+so that a shared runtime and a swapped pair are shown to fail on any machine.
+
+Verified on Windows 10 x64 (2026-09-29): the staging script run with
+`--platform=darwin` into a scratch folder downloaded and checksum-verified both
+macOS runtimes and staged `mcp-arm64/node` as an arm64 Mach-O and `mcp-x64/node` as
+an x86-64 Mach-O, read from their headers. The live download test does the same for
+both when `STAGE_RUNTIME_NETWORK=1`. A Windows `electron-builder --dir` packaged from
+`resources/mcp-x64` into `resources/mcp`, and the packaged Node and `Knightbook.exe`
+are both x64 PE.
+
+Not verified on Windows: a macOS package. electron-builder does not build macOS
+apps on Windows, so neither DMG was produced here.
+
+On the macOS CI runner (manual run 36585090697, 2026-09-29, Apple silicon
+`macos-latest`), staging filled both `mcp-arm64` and `mcp-x64`, but
+`electron-builder --dir` packaged only `mac-arm64`: `--dir` without an
+architecture builds the runner's own CPU. The Intel app was never packaged, so the
+packaged test passed on half the release. The user chose on 2026-09-29 to package both in CI rather
+than leave the Intel app to a release build; the macOS package job was about a
+minute in total, and Mac jobs run only on merges and manual runs. CI's macOS job now runs
+`pnpm pack:dir:mac` (`--dir --mac --arm64 --x64`), and under
+`REQUIRE_PACKAGED_APP` on macOS `packaged-architecture.test.ts` fails unless both
+CPUs were packaged. The suites that start the server or the window pick the package
+for the runner's own CPU, so none of them depends on Rosetta. A separate CI step
+starts the Intel Node with `arch -x86_64` and is allowed to fail: it records
+whether Rosetta was there, and is not a gate (ticket `eca73450`).
+
+Checked in manual run 36589398153 (attempt 2, 2026-09-29): the macOS job packaged
+`arch=x64` into `release/mac` and `arch=arm64` into `release/mac-arm64`, both
+tests in `packaged-architecture.test.ts` ran and passed, and the Intel Node read as
+a Mach-O x86_64 binary and printed `v24.19.0` under `arch -x86_64`, so Rosetta was
+available on that runner. Only `--version` was run under Rosetta; the Intel app's
+MCP server and window were not started.
+
 ## What this does not establish
 
 - **macOS and Linux.** This ran on Windows only. The layout and launch command

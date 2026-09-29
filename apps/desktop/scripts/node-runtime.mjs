@@ -48,6 +48,29 @@ export function resolveTarget(platform = process.platform, arch = process.arch) 
 }
 
 /**
+ * The architectures electron-builder.yml's mac target builds in one run. Each
+ * needs its own runtime staged, because electron-builder packages one resources
+ * folder per architecture and an arm64 Node does not run on an Intel Mac. A test
+ * holds this to the config.
+ */
+export const MAC_ARCHES = ['arm64', 'x64']
+
+/**
+ * Which architectures to stage for a platform: the ones asked for, else every
+ * one the mac build packages, else this machine's. `requested` is the `--arch`
+ * value, comma-separated.
+ */
+export function archesToStage(platform, requested) {
+  if (requested) return requested.split(',').map((arch) => arch.trim())
+  return platform === 'darwin' ? [...MAC_ARCHES] : [process.arch]
+}
+
+/** The folder a target's runtime is staged in, which electron-builder reads as `mcp-${arch}`. */
+export function stagingFolderFor(target) {
+  return `mcp-${target.arch}`
+}
+
+/**
  * Where the runtime lives inside the published archive, which differs by
  * platform: Windows ships a zip with the binary at the top level, the others
  * ship a tarball with it under `bin/`.

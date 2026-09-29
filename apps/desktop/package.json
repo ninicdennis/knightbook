@@ -9,6 +9,7 @@
     "preview:board": "vite --config vite.preview.config.ts",
     "build": "electron-vite build && node scripts/stage-mcp-runtime.mjs",
     "pack:dir": "node scripts/release-lock-guard.mjs && pnpm build && electron-builder --dir",
+    "pack:dir:mac": "node scripts/release-lock-guard.mjs && pnpm build && electron-builder --dir --mac --arm64 --x64",
     "start:packaged": "node scripts/start-packaged.mjs",
     "derive:icon": "electron scripts/derive-icon.cjs",
     "test": "vitest run",

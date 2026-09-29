@@ -1,5 +1,6 @@
 import { access, readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
+import { binaryArchitecture } from '../../../apps/desktop/scripts/binary-architecture.mjs'
 import { REPO_ROOT, type StagedResources } from './stage.js'
 
 /**
@@ -104,16 +105,41 @@ export async function launchableBinaryIn(
 export async function packagedResources(): Promise<StagedResources | null> {
   for (const candidate of await candidates()) {
     const resources = await resourcesOf(candidate.resources)
-    if (resources) return resources
+    if (resources && (await runsOnThisCpu(resources))) return resources
   }
   return null
+}
+
+/**
+ * The suites that start the server or the window need a package for this
+ * machine's CPU. macOS packages the Intel app beside the Apple silicon one, and
+ * starting that on an arm runner would need Rosetta, which is not a given; which
+ * one `readdir` lists first must not decide that.
+ */
+async function runsOnThisCpu(resources: StagedResources): Promise<boolean> {
+  return (await binaryArchitecture(resources.nodePath))?.arch === process.arch
+}
+
+/**
+ * Every packaged build here, one per architecture where a platform packages
+ * several (macOS builds arm64 and x64 in one run), for checks that must look at
+ * each of them rather than the first found.
+ */
+export async function packagedApps(): Promise<PackagedApp[]> {
+  const apps: PackagedApp[] = []
+  for (const candidate of await candidates()) {
+    const resources = await resourcesOf(candidate.resources)
+    const executablePath = await launchableBinaryIn(join(RELEASE_DIR, candidate.executableIn))
+    if (resources && executablePath) apps.push({ ...resources, executablePath })
+  }
+  return apps
 }
 
 /** The packaged build including the binary to launch, for the window tests. */
 export async function packagedApp(): Promise<PackagedApp | null> {
   for (const candidate of await candidates()) {
     const resources = await resourcesOf(candidate.resources)
-    if (!resources) continue
+    if (!resources || !(await runsOnThisCpu(resources))) continue
 
     const executablePath = await launchableBinaryIn(join(RELEASE_DIR, candidate.executableIn))
     if (!executablePath) continue

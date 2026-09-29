@@ -93,9 +93,27 @@ jobs:
       - *setup-node
       - *install
 
-      # Builds the MCP bundle itself before packaging.
+      # Builds the MCP bundle itself before packaging. `--dir` alone packages only
+      # the runner's own CPU, so macOS asks for both: the Intel app is otherwise
+      # never packaged or checked before a release (ticket eca73450).
       - name: Build and package the desktop app
+        if: runner.os != 'macOS'
         run: pnpm pack:dir
+
+      - name: Build and package the desktop app for both Mac CPUs
+        if: runner.os == 'macOS'
+        run: pnpm pack:dir:mac
+
+      # Evidence, not a gate: whether the Intel app's own Node starts on this arm
+      # runner, which needs Rosetta. The packaged tests read its header and do not
+      # run it, so this is the only place it is started.
+      - name: Start the Intel Mac runtime under Rosetta
+        if: runner.os == 'macOS'
+        continue-on-error: true
+        run: |
+          node_x64="$(ls -d apps/desktop/release/mac/*.app)/Contents/Resources/mcp/node"
+          file "$node_x64"
+          arch -x86_64 "$node_x64" --version
 
       # Only the packaged-* suites; `check` already ran the rest. With
       # REQUIRE_PACKAGED_APP set they fail rather than skip if the package is missing.

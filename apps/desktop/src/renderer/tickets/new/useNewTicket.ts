@@ -1,7 +1,7 @@
 import { useDisclosure } from '@mantine/hooks'
 import { useCallback, useState } from 'react'
-import type { NewTicketInput } from '../../shared/ticket-create-contract.js'
-import type { ScreenControls } from '../projects/screen.js'
+import type { NewTicketInput } from '../../../shared/ticket-create-contract.js'
+import type { ScreenControls } from '../../projects/screen.js'
 
 /**
  * Creating a ticket from the board. Unlike the other board actions a failure

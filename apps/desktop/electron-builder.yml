@@ -16,8 +16,12 @@ files:
 # outside the ASAR archive so the AI client can execute them directly. The
 # installed path is what the user saves in their client configuration, so it has
 # to stay stable across updates.
+#
+# Staged per architecture, and ${arch} is expanded for each one packaged: the mac
+# target builds arm64 and x64 in one run, and each needs a Node for its own CPU.
+# Installed, it is still `mcp`, so the saved client command does not change.
 extraResources:
-  - from: resources/mcp
+  - from: resources/mcp-${arch}
     to: mcp
     filter:
       - '**/*'

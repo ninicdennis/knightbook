@@ -75,8 +75,10 @@ export {
   describeReason,
   evaluateReadiness,
   failedPrerequisites,
+  summarizePrerequisites,
   type FailedPrerequisite,
   type IneligibilityReason,
+  type PrerequisiteSummary,
   type Readiness,
 } from './tickets/dependencies.js'
 export {

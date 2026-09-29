@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { KnightbookApi } from '../../shared/contract.js'
-import { TICKET_ID, detail, makeApi, project, renderApp, ticket } from '../test/test-fixtures.js'
+import type { KnightbookApi } from '../../../shared/contract.js'
+import { TICKET_ID, detail, makeApi, project, renderApp, ticket } from '../../test/test-fixtures.js'
 
 /**
  * How the ticket dialog is put together, rather than what it says.

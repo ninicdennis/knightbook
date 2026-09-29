@@ -1,7 +1,7 @@
 import { Alert, Group, Loader, Text } from '@mantine/core'
 import { IconAlertTriangle } from '@tabler/icons-react'
-import type { TicketView } from '../../shared/contract.js'
-import { VerificationIssueNotice } from '../verification/VerificationIssueNotice.js'
+import type { TicketView } from '../../../shared/contract.js'
+import { VerificationIssueNotice } from '../../verification/VerificationIssueNotice.js'
 import { CompletionRecord } from './TicketDetailSections.js'
 
 /**

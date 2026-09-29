@@ -7,6 +7,7 @@ import {
   listTicketRecords,
   phasesContaining,
   ProjectError,
+  summarizePrerequisites,
   ticketReviewStatus,
   type Project,
   type Ticket,
@@ -44,6 +45,8 @@ export async function toTicketView(
   const { frontmatter } = ticket
   const unattributed = isUnattributedCompletion(ticket)
   const readiness = evaluateReadiness(frontmatter, lookup.byId, lookup.unreadable)
+  const prerequisites = summarizePrerequisites(frontmatter, readiness)
+  const cycle = readiness.reasons.find((reason) => reason.kind === 'dependency_cycle')
   const review = await ticketReviewStatus(project, frontmatter.id)
 
   return {
@@ -55,6 +58,9 @@ export async function toTicketView(
     dependsOn: frontmatter.depends_on,
     dependencyReady: readiness.ready,
     dependencyNotes: readiness.reasons.map(describeReason),
+    unmetPrerequisites: prerequisites.unmet.map(describeReason),
+    prerequisitesMet: prerequisites.allMet,
+    dependencyCycle: cycle ? describeReason(cycle) : null,
     blocker: frontmatter.blocker ?? null,
     archivedAt: frontmatter.archived?.archived_at ?? null,
     verificationIssue: frontmatter.verification_issue

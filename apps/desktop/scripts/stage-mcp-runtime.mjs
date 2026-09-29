@@ -2,13 +2,16 @@ import { chmod, copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { execPath } from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { binaryArchitecture } from './binary-architecture.mjs'
 import {
+  archesToStage,
   archiveFor,
   ensureRuntime,
   hostProvides,
   NODE_VERSION,
   resolveTarget,
   sha256,
+  stagingFolderFor,
 } from './node-runtime.mjs'
 
 /**
@@ -19,6 +22,11 @@ import {
  * one running this script. `--platform` and `--arch` name that target and
  * default to this machine; `node-runtime.mjs` supplies the binary, downloading
  * and checksumming it when the host cannot provide it itself.
+ *
+ * Each architecture gets its own folder, `resources/mcp-<arch>`, which
+ * electron-builder reads as `mcp-${arch}`. The mac build packages arm64 and x64
+ * in one run, so a macOS stage fills both unless `--arch` narrows it; one shared
+ * folder would give the Intel app an arm64 Node that cannot start.
  *
  * Nothing already staged is replaced unless it differs. On a development machine
  * an AI client usually has the MCP server running from this very directory, and
@@ -43,17 +51,18 @@ function option(argv, name) {
 const args = process.argv.slice(2)
 
 /**
- * `--platform=darwin --arch=arm64`, or this machine when neither is given, and
- * `--out` for a directory other than the one electron-builder installs from.
- * A cross-target stage clears the runtime for the platform it replaces, so
- * checking one without disturbing a working resources directory needs `--out`.
+ * `--platform=darwin --arch=arm64` (`--arch` takes a comma-separated list), or
+ * this machine when neither is given, and `--out` for a resources directory
+ * other than the one electron-builder installs from. A cross-target stage clears
+ * the runtime for the platform it replaces, so checking one without disturbing a
+ * working resources directory needs `--out`.
  */
 /** A target this project does not build is a mistake in the command, not a crash. */
-function targetOrExit() {
+function targetsOrExit() {
+  const platform = option(args, 'platform') ?? process.platform
   try {
-    return resolveTarget(
-      option(args, 'platform') ?? process.platform,
-      option(args, 'arch') ?? process.arch,
+    return archesToStage(platform, option(args, 'arch')).map((arch) =>
+      resolveTarget(platform, arch),
     )
   } catch (error) {
     console.error(error.message)
@@ -61,10 +70,8 @@ function targetOrExit() {
   }
 }
 
-const buildTarget = targetOrExit()
-const target = option(args, 'out') ?? join(APP_DIR, 'resources', 'mcp')
-const runtime = archiveFor(buildTarget)
-const nodeName = runtime.binaryName
+const buildTargets = targetsOrExit()
+const resourcesDir = option(args, 'out') ?? join(APP_DIR, 'resources')
 
 /** A file being in use, which on Windows is how a running executable reports. */
 const IN_USE = new Set(['EPERM', 'EBUSY', 'EACCES', 'ETXTBSY'])
@@ -108,7 +115,7 @@ function explainInUse(staged) {
 }
 
 /** Copies only what changed, and explains a file that is held open. */
-async function stage(source, name) {
+async function stage(source, target, name) {
   const staged = join(target, name)
   if (await isAlreadyStaged(source, staged)) {
     return `kept ${name} (already identical)`
@@ -131,7 +138,7 @@ async function stage(source, name) {
  * the previous wholesale delete was for. The runtime for this platform is not
  * touched here: `stage` decides whether it needs replacing at all.
  */
-async function removeStrays() {
+async function removeStrays(target, nodeName) {
   const keep = new Set([nodeName, 'server.mjs'])
   let entries
   try {
@@ -158,47 +165,72 @@ try {
   process.exit(1)
 }
 
-await mkdir(target, { recursive: true })
-
-const strays = await removeStrays()
-if (strays.length > 0) console.log(`Removed from an earlier build: ${strays.join(', ')}`)
-
-/*
- * The build host's own Node is used only when it is the same platform, CPU and
- * version as the runtime this project ships. Anything else is fetched for the
- * target, so a macOS arm64 release is never a copy of the Linux x64 Node that
- * built it.
+/**
+ * A staged runtime whose header names another CPU is refused here, before
+ * electron-builder packages it into an app that could not start its server.
  */
-const source = hostProvides(buildTarget)
-  ? execPath
-  : await ensureRuntime({ target: buildTarget, cacheDir: CACHE, log: (line) => console.log(line) })
-
-const results = [await stage(source, nodeName), await stage(server, 'server.mjs')]
-
-/*
- * Set on the staged copy as well: copyFile carries the mode on POSIX, but a
- * binary just unpacked from a zip never had one to carry.
- *
- * On Windows this call does nothing that survives. NTFS has no executable bit,
- * so a Linux or macOS runtime staged here is packaged without one and the
- * installed application cannot start its own server. Each target is built on
- * its own runner in CI, so this is a warning about a cross-build a person ran
- * by hand rather than something the release path depends on.
- */
-if (buildTarget.platform !== 'win32') {
-  await chmod(join(target, nodeName), 0o755)
-
-  if (process.platform === 'win32') {
-    console.warn(
-      `\nWarning: staged a ${buildTarget.key} runtime on Windows.\n` +
-        'NTFS cannot record the executable bit, so this staging directory is not\n' +
-        `fit to package. Build the ${buildTarget.platform} target on ${buildTarget.platform}.`,
-    )
-  }
+async function checkArchitecture(staged, buildTarget) {
+  const found = await binaryArchitecture(staged)
+  if (found?.arch === buildTarget.arch) return
+  console.error(
+    `The runtime staged for ${buildTarget.key} is built for ` +
+      `${found ? (found.arch ?? 'an unknown CPU') : 'no CPU this can read'}: ${staged}`,
+  )
+  process.exit(1)
 }
 
-console.log(`${results.join(', ')} in ${target}`)
-console.log(
-  `Staged Node ${hostProvides(buildTarget) ? process.versions.node : NODE_VERSION} ` +
-    `for ${buildTarget.key}${source === execPath ? ', from this build host' : ''}.`,
-)
+async function stageTarget(buildTarget) {
+  const target = join(resourcesDir, stagingFolderFor(buildTarget))
+  const nodeName = archiveFor(buildTarget).binaryName
+  await mkdir(target, { recursive: true })
+
+  const strays = await removeStrays(target, nodeName)
+  if (strays.length > 0) console.log(`Removed from an earlier build: ${strays.join(', ')}`)
+
+  /*
+   * The build host's own Node is used only when it is the same platform, CPU and
+   * version as the runtime this project ships. Anything else is fetched for the
+   * target, so a macOS arm64 release is never a copy of the Linux x64 Node that
+   * built it.
+   */
+  const source = hostProvides(buildTarget)
+    ? execPath
+    : await ensureRuntime({
+        target: buildTarget,
+        cacheDir: CACHE,
+        log: (line) => console.log(line),
+      })
+
+  const results = [await stage(source, target, nodeName), await stage(server, target, 'server.mjs')]
+  await checkArchitecture(join(target, nodeName), buildTarget)
+
+  /*
+   * Set on the staged copy as well: copyFile carries the mode on POSIX, but a
+   * binary just unpacked from a zip never had one to carry.
+   *
+   * On Windows this call does nothing that survives. NTFS has no executable bit,
+   * so a Linux or macOS runtime staged here is packaged without one and the
+   * installed application cannot start its own server. Each target is built on
+   * its own runner in CI, so this is a warning about a cross-build a person ran
+   * by hand rather than something the release path depends on.
+   */
+  if (buildTarget.platform !== 'win32') {
+    await chmod(join(target, nodeName), 0o755)
+
+    if (process.platform === 'win32') {
+      console.warn(
+        `\nWarning: staged a ${buildTarget.key} runtime on Windows.\n` +
+          'NTFS cannot record the executable bit, so this staging directory is not\n' +
+          `fit to package. Build the ${buildTarget.platform} target on ${buildTarget.platform}.`,
+      )
+    }
+  }
+
+  console.log(`${results.join(', ')} in ${target}`)
+  console.log(
+    `Staged Node ${hostProvides(buildTarget) ? process.versions.node : NODE_VERSION} ` +
+      `for ${buildTarget.key}${source === execPath ? ', from this build host' : ''}.`,
+  )
+}
+
+for (const buildTarget of buildTargets) await stageTarget(buildTarget)

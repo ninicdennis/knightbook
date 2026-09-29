@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { KnightbookApi } from '../../shared/contract.js'
+import type { KnightbookApi } from '../../../shared/contract.js'
 import {
   CHECKOUT,
   TICKET_ID,
@@ -11,7 +11,7 @@ import {
   project,
   renderApp,
   ticket,
-} from '../test/test-fixtures.js'
+} from '../../test/test-fixtures.js'
 
 /**
  * Editing a ticket's title and body as Markdown source from the detail view.

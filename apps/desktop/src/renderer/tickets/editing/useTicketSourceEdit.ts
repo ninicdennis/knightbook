@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
-import type { ProjectView, Result } from '../../shared/contract.js'
-import type { TicketContentEdit } from '../../shared/ticket-edit-contract.js'
+import type { ProjectView, Result } from '../../../shared/contract.js'
+import type { TicketContentEdit } from '../../../shared/ticket-edit-contract.js'
 
 /**
  * The state of editing a ticket's title and body as source. The draft is held

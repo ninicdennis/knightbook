@@ -57,6 +57,7 @@ describe('the board distinguishes states that must not look alike', () => {
             dependencyReady: false,
             dependsOn: ['22222222-2222-4222-8222-222222222222'],
             dependencyNotes: ['waiting on "Safe writes" (2222…), which is in_progress'],
+            unmetPrerequisites: ['waiting on "Safe writes" (2222…), which is in_progress'],
           }),
         ],
       }),

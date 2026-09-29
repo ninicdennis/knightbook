@@ -16,6 +16,7 @@
     "typecheck": "pnpm -r typecheck",
     "build:mcp": "pnpm --filter @knightbook/mcp build",
     "pack:dir": "pnpm build:mcp && pnpm --filter @knightbook/desktop pack:dir",
+    "pack:dir:mac": "pnpm build:mcp && pnpm --filter @knightbook/desktop pack:dir:mac",
     "start:packaged": "pnpm --filter @knightbook/desktop start:packaged",
     "preview:board": "pnpm --filter @knightbook/desktop preview:board",
     "experiment:editor": "pnpm --filter @knightbook/experiment-editor-preservation report"

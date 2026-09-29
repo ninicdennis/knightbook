@@ -4,6 +4,8 @@ import {
   IconEye,
   IconEyeOff,
   IconLock,
+  IconLockOpen,
+  IconRefresh,
   IconRobot,
   IconThumbDown,
   IconUserCheck,
@@ -31,14 +33,20 @@ interface Props {
 }
 
 export function TicketCardBadges({ ticket, isNext }: Props) {
-  const blockedInBacklog = ticket.status === 'backlog' && !ticket.dependencyReady
+  // Readiness only decides what can start next, so these read in Backlog only.
+  const inBacklog = ticket.status === 'backlog'
+  const waiting = inBacklog && ticket.unmetPrerequisites.length > 0
+  const unlocked = inBacklog && ticket.prerequisitesMet
+  const cycle = inBacklog ? ticket.dependencyCycle : null
   const affected = ticket.affectedBy.length > 0
 
   const hasAnything =
     ticket.type !== null ||
     isNext ||
     ticket.review.state !== 'reviewed' ||
-    blockedInBacklog ||
+    waiting ||
+    unlocked ||
+    cycle !== null ||
     ticket.blocker !== null ||
     ticket.verificationIssue !== null ||
     affected ||
@@ -83,12 +91,37 @@ export function TicketCardBadges({ ticket, isNext }: Props) {
         </Tooltip>
       )}
 
-      {blockedInBacklog && (
+      {/*
+        Counts the prerequisites still unmet, not every one listed, so a ticket
+        held back only by its own blocker never reads as waiting on others.
+      */}
+      {waiting && (
         <QuietBadge
           icon={<IconLock size={11} />}
-          label={`Waiting on ${ticket.dependsOn.length}`}
-          tooltip={ticket.dependencyNotes.join('; ') || 'Not ready to start.'}
+          label={`Waiting on ${ticket.unmetPrerequisites.length}`}
+          tooltip={ticket.unmetPrerequisites.join('; ')}
         />
+      )}
+
+      {unlocked && (
+        <Tooltip
+          multiline
+          w={300}
+          withArrow
+          label="Every prerequisite is in Verification or Done, so they no longer hold this back. That does not mean they were accepted."
+        >
+          <Badge size="sm" variant="light" color="green" leftSection={<IconLockOpen size={11} />}>
+            Unlocked
+          </Badge>
+        </Tooltip>
+      )}
+
+      {cycle && (
+        <Tooltip multiline w={320} withArrow label={cycle}>
+          <Badge size="sm" variant="light" color="orange" leftSection={<IconRefresh size={11} />}>
+            Dependency cycle
+          </Badge>
+        </Tooltip>
       )}
 
       {ticket.blocker && (

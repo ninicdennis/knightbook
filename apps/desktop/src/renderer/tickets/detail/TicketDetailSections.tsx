@@ -1,8 +1,8 @@
 import { Alert, Badge, Button, Group, Stack, Text } from '@mantine/core'
 import { IconAlertTriangle, IconFileText, IconMap } from '@tabler/icons-react'
 import { useState, type ReactNode } from 'react'
-import type { TicketDetailView, TicketPlanView, TicketView } from '../../shared/contract.js'
-import { STATUS_COLOR, STATUS_LABEL } from '../theme/theme.js'
+import type { TicketDetailView, TicketPlanView, TicketView } from '../../../shared/contract.js'
+import { STATUS_COLOR, STATUS_LABEL } from '../../theme/theme.js'
 
 /**
  * The secondary sections of the ticket detail: what it depends on, which

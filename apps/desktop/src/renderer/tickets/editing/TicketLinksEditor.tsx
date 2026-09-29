@@ -1,9 +1,9 @@
 import { Alert, Button, Group, Stack } from '@mantine/core'
 import { IconAlertTriangle } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
-import type { ProjectView, Result, TicketDetailView, TicketView } from '../../shared/contract.js'
-import type { DocumentSummary } from '../../shared/documents-contract.js'
-import type { TicketLinksEdit } from '../../shared/ticket-edit-contract.js'
+import type { ProjectView, Result, TicketDetailView, TicketView } from '../../../shared/contract.js'
+import type { DocumentSummary } from '../../../shared/documents-contract.js'
+import type { TicketLinksEdit } from '../../../shared/ticket-edit-contract.js'
 import { LinkPicker, fileName, matchTitleOrPath, renderDocumentOption } from './LinkPicker.js'
 
 /**

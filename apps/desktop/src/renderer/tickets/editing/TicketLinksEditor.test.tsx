@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { KnightbookApi, TicketView } from '../../shared/contract.js'
+import type { KnightbookApi, TicketView } from '../../../shared/contract.js'
 import {
   CHECKOUT,
   TICKET_ID,
@@ -11,7 +11,7 @@ import {
   project,
   renderApp,
   ticket,
-} from '../test/test-fixtures.js'
+} from '../../test/test-fixtures.js'
 
 /**
  * Editing a ticket's prerequisites and related documents from its detail view.
@@ -224,6 +224,7 @@ describe('after saving', () => {
           dependsOn: [SCHEMA_ID],
           dependencyReady: false,
           dependencyNotes: ['waiting on "Define the schema"'],
+          unmetPrerequisites: ['waiting on "Define the schema"'],
         }),
       }
     })

@@ -20,8 +20,8 @@ import { useLinkNavigation, type LinkPlace } from './markdown/useLinkNavigation.
 import { McpStatusFooter } from './mcp/McpStatusFooter.js'
 import { TicketSearch } from './search/TicketSearch.js'
 import { useSearchShortcut } from './search/useSearchShortcut.js'
-import { TicketDetailModal } from './tickets/TicketDetailModal.js'
-import { useNewTicket } from './tickets/useNewTicket.js'
+import { TicketDetailModal } from './tickets/detail/TicketDetailModal.js'
+import { useNewTicket } from './tickets/new/useNewTicket.js'
 import { useTicketActions } from './tickets/useTicketActions.js'
 
 /**

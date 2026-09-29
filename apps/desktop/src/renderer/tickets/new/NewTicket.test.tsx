@@ -1,9 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { KnightbookApi } from '../../shared/contract.js'
+import type { KnightbookApi } from '../../../shared/contract.js'
 import { NEW_TICKET_SECTIONS, newTicketBody } from './NewTicketDialog.js'
-import { CHECKOUT, detail, makeApi, project, renderApp, ticket } from '../test/test-fixtures.js'
+import { CHECKOUT, detail, makeApi, project, renderApp, ticket } from '../../test/test-fixtures.js'
 
 /**
  * Creating a ticket from the Backlog column. What matters: the title is

@@ -23,7 +23,7 @@ import type { ReactNode } from 'react'
 import type { ChangeSectionView, ReviewChangesView } from '../../shared/contract.js'
 import type { ChangesLoad } from './useReviewChanges.js'
 import { DiffTable } from './DiffTable.js'
-import { formatWhen } from '../tickets/TicketDetailSections.js'
+import { formatWhen } from '../tickets/detail/TicketDetailSections.js'
 
 /**
  * The read-only "changes since your review" view, shared by documents and

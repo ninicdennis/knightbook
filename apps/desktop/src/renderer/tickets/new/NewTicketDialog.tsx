@@ -1,9 +1,9 @@
 import { Alert, Button, Group, Modal, Select, Stack, Textarea, TextInput } from '@mantine/core'
 import { IconAlertTriangle } from '@tabler/icons-react'
 import { useEffect, useState, type FormEvent } from 'react'
-import type { TicketType } from '../../shared/contract.js'
-import type { NewTicketInput } from '../../shared/ticket-create-contract.js'
-import { TICKET_TYPE_EMOJI, TICKET_TYPE_LABEL, TICKET_TYPES } from './ticket-types.js'
+import type { TicketType } from '../../../shared/contract.js'
+import type { NewTicketInput } from '../../../shared/ticket-create-contract.js'
+import { TICKET_TYPE_EMOJI, TICKET_TYPE_LABEL, TICKET_TYPES } from '../ticket-types.js'
 
 /**
  * A new Backlog ticket, written by the same core path an AI tool's

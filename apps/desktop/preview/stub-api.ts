@@ -25,6 +25,9 @@ function ticket(
     dependsOn: [],
     dependencyReady: true,
     dependencyNotes: [],
+    unmetPrerequisites: [],
+    prerequisitesMet: false,
+    dependencyCycle: null,
     blocker: null,
     verificationIssue: null,
     affectedBy: [],
@@ -85,6 +88,22 @@ const PROJECT: ProjectView = {
         'waiting on "Build the Kanban board" (board), which is backlog',
         'waiting on "Evaluate the formatted editor" (editor), which is in_progress',
       ],
+      unmetPrerequisites: [
+        'waiting on "Build the Kanban board" (board), which is backlog',
+        'waiting on "Evaluate the formatted editor" (editor), which is in_progress',
+      ],
+    }),
+    // Prerequisites all met, held back only by its own blocker.
+    ticket({
+      id: 'release',
+      type: 'feature',
+      title: 'Publish a release from the release branch',
+      status: 'backlog',
+      dependsOn: ['writes'],
+      dependencyReady: false,
+      dependencyNotes: ['is blocked: Deferred until the user decides to start it.'],
+      prerequisitesMet: true,
+      blocker: 'Deferred until the user decides to start it.',
     }),
     ticket({
       id: 'editor',
@@ -129,6 +148,10 @@ const PROJECT: ProjectView = {
       dependsOn: ['importer'],
       dependencyReady: false,
       dependencyNotes: [
+        'rests on "Import dated records" (importer), which failed verification: ' +
+          'Every imported date is an hour off around the daylight-saving change.',
+      ],
+      unmetPrerequisites: [
         'rests on "Import dated records" (importer), which failed verification: ' +
           'Every imported date is an hour off around the daylight-saving change.',
       ],
