@@ -109,6 +109,21 @@ export async function packagedResources(): Promise<StagedResources | null> {
   return null
 }
 
+/**
+ * Every packaged build here, one per architecture where a platform packages
+ * several (macOS builds arm64 and x64 in one run), for checks that must look at
+ * each of them rather than the first found.
+ */
+export async function packagedApps(): Promise<PackagedApp[]> {
+  const apps: PackagedApp[] = []
+  for (const candidate of await candidates()) {
+    const resources = await resourcesOf(candidate.resources)
+    const executablePath = await launchableBinaryIn(join(RELEASE_DIR, candidate.executableIn))
+    if (resources && executablePath) apps.push({ ...resources, executablePath })
+  }
+  return apps
+}
+
 /** The packaged build including the binary to launch, for the window tests. */
 export async function packagedApp(): Promise<PackagedApp | null> {
   for (const candidate of await candidates()) {

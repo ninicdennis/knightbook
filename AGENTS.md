@@ -112,7 +112,7 @@ docs/              Specification, technical design, research, experiment finding
 ## Gotchas
 
 - `packages/mcp/dist/server.mjs` is only as new as the last `pnpm build:mcp`. The
-  copies under `apps/desktop/resources/mcp/` and `apps/desktop/release/` are staged at
+  copies under `apps/desktop/resources/mcp-<arch>/` and `apps/desktop/release/` are staged at
   packaging time and lag further. A connected client keeps running the build it
   started with; reconnect after rebuilding.
 - `pnpm preview:board` must run from the repository root script (it filters to

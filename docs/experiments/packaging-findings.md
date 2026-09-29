@@ -122,6 +122,47 @@ target list, the host-reuse rule, a checksum that is absent, a checksum that doe
 not match, and a download that 404s; the one that really fetches from nodejs.org is
 off unless `STAGE_RUNTIME_NETWORK=1`.
 
+## One runtime per architecture (2026-09-29)
+
+The mac target packages arm64 and x64 in one electron-builder run, and staging used
+to fill one `resources/mcp/` folder that both packages copied. On the Apple silicon
+runner both DMGs would have carried the arm64 Node, so the Intel app could not start
+its MCP server (ticket `41d9ba34`, option 1 in `docs/proposals/platform-support.md`).
+
+Staging now writes each architecture to its own folder, `resources/mcp-<arch>/`,
+and `extraResources` reads `resources/mcp-${arch}`, which electron-builder expands
+for each architecture it packages. The installed folder is still `mcp`, so the
+command a user saved in their client does not change. A macOS stage fills both
+folders unless `--arch` names one (`--arch` now takes a comma-separated list), and
+`--out` now names the resources folder the `mcp-<arch>` folders go in. The mac
+architecture list lives in `MAC_ARCHES` in `scripts/node-runtime.mjs`, and a test
+fails if it and the mac target in `electron-builder.yml` disagree. The unpackaged
+app reads `resources/mcp-<its own arch>`. An old `resources/mcp/` folder from
+earlier builds is left where it is, since an AI client may be running from it; it
+is ignored by Git and no longer packaged.
+
+The CPU is read from the executable header (`scripts/binary-architecture.mjs`:
+Mach-O, ELF and PE), because the file is called `node` either way. Staging refuses
+a runtime whose header names another CPU. `packaged-architecture.test.ts` compares
+each packaged app's Node with the app's own executable, which Electron builds per
+architecture, and `architecture.test.ts` runs the same rule on fake Mach-O packages
+so that a shared runtime and a swapped pair are shown to fail on any machine.
+
+Verified on Windows 10 x64 (2026-09-29): the staging script run with
+`--platform=darwin` into a scratch folder downloaded and checksum-verified both
+macOS runtimes and staged `mcp-arm64/node` as an arm64 Mach-O and `mcp-x64/node` as
+an x86-64 Mach-O, read from their headers. The live download test does the same for
+both when `STAGE_RUNTIME_NETWORK=1`. A Windows `electron-builder --dir` packaged from
+`resources/mcp-x64` into `resources/mcp`, and the packaged Node and `Knightbook.exe`
+are both x64 PE.
+
+Not verified: a macOS package. electron-builder does not build macOS apps on
+Windows, so neither DMG was produced, and nothing here was run on a Mac, under
+Rosetta or otherwise. Whether CI's `pnpm pack:dir` (`--dir`) on the macOS runner
+packages both architectures or only the runner's own is also unchecked; if only
+arm64, the packaged test covers the arm64 app there and the Intel app is first
+packaged by a release build.
+
 ## What this does not establish
 
 - **macOS and Linux.** This ran on Windows only. The layout and launch command

@@ -1,16 +1,21 @@
 // @vitest-environment node
 import { readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterAll, describe, expect, it } from 'vitest'
+import { binaryArchitecture } from './binary-architecture.mjs'
 import {
+  archesToStage,
   archiveFor,
   checksumFor,
   distUrl,
   ensureRuntime,
   hostProvides,
   NODE_VERSION,
+  MAC_ARCHES,
   resolveTarget,
+  stagingFolderFor,
 } from './node-runtime.mjs'
 
 /**
@@ -120,6 +125,46 @@ describe('the checksum gate', () => {
 })
 
 /**
+ * The mac build packages two architectures in one run, and electron-builder
+ * takes each one's runtime from `resources/mcp-${arch}`. These hold the staging
+ * side and the config to the same list, so adding an architecture to one and not
+ * the other fails here instead of shipping a Node for the wrong CPU.
+ */
+describe('staging one runtime per architecture', () => {
+  const config = readFile(
+    join(dirname(fileURLToPath(import.meta.url)), '..', 'electron-builder.yml'),
+    'utf8',
+  )
+
+  it('stages every architecture the mac target packages', async () => {
+    // The mac block runs from "mac:" to the next top-level key.
+    const lines = (await config).split(/\r?\n/)
+    const macStart = lines.indexOf('mac:')
+    const macEnd = lines.findIndex((line, index) => index > macStart && /^\S/.test(line))
+    const archLine = lines.slice(macStart, macEnd).find((line) => line.includes('arch:')) ?? ''
+    const packaged = archLine
+      .slice(archLine.indexOf('[') + 1, archLine.indexOf(']'))
+      .split(',')
+      .map((arch) => arch.trim())
+
+    expect(packaged?.sort()).toEqual([...MAC_ARCHES].sort())
+    expect(archesToStage('darwin', undefined)).toEqual(MAC_ARCHES)
+  })
+
+  it('stages only this machine for other platforms, and what was asked for when asked', () => {
+    expect(archesToStage('win32', undefined)).toEqual([process.arch])
+    expect(archesToStage('darwin', 'x64')).toEqual(['x64'])
+    expect(archesToStage('darwin', 'arm64, x64')).toEqual(['arm64', 'x64'])
+  })
+
+  it('gives each architecture the folder electron-builder reads for it', async () => {
+    expect(stagingFolderFor(resolveTarget('darwin', 'arm64'))).toBe('mcp-arm64')
+    expect(stagingFolderFor(resolveTarget('darwin', 'x64'))).toBe('mcp-x64')
+    expect(await config).toContain('from: resources/mcp-${arch}')
+  })
+})
+
+/**
  * The real thing: fetch, verify and unpack a runtime for a platform this machine
  * is not. Off by default because it downloads about 30 MB; set
  * STAGE_RUNTIME_NETWORK=1 to run it.
@@ -140,5 +185,12 @@ describe.runIf(process.env['STAGE_RUNTIME_NETWORK'] === '1')('against nodejs.org
 
     // The second call must not download again.
     expect(await ensureRuntime({ target, cacheDir })).toBe(first)
+  }, 600_000)
+
+  it('fetches a macOS runtime for each CPU, each built for that CPU', async () => {
+    for (const arch of MAC_ARCHES) {
+      const binary = await ensureRuntime({ target: resolveTarget('darwin', arch), cacheDir })
+      expect(await binaryArchitecture(binary)).toEqual({ format: 'mach-o', arch })
+    }
   }, 600_000)
 })

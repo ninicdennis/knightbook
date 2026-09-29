@@ -16,9 +16,11 @@ import { accessRegistryPath } from './mcp-access.js'
 export const NODE_BINARY = process.platform === 'win32' ? 'node.exe' : 'node'
 
 export function mcpResourcesDir(): string {
+  // Unpackaged, this is the staging folder for this machine's CPU, which
+  // `pnpm build` fills (scripts/stage-mcp-runtime.mjs).
   return app.isPackaged
     ? join(process.resourcesPath, 'mcp')
-    : join(app.getAppPath(), 'resources', 'mcp')
+    : join(app.getAppPath(), 'resources', `mcp-${process.arch}`)
 }
 
 export interface McpLaunchCommand {
