@@ -100,6 +100,19 @@ export interface TicketView {
   dependsOn: string[]
   dependencyReady: boolean
   dependencyNotes: string[]
+  /**
+   * One note per listed prerequisite that does not satisfy the dependency; the
+   * length is the card's "Waiting on" count. A blocker, a cycle or a failure
+   * further up the chain is never in here, because each has its own badge.
+   */
+  unmetPrerequisites: string[]
+  /**
+   * Lists prerequisites and every one is in Verification or Done, with no
+   * failure or cycle among them (D-014, D-017). That is not acceptance.
+   */
+  prerequisitesMet: boolean
+  /** The dependency cycle this ticket is part of, described, or null. */
+  dependencyCycle: string | null
   blocker: string | null
   /** This ticket's own failed verification, or null. */
   verificationIssue: VerificationIssueView | null

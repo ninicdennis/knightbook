@@ -224,6 +224,7 @@ describe('after saving', () => {
           dependsOn: [SCHEMA_ID],
           dependencyReady: false,
           dependencyNotes: ['waiting on "Define the schema"'],
+          unmetPrerequisites: ['waiting on "Define the schema"'],
         }),
       }
     })

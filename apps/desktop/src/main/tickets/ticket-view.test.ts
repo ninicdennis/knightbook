@@ -81,3 +81,49 @@ describe('a completion on the board', () => {
     expect(view.completion).toBeNull()
   })
 })
+
+describe('prerequisites on the board', () => {
+  async function moveTo(id: string, status: 'in_progress' | 'verification') {
+    const current = await readTicket(project, id)
+    return await updateTicket(project, id, { expectedRevision: current.revision, status })
+  }
+
+  it('counts the unmet prerequisites, and says when all are met, as each one moves', async () => {
+    const first = await createTicket(project, { title: 'First' })
+    const second = await createTicket(project, { title: 'Second' })
+    const dependent = await createTicket(project, {
+      title: 'Dependent',
+      dependsOn: [first.frontmatter.id, second.frontmatter.id],
+    })
+    const id = dependent.frontmatter.id
+
+    expect((await viewOf(id)).unmetPrerequisites).toHaveLength(2)
+
+    await moveTo(first.frontmatter.id, 'in_progress')
+    await moveTo(first.frontmatter.id, 'verification')
+    const halfway = await viewOf(id)
+    expect(halfway.unmetPrerequisites).toEqual([expect.stringMatching(/"Second"/)])
+    expect(halfway.prerequisitesMet).toBe(false)
+
+    await moveTo(second.frontmatter.id, 'in_progress')
+    await moveTo(second.frontmatter.id, 'verification')
+    const unlocked = await viewOf(id)
+    expect(unlocked.unmetPrerequisites).toEqual([])
+    expect(unlocked.prerequisitesMet).toBe(true)
+  })
+
+  it('does not count a blocker as a prerequisite, with or without prerequisites', async () => {
+    const lone = await createTicket(project, { title: 'Lone' })
+    await updateTicket(project, lone.frontmatter.id, {
+      expectedRevision: lone.revision,
+      blocker: 'Waiting upstream.',
+    })
+
+    const view = await viewOf(lone.frontmatter.id)
+
+    expect(view.dependencyReady).toBe(false)
+    expect(view.unmetPrerequisites).toEqual([])
+    expect(view.prerequisitesMet).toBe(false)
+    expect(view.dependencyCycle).toBeNull()
+  })
+})

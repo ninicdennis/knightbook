@@ -196,3 +196,56 @@ export function describeReason(reason: IneligibilityReason): string {
       )
   }
 }
+
+/** The prerequisite side of readiness, for a card to summarize apart from a blocker or a cycle. */
+export interface PrerequisiteSummary {
+  /** One reason per listed prerequisite that does not satisfy the dependency. */
+  readonly unmet: IneligibilityReason[]
+  /**
+   * The ticket lists prerequisites and nothing about them holds it back: each is
+   * in Verification or Done (which is not acceptance, D-014), none failed
+   * verification anywhere up the chain (D-017), and they form no cycle. A
+   * blocker is the ticket's own state, so it does not count against this.
+   */
+  readonly allMet: boolean
+}
+
+export function summarizePrerequisites(
+  ticket: TicketFrontmatter,
+  readiness: Readiness,
+): PrerequisiteSummary {
+  const unmetById = new Map<string, IneligibilityReason>()
+  for (const reason of readiness.reasons) {
+    const unmetId = unmetPrerequisiteId(reason)
+    // A prerequisite that failed verification after being reopened is both not
+    // ready and failed; it is still one prerequisite, so it counts once.
+    if (unmetId !== null && !unmetById.has(unmetId)) unmetById.set(unmetId, reason)
+  }
+  return {
+    unmet: [...unmetById.values()],
+    allMet:
+      ticket.depends_on.length > 0 &&
+      readiness.reasons.every((reason) => reason.kind === 'blocked'),
+  }
+}
+
+/**
+ * The listed prerequisite a reason is about, or null when the reason is not one
+ * prerequisite failing to satisfy: a blocker, a cycle (self-dependency included),
+ * or a failure further up the chain, each of which the card shows on its own.
+ */
+function unmetPrerequisiteId(reason: IneligibilityReason): string | null {
+  switch (reason.kind) {
+    case 'prerequisite_not_ready':
+    case 'prerequisite_archived':
+    case 'prerequisite_missing':
+    case 'prerequisite_unreadable':
+      return reason.ticketId
+    case 'prerequisite_failed_verification':
+      return reason.direct ? reason.ticketId : null
+    case 'self_dependency':
+    case 'dependency_cycle':
+    case 'blocked':
+      return null
+  }
+}
