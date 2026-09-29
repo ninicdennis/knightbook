@@ -163,13 +163,22 @@ On the macOS CI runner (manual run 36585090697, 2026-09-29, Apple silicon
 `macos-latest`), staging filled both `mcp-arm64` and `mcp-x64`, but
 `electron-builder --dir` packaged only `mac-arm64`: `--dir` without an
 architecture builds the runner's own CPU. The Intel app was never packaged, so the
-packaged test passed on half the release. CI's macOS job now runs
+packaged test passed on half the release. The user chose on 2026-09-29 to package both in CI rather
+than leave the Intel app to a release build; the macOS package job was about a
+minute in total, and Mac jobs run only on merges and manual runs. CI's macOS job now runs
 `pnpm pack:dir:mac` (`--dir --mac --arm64 --x64`), and under
 `REQUIRE_PACKAGED_APP` on macOS `packaged-architecture.test.ts` fails unless both
 CPUs were packaged. The suites that start the server or the window pick the package
 for the runner's own CPU, so none of them depends on Rosetta. A separate CI step
 starts the Intel Node with `arch -x86_64` and is allowed to fail: it records
 whether Rosetta was there, and is not a gate (ticket `eca73450`).
+
+Checked in manual run 36589398153 (attempt 2, 2026-09-29): the macOS job packaged
+`arch=x64` into `release/mac` and `arch=arm64` into `release/mac-arm64`, both
+tests in `packaged-architecture.test.ts` ran and passed, and the Intel Node read as
+a Mach-O x86_64 binary and printed `v24.19.0` under `arch -x86_64`, so Rosetta was
+available on that runner. Only `--version` was run under Rosetta; the Intel app's
+MCP server and window were not started.
 
 ## What this does not establish
 
