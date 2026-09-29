@@ -156,12 +156,20 @@ both when `STAGE_RUNTIME_NETWORK=1`. A Windows `electron-builder --dir` packaged
 `resources/mcp-x64` into `resources/mcp`, and the packaged Node and `Knightbook.exe`
 are both x64 PE.
 
-Not verified: a macOS package. electron-builder does not build macOS apps on
-Windows, so neither DMG was produced, and nothing here was run on a Mac, under
-Rosetta or otherwise. Whether CI's `pnpm pack:dir` (`--dir`) on the macOS runner
-packages both architectures or only the runner's own is also unchecked; if only
-arm64, the packaged test covers the arm64 app there and the Intel app is first
-packaged by a release build.
+Not verified on Windows: a macOS package. electron-builder does not build macOS
+apps on Windows, so neither DMG was produced here.
+
+On the macOS CI runner (manual run 36585090697, 2026-09-29, Apple silicon
+`macos-latest`), staging filled both `mcp-arm64` and `mcp-x64`, but
+`electron-builder --dir` packaged only `mac-arm64`: `--dir` without an
+architecture builds the runner's own CPU. The Intel app was never packaged, so the
+packaged test passed on half the release. CI's macOS job now runs
+`pnpm pack:dir:mac` (`--dir --mac --arm64 --x64`), and under
+`REQUIRE_PACKAGED_APP` on macOS `packaged-architecture.test.ts` fails unless both
+CPUs were packaged. The suites that start the server or the window pick the package
+for the runner's own CPU, so none of them depends on Rosetta. A separate CI step
+starts the Intel Node with `arch -x86_64` and is allowed to fail: it records
+whether Rosetta was there, and is not a gate (ticket `eca73450`).
 
 ## What this does not establish
 

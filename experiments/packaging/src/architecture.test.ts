@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { runtimeMismatches, type PackagedBinaries } from './architecture.js'
+import { packagedCpus, runtimeMismatches, type PackagedBinaries } from './architecture.js'
 import { removeWorkspace } from './stage.js'
 
 /**
@@ -78,5 +78,17 @@ describe('checking each package carries a runtime for its own CPU', () => {
     expect(mismatches).toEqual([
       'mac-arm64: the app is built for arm64 but its Node runtime is built for an unreadable CPU',
     ])
+  })
+})
+
+describe('listing the CPUs a release packaged', () => {
+  it('names each app once, so a missing Intel app shows as a missing entry', async () => {
+    const [armPackage, intelPackage] = await macPackages('arm64', 'x64')
+
+    expect(await packagedCpus([intelPackage!.executablePath, armPackage!.executablePath])).toEqual([
+      'arm64',
+      'x64',
+    ])
+    expect(await packagedCpus([armPackage!.executablePath])).toEqual(['arm64'])
   })
 })

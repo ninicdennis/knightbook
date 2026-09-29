@@ -38,12 +38,13 @@ Node 24 and pnpm (the version pinned in `package.json`, via corepack).
 | `pnpm check` | Lint (Oxlint), format check (Prettier), typecheck, every test suite. Run before handing off |
 | `pnpm build:mcp` | Bundle the MCP server to `packages/mcp/dist/server.mjs` |
 | `pnpm pack:dir` | Build and produce the unpacked app under `apps/desktop/release/` |
+| `pnpm pack:dir:mac` | The same on macOS for both CPUs (arm64 and x64); CI's macOS job uses it |
 | `pnpm start:packaged` | Open the last packaged app; rebuilds nothing |
 | `pnpm preview:board` | Board against stub data at `http://localhost:5199`, for layout review |
 | `pnpm --filter <package> test` | One package's tests, e.g. `@knightbook/core` |
 
 CI (`.github/workflows/ci.yml`) has two jobs. `check` runs install, `build:mcp` and
-`check`; only if it passes, `package` runs `pack:dir` and then the packaged-app tests
+`check`; only if it passes, `package` runs `pack:dir` (`pack:dir:mac` on macOS) and then the packaged-app tests
 (`test:packaged` in `experiments/packaging`) with `REQUIRE_PACKAGED_APP=1`, keeping a
 screenshot and the app's output when the window test fails. Pull requests run on
 Linux only. Windows and macOS are checked on merge to `main` and on a manual run

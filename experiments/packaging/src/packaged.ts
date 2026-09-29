@@ -1,5 +1,6 @@
 import { access, readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
+import { binaryArchitecture } from '../../../apps/desktop/scripts/binary-architecture.mjs'
 import { REPO_ROOT, type StagedResources } from './stage.js'
 
 /**
@@ -104,9 +105,19 @@ export async function launchableBinaryIn(
 export async function packagedResources(): Promise<StagedResources | null> {
   for (const candidate of await candidates()) {
     const resources = await resourcesOf(candidate.resources)
-    if (resources) return resources
+    if (resources && (await runsOnThisCpu(resources))) return resources
   }
   return null
+}
+
+/**
+ * The suites that start the server or the window need a package for this
+ * machine's CPU. macOS packages the Intel app beside the Apple silicon one, and
+ * starting that on an arm runner would need Rosetta, which is not a given; which
+ * one `readdir` lists first must not decide that.
+ */
+async function runsOnThisCpu(resources: StagedResources): Promise<boolean> {
+  return (await binaryArchitecture(resources.nodePath))?.arch === process.arch
 }
 
 /**
@@ -128,7 +139,7 @@ export async function packagedApps(): Promise<PackagedApp[]> {
 export async function packagedApp(): Promise<PackagedApp | null> {
   for (const candidate of await candidates()) {
     const resources = await resourcesOf(candidate.resources)
-    if (!resources) continue
+    if (!resources || !(await runsOnThisCpu(resources))) continue
 
     const executablePath = await launchableBinaryIn(join(RELEASE_DIR, candidate.executableIn))
     if (!executablePath) continue

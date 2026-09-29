@@ -17,6 +17,16 @@ export interface PackagedBinaries {
   readonly nodePath: string
 }
 
+/** The CPUs the given app executables are built for, sorted; unreadable ones are left out. */
+export async function packagedCpus(executablePaths: readonly string[]): Promise<string[]> {
+  const cpus: string[] = []
+  for (const path of executablePaths) {
+    const cpu = (await binaryArchitecture(path))?.arch
+    if (cpu) cpus.push(cpu)
+  }
+  return cpus.sort()
+}
+
 /** One line per package whose runtime is not for the app's CPU; empty when all match. */
 export async function runtimeMismatches(apps: readonly PackagedBinaries[]): Promise<string[]> {
   const mismatches: string[] = []
