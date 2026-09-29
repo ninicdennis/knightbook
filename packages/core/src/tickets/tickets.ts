@@ -20,6 +20,7 @@ import {
   type TicketType,
 } from '../records/schema.js'
 import { readRecord, writeRecord } from '../records/write.js'
+import { assertDependencyChange } from './dependency-change.js'
 
 // Archiving lives in its own module; re-exported so existing imports keep working.
 export { archiveTicket, isArchived, restoreTicket } from './archive.js'
@@ -245,6 +246,16 @@ export async function updateTicket(
   // Refuse before changing anything: an invalid record stays exactly as it is.
   const current = parseTicket(content, id)
   const record = parseRecord(content)
+  if (input.dependsOn !== undefined) {
+    const { tickets, problems } = await listTicketRecords(project)
+    assertDependencyChange(
+      id,
+      current.frontmatter.depends_on,
+      input.dependsOn,
+      new Map(tickets.map((ticket) => [ticket.frontmatter.id, ticket.frontmatter])),
+      new Set(problems.map((problem) => problem.id)),
+    )
+  }
 
   if (input.title !== undefined) record.data.set('title', input.title)
   if (input.status !== undefined) {

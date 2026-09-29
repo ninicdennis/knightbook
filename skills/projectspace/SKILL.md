@@ -189,6 +189,11 @@ heading. `related_documents` is different: those are project-relative paths
 - One ticket, one verifiable outcome. If it has two, split it.
 - Put prerequisites in `depends_on` (ticket ids) and the documents that explain it in
   `related_documents` (project-relative paths).
+- `ticket_update` refuses a `depends_on` change that adds the ticket itself, an id
+  that does not exist, or a prerequisite that already leads back to the ticket
+  (`invalid_dependency`, and nothing is written). The message names the problem; tell
+  the user rather than looking for a way around it. A bad reference that was already
+  in the file is reported in `dependency_notes`, not refused.
 - Set `type` when the user has said what kind of work it is, or when it is plainly
   one of them: `feature` for a new or expanded capability, `bug` for existing
   behaviour that is wrong, `research` for investigation, comparison or evidence

@@ -13,6 +13,8 @@ export type ProjectErrorCode =
   | 'invalid_record'
   | 'unsupported_schema_version'
   | 'invalid_transition'
+  /** A change would add a prerequisite that is unknown, the ticket itself, or leads back to it. */
+  | 'invalid_dependency'
   | 'locked'
   /** The MCP access registry exists but cannot be read or understood. */
   | 'registry_unreadable'

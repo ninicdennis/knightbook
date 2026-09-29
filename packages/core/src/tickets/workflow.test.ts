@@ -5,7 +5,7 @@ import { reservedPaths } from '../records/paths.js'
 import { setBacklogOrder, type Project } from '../records/project.js'
 import { selectNextTicket } from './selection.js'
 import { createTicket, listTickets, readTicket, updateTicket } from './tickets.js'
-import { withFixtureProject } from '../test/fixture-project.js'
+import { setDependenciesByHand, withFixtureProject } from '../test/fixture-project.js'
 
 /** Moves a ticket forward through the real transitions rather than editing status directly. */
 async function moveTo(project: Project, id: string, status: 'in_progress' | 'verification') {
@@ -67,11 +67,8 @@ describe('dependency readiness (D-014)', () => {
     await withFixtureProject(async (project) => {
       const a = await createTicket(project, { title: 'A' })
       const b = await createTicket(project, { title: 'B', dependsOn: [a.frontmatter.id] })
-      const reread = await readTicket(project, a.frontmatter.id)
-      await updateTicket(project, a.frontmatter.id, {
-        expectedRevision: reread.revision,
-        dependsOn: [b.frontmatter.id],
-      })
+      // Written by hand: updateTicket refuses to close a cycle (D-032).
+      await setDependenciesByHand(project, a.frontmatter.id, [b.frontmatter.id])
 
       const result = await selectNextTicket(project)
       expect(result.next).toBeNull()
