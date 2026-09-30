@@ -5,7 +5,7 @@ title: "Stage the matching Node runtime for each release target"
 status: done
 depends_on: []
 created_at: 2026-09-19T20:05:15.184Z
-updated_at: 2026-09-25T14:35:47.044Z
+updated_at: 2026-09-30T02:44:32.656Z
 related_documents:
   - docs/experiments/packaging-findings.md
   - docs/proposals/release-automation.md
@@ -15,6 +15,8 @@ completion:
   recorded_at: 2026-09-24T20:12:54.659Z
   instruction: Moved to Done in the app.
   accepted_revision: ab5bb27c6fe5ec1b04887e4841a61e18
+archived:
+  archived_at: 2026-09-30T02:44:32.655Z
 ---
 
 # Per-target runtime staging
