@@ -6,7 +6,7 @@ status: done
 type: bug
 depends_on: []
 created_at: 2026-09-22T01:45:41.324Z
-updated_at: 2026-09-25T14:36:16.191Z
+updated_at: 2026-09-30T02:44:43.934Z
 related_documents:
   - docs/research/plans-review-documents-research.md
   - docs/assets/README.md
@@ -16,6 +16,8 @@ completion:
   recorded_at: 2026-09-25T14:28:53.044Z
   instruction: Moved to Done in the app.
   accepted_revision: 1eac3e9ee2d79102f30bbb82299a0062
+archived:
+  archived_at: 2026-09-30T02:44:43.934Z
 ---
 
 # Make the Windows app icon fill its native icon space
