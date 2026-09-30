@@ -97,6 +97,7 @@ export function DocumentReader(props: Props) {
           {view.rendered ? (
             <MarkdownBody
               html={view.rendered.html}
+              rootPath={props.rootPath}
               onFollowLink={props.onFollowLink}
               scrollTo={props.scrollTo}
             />

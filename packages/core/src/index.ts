@@ -136,6 +136,12 @@ export {
 } from './search/ticket-search.js'
 export { resolveLinkDestination, type LinkDestination } from './documents/links.js'
 export {
+  MAX_IMAGE_BYTES,
+  readProjectImage,
+  type ImageMediaType,
+  type ProjectImage,
+} from './documents/images.js'
+export {
   compareSources,
   reviewChanges,
   type ChangedLine,

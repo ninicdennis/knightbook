@@ -5,6 +5,8 @@ import { useState, type ReactNode } from 'react'
 import type { MovableStatus, ProjectView, TicketStatus, TicketView } from '../../shared/contract.js'
 import { orderDone } from './done-order.js'
 import { BoardColumn, EmptyColumn } from './BoardColumn.js'
+import { PlanFilterBar } from './PlanFilterBar.js'
+import { usePlanFilter } from './usePlanFilter.js'
 import { BacklogOrderProblems } from './BacklogOrderProblems.js'
 import { RecordProblems } from './RecordProblems.js'
 import { TicketCard } from './TicketCard.js'
@@ -54,6 +56,10 @@ export function Board({
   onNewTicket,
 }: BoardProps) {
   const [doneExpanded, setDoneExpanded] = useState(false)
+  // D-035: narrows what is drawn, never what is stored or what "next up" means.
+  const plan = usePlanFilter(project.checkoutPath, project.plans)
+  const filtered = plan.filter.kind !== 'all'
+  const shown = project.tickets.filter((ticket) => plan.matches(ticket.id))
 
   const handleDragEnd = (event: { operation: { source: unknown; target: unknown } }) => {
     const source = event.operation.source as { id?: string } | null
@@ -101,10 +107,18 @@ export function Board({
     <Stack gap="sm" style={{ height: '100%' }}>
       <RecordProblems problems={project.problems} />
       <BacklogOrderProblems problems={project.backlogOrderProblems} />
+      <PlanFilterBar
+        plans={project.plans}
+        filter={plan.filter}
+        onChange={plan.setFilter}
+        matching={shown.length}
+        total={project.tickets.length}
+      />
       <DragDropProvider onDragEnd={handleDragEnd}>
         <Group align="stretch" gap="md" wrap="nowrap" style={{ flex: 1, minHeight: 0 }}>
           {COLUMNS.map((status) => {
-            const tickets = project.tickets.filter((ticket) => ticket.status === status)
+            const inColumn = project.tickets.filter((ticket) => ticket.status === status)
+            const tickets = shown.filter((ticket) => ticket.status === status)
             const listing = status === 'done' ? orderDone(tickets, doneExpanded) : null
 
             return (
@@ -112,12 +126,21 @@ export function Board({
                 key={status}
                 status={status}
                 // The total always shows, whether or not every card is on screen.
+                // Filtered, it is the matching total; the bar above says so.
                 count={tickets.length}
                 quiet={status === 'done'}
-                onArchiveColumn={() => onArchiveColumn(status)}
+                // Archiving a whole column would include cards the filter hides,
+                // so it is offered on the unfiltered board only.
+                onArchiveColumn={filtered ? null : () => onArchiveColumn(status)}
                 {...(status === 'backlog' ? { onNewTicket } : {})}
               >
-                {tickets.length === 0 ? (
+                {tickets.length === 0 && inColumn.length > 0 ? (
+                  <Text size="xs" c="dimmed" style={{ lineHeight: 1.6 }}>
+                    {inColumn.length === 1
+                      ? '1 ticket here is hidden by the plan filter.'
+                      : `${inColumn.length} tickets here are hidden by the plan filter.`}
+                  </Text>
+                ) : tickets.length === 0 ? (
                   <EmptyColumn status={status} project={project} />
                 ) : listing ? (
                   <>

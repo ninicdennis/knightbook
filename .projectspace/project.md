@@ -5,6 +5,7 @@ name: "Projectspace"
 documents_include:
   - README.md
   - docs
+  - test.md
 backlog_order:
   - 7e45939e-f6d9-4a78-88d5-91272b01ff77
   - 2fbd9919-c941-4e42-a016-19280b14d662

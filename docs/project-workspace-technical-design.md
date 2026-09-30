@@ -77,6 +77,18 @@ document, a ticket file whose ticket exists, or `unavailable` with a reason
 Markdown; exists but not included; missing). The renderer never opens a path the
 host did not confirm, and following a link reads only.
 
+Images (2026-09-29, D-034, ticket 90e1db82) go through the same resolution. While
+rendering, every image, Markdown or raw `<img>`, becomes an inert placeholder
+(`markdown-images.ts`, on an inert `DOMParser` document, before DOMPurify, which
+then forbids `img` outright). An in-project path is sent to the host
+(`readProjectImage` in core, `image:read` over IPC), which applies the link
+boundary check (`resolveContentPath`, shared with `resolveLinkDestination`),
+refuses `.projectspace/`, caps the size at 5 MB and decides the type from the
+first bytes: PNG, JPEG, GIF or WebP, never SVG. The window receives a data URL,
+which the page's `img-src 'self' data:` policy already allows, or a reason that
+the placeholder then shows. Remote, protocol-relative, `data:` and absolute
+sources are never sent to the host.
+
 Headings carry GitHub-style ids with a `user-content-` prefix so a heading cannot
 shadow a page property; fragments name the unprefixed slug, in the same file or
 another. The destination heading is scrolled to and focused; a missing one leaves
@@ -189,7 +201,8 @@ repository/
   .projectspace/
     project.md                      identity, included paths, board order
     tickets/<stable-id>.md           one canonical file per ticket
-    plans/<stable-id>.md             one file per plan: phases referencing tickets (D-022)
+    plans/<stable-id>.md             one file per plan: phases referencing tickets (D-022);
+                                     the board filters by them as view state only (D-035)
     documents/<stable-id>.md         metadata pointing to an existing document
     reviews/tickets/<ticket-id>/<reviewed-at>.md
     reviews/documents/<document path>/<reviewed-at>.md

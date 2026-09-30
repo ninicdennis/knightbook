@@ -5,6 +5,7 @@ import type { KnightbookApi } from '../../shared/contract.js'
 import {
   CHECKOUT,
   connectedSession,
+  findMcpStatusButton,
   makeApi,
   mcpStatus,
   project,
@@ -66,7 +67,7 @@ describe('the MCP status footer', () => {
 
   it('explains why there is no Start or Stop instead of offering broken ones', async () => {
     renderApp()
-    await user.click(await screen.findByRole('button', { name: /MCP not connected/i }))
+    await user.click(await findMcpStatusButton())
 
     expect(await screen.findByText(/starts and stops this server itself/i)).toBeTruthy()
     expect(screen.queryByRole('button', { name: /^Start$/ })).toBeNull()
@@ -80,7 +81,7 @@ describe('the MCP status footer', () => {
     // The header's plug icon moved here, so connection actions have one home.
     expect(screen.queryByRole('button', { name: /copy mcp configuration/i })).toBeNull()
 
-    await user.click(await screen.findByRole('button', { name: /MCP not connected/i }))
+    await user.click(await findMcpStatusButton())
     expect(await screen.findByRole('button', { name: /copy mcp configuration/i })).toBeTruthy()
   })
 
@@ -115,7 +116,7 @@ describe('the MCP status footer', () => {
       message: 'The MCP project access list could not be saved.',
     })
     renderApp()
-    await user.click(await screen.findByRole('button', { name: /MCP not connected/i }))
+    await user.click(await findMcpStatusButton())
 
     const toggle = await screen.findByRole('switch', { name: /allow ai access through mcp/i })
     await user.click(toggle)

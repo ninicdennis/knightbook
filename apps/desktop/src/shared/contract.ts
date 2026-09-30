@@ -171,6 +171,14 @@ export interface RecordProblemView {
   reason: string
 }
 
+/** A plan as the board filters by it: the tickets linked anywhere in its phases. */
+export interface BoardPlanView {
+  id: string
+  title: string
+  /** Each ticket once, however many phases list it. */
+  ticketIds: string[]
+}
+
 export interface ProjectView {
   name: string
   checkoutPath: string
@@ -190,6 +198,11 @@ export interface ProjectView {
    * id with no ticket. Reported and never removed, so the user decides.
    */
   backlogOrderProblems: { duplicates: string[]; unknown: string[] }
+  /**
+   * Every readable plan, for the board's plan filter. A plan file that cannot
+   * be read is left out here and reported in the Plans view.
+   */
+  plans: BoardPlanView[]
 }
 
 export type Result<T> =

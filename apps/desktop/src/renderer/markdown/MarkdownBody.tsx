@@ -3,10 +3,13 @@ import { IconAlertTriangle } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
 import type { LinkRequest, ScrollTarget } from './useLinkNavigation.js'
 import { headingIdFor } from './markdown.js'
+import { useProjectImages } from './useProjectImages.js'
 
 interface Props {
   /** Already sanitized by renderMarkdown; never pass unsanitized HTML here. */
   html: string
+  /** The project the content belongs to, for the in-project images it shows. */
+  rootPath: string
   /**
    * Follows an in-project link. Resolves to a message for the reader when the
    * link could not be followed, or null when it was.
@@ -30,9 +33,16 @@ interface Props {
  *
  * A link that could not be followed says why, here, where the reader clicked.
  */
-export function MarkdownBody({ html, onFollowLink, scrollTo = null, compact = false }: Props) {
+export function MarkdownBody({
+  html,
+  rootPath,
+  onFollowLink,
+  scrollTo = null,
+  compact = false,
+}: Props) {
   const container = useRef<HTMLDivElement>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  useProjectImages(container, html, rootPath)
 
   useEffect(() => {
     const node = container.current

@@ -1,5 +1,9 @@
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
+import { classifyLink } from './link-target.js'
+import { replaceImages } from './markdown-images.js'
+
+export { classifyLink, type LinkTarget } from './link-target.js'
 
 /**
  * Rendering project documents for reading. Technical design section 1 treats
@@ -21,14 +25,6 @@ import { marked } from 'marked'
  * so links written for GitHub keep working here.
  */
 
-export type LinkTarget =
-  /** A path inside the project, resolved from the linking file. */
-  | { kind: 'internal'; path: string; fragment: string | null }
-  /** A heading in the same file. */
-  | { kind: 'anchor'; fragment: string }
-  | { kind: 'external'; url: string }
-  | { kind: 'blocked'; raw: string }
-
 const HEADING_ID_PREFIX = 'user-content-'
 
 /** GitHub's heading slug, which is what people write fragments against. */
@@ -46,15 +42,6 @@ export function headingIdFor(fragment: string): string | null {
   return slug ? `${HEADING_ID_PREFIX}${slug}` : null
 }
 
-/** Decodes percent-escapes exactly once; malformed escapes are refused, not guessed. */
-function decodeOnce(value: string): string | null {
-  try {
-    return decodeURIComponent(value)
-  } catch {
-    return null
-  }
-}
-
 /** Frontmatter is metadata, not prose; it is shown separately, not rendered. */
 const FRONTMATTER = /^---\r?\n([\s\S]*?\r?\n)?---[^\S\r\n]*(\r?\n)?/
 
@@ -62,57 +49,6 @@ export function splitFrontmatter(source: string): { frontmatter: string; body: s
   const match = FRONTMATTER.exec(source)
   if (!match) return { frontmatter: '', body: source }
   return { frontmatter: match[1] ?? '', body: source.slice(match[0].length) }
-}
-
-export function classifyLink(href: string, fromPath: string): LinkTarget {
-  const trimmed = href.trim()
-  if (trimmed.length === 0) return { kind: 'blocked', raw: href }
-
-  if (/^https?:\/\//i.test(trimmed)) return { kind: 'external', url: trimmed }
-
-  // Any other scheme, protocol-relative URL, absolute path, or Windows
-  // separator is refused. Markdown links use forward slashes.
-  if (
-    /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ||
-    trimmed.startsWith('//') ||
-    trimmed.startsWith('/') ||
-    trimmed.includes('\\')
-  ) {
-    return { kind: 'blocked', raw: trimmed }
-  }
-
-  const hashAt = trimmed.indexOf('#')
-  const pathPart = hashAt === -1 ? trimmed : trimmed.slice(0, hashAt)
-  const rawFragment = hashAt === -1 ? '' : trimmed.slice(hashAt + 1)
-  const fragment = rawFragment ? decodeOnce(rawFragment) : null
-  if (rawFragment && fragment === null) return { kind: 'blocked', raw: trimmed }
-
-  if (pathPart.length === 0) {
-    return fragment ? { kind: 'anchor', fragment } : { kind: 'blocked', raw: trimmed }
-  }
-
-  // Resolve relative to the linking file, then reject anything that climbs out
-  // of the project. The host validates the result again before opening it.
-  const base = fromPath.split('/').slice(0, -1)
-  const resolved: string[] = []
-  for (const encoded of [...base, ...pathPart.split('/')]) {
-    const segment = decodeOnce(encoded)
-    // An escaped separator would smuggle in a path the link did not write.
-    if (segment === null || segment.includes('/') || segment.includes('\\')) {
-      return { kind: 'blocked', raw: trimmed }
-    }
-    if (segment === '' || segment === '.') continue
-    if (segment === '..') {
-      if (resolved.length === 0) return { kind: 'blocked', raw: trimmed }
-      resolved.pop()
-      continue
-    }
-    resolved.push(segment)
-  }
-
-  return resolved.length === 0
-    ? { kind: 'blocked', raw: trimmed }
-    : { kind: 'internal', path: resolved.join('/'), fragment }
 }
 
 export interface RenderedDocument {
@@ -160,19 +96,45 @@ export function renderMarkdown(source: string, fromPath: string): RenderedDocume
     }
   }
 
-  // Images could reach the network or the filesystem, so they are shown as a
-  // note rather than loaded. Reading a document must not fetch anything.
+  // Images could reach the network or the filesystem if left alone. They are
+  // written as an ordinary <img> here, then every image, Markdown or raw HTML,
+  // becomes an inert placeholder in one place (markdown-images.ts). Nothing is
+  // loaded while rendering; the host fills in-project ones after its checks.
   renderer.image = ({ href, text }) =>
-    `<span class="blocked-image">[image: ${escapeAttribute(text || href || 'untitled')}]</span>`
+    `<img src="${escapeAttribute(href ?? '')}" alt="${escapeAttribute(text ?? '')}">`
 
-  const html = marked.parse(body, { renderer, async: false, gfm: true })
+  const html = replaceImages(marked.parse(body, { renderer, async: false, gfm: true }), fromPath)
 
   return {
     frontmatter,
     html: DOMPurify.sanitize(html, {
       ALLOWED_URI_REGEXP: /^#$/,
-      ADD_ATTR: ['data-link', 'data-fragment', 'data-external'],
-      FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'base'],
+      ADD_ATTR: [
+        'data-link',
+        'data-fragment',
+        'data-external',
+        'data-image',
+        'data-image-alt',
+        'data-image-width',
+        'data-image-height',
+      ],
+      // No <img> survives: every image was turned into a placeholder above, and
+      // one that somehow was not must not reach the page as a live element.
+      FORBID_TAGS: [
+        'script',
+        'style',
+        'iframe',
+        'object',
+        'embed',
+        'form',
+        'input',
+        'base',
+        'img',
+        'picture',
+        'source',
+        'video',
+        'audio',
+      ],
       FORBID_ATTR: ['srcset', 'formaction', 'style'],
     }),
   }

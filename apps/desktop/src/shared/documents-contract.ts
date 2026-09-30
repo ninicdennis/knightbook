@@ -56,6 +56,21 @@ export type LinkDestinationView =
       message: string
     }
 
+/** A document the app just created, and the listing that now includes it. */
+export interface CreatedDocumentView {
+  path: string
+  documents: DocumentListView
+}
+
+/** An in-project image for display, as a data URL, or why it is not shown. */
+export type ProjectImageView =
+  | { kind: 'image'; dataUrl: string }
+  | {
+      kind: 'unavailable'
+      reason: 'outside_project' | 'reserved' | 'not_found' | 'unsupported_type' | 'too_large'
+      message: string
+    }
+
 export interface DocumentsApi {
   listDocuments(rootPath: string): Promise<Result<DocumentListView>>
   /**
@@ -92,4 +107,18 @@ export interface DocumentsApi {
   resolveLink(rootPath: string, path: string): Promise<Result<LinkDestinationView>>
   /** Opens an http(s) link from a document, on an explicit user click. */
   openExternalLink(url: string): Promise<Result<null>>
+  /**
+   * Reads an image a document or ticket names by a project-relative path. Reads
+   * only, records nothing, and returns a data URL: never a path or `file:` URL.
+   */
+  readProjectImage(rootPath: string, path: string): Promise<Result<ProjectImageView>>
+  /**
+   * Creates a Markdown document at a project-relative path and includes it.
+   * Never overwrites: an existing file is refused and nothing is written.
+   */
+  createDocument(
+    rootPath: string,
+    path: string,
+    content: string,
+  ): Promise<Result<CreatedDocumentView>>
 }

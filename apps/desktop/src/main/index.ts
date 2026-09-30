@@ -32,6 +32,8 @@ import { registerPlanHandlers } from './documents/plans-ipc.js'
 import { registerTicketCreateHandler } from './tickets/ticket-create-ipc.js'
 import { registerTicketEditHandlers } from './tickets/ticket-edit-ipc.js'
 import { registerDocumentSearchHandler } from './documents/document-search-ipc.js'
+import { registerImageHandler } from './documents/image-ipc.js'
+import { registerDocumentCreateHandler } from './documents/document-create-ipc.js'
 
 /**
  * Technical design section 1: the renderer receives narrow operations through
@@ -141,6 +143,8 @@ void app.whenReady().then(async () => {
   registerTicketCreateHandler()
   registerTicketEditHandlers()
   registerDocumentSearchHandler()
+  registerImageHandler()
+  registerDocumentCreateHandler()
   process.stdout.write(`MCP launch command: ${JSON.stringify(mcpLaunchCommand())}\n`)
 
   /*

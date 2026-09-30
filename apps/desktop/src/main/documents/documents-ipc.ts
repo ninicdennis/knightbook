@@ -33,7 +33,7 @@ import { guard } from '../guard.js'
  * crafted link in a document cannot reach outside the checkout.
  */
 
-async function buildListing(project: Project): Promise<DocumentListView> {
+export async function buildListing(project: Project): Promise<DocumentListView> {
   const listing = await listIncludedDocuments(project)
 
   const documents = []
