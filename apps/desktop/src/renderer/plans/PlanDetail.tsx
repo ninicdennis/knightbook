@@ -1,5 +1,5 @@
 import { Badge, Button, Group, Stack, Text, Title, UnstyledButton } from '@mantine/core'
-import { IconArrowLeft, IconExternalLink } from '@tabler/icons-react'
+import { IconArrowLeft, IconExternalLink, IconLayoutKanban } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
 import type { PlanPhaseView, PlanTicketView, PlanView } from '../../shared/plans-contract.js'
 import type { LinkRequest } from '../markdown/useLinkNavigation.js'
@@ -19,6 +19,8 @@ interface Props {
   plan: PlanView
   onOpenTicket: (id: string) => void
   onFollowLink: (request: LinkRequest) => Promise<string | null>
+  /** Opens the board narrowed to this plan (D-035). */
+  onViewOnBoard: (planId: string) => void
   /** Shown on a narrow window, where the list and the plan take turns. */
   onBack?: () => void
 }
@@ -83,7 +85,14 @@ function Phase({ phase, onOpen }: { phase: PlanPhaseView; onOpen: (id: string) =
   )
 }
 
-export function PlanDetail({ rootPath, plan, onOpenTicket, onFollowLink, onBack }: Props) {
+export function PlanDetail({
+  rootPath,
+  plan,
+  onOpenTicket,
+  onFollowLink,
+  onViewOnBoard,
+  onBack,
+}: Props) {
   const [failure, setFailure] = useState<string | null>(null)
   const rendered = useMemo(() => renderMarkdown(plan.body, plan.file), [plan.body, plan.file])
 
@@ -115,14 +124,24 @@ export function PlanDetail({ rootPath, plan, onOpenTicket, onFollowLink, onBack 
             <span className="ps-docs-reader-path">{plan.file}</span>
           </Stack>
         </div>
-        <Button
-          size="xs"
-          variant="default"
-          leftSection={<IconExternalLink size={14} />}
-          onClick={() => void openFile()}
-        >
-          Edit externally
-        </Button>
+        <Group gap="xs" wrap="nowrap">
+          <Button
+            size="xs"
+            variant="default"
+            leftSection={<IconLayoutKanban size={14} />}
+            onClick={() => onViewOnBoard(plan.id)}
+          >
+            View on board
+          </Button>
+          <Button
+            size="xs"
+            variant="default"
+            leftSection={<IconExternalLink size={14} />}
+            onClick={() => void openFile()}
+          >
+            Edit externally
+          </Button>
+        </Group>
       </div>
 
       <div className="ps-docs-body">
@@ -133,7 +152,7 @@ export function PlanDetail({ rootPath, plan, onOpenTicket, onFollowLink, onBack 
             </Text>
           )}
           <PlanProgress progress={plan.progress} label={`Plan ${plan.title}`} />
-          <MarkdownBody html={rendered.html} onFollowLink={onFollowLink} />
+          <MarkdownBody html={rendered.html} rootPath={rootPath} onFollowLink={onFollowLink} />
           {plan.phases.length === 0 ? (
             <Text size="sm" c="var(--ps-text-muted)">
               No phases yet. Ask your AI tool to break this plan into phases, or add them to the

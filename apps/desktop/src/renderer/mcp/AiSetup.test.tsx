@@ -3,7 +3,14 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { KnightbookApi } from '../../shared/contract.js'
 import type { SkillTargetView } from '../../shared/skill-setup-contract.js'
-import { CHECKOUT, makeApi, renderApp, skillSetup } from '../test/test-fixtures.js'
+import {
+  CHECKOUT,
+  connectedSession,
+  findMcpStatusButton,
+  makeApi,
+  renderApp,
+  skillSetup,
+} from '../test/test-fixtures.js'
 
 /**
  * Guided setup from the installed app. What matters most is what it will not
@@ -28,10 +35,38 @@ function withStates(states: SkillTargetView['state'][]) {
 }
 
 async function openSetup() {
-  await user.click(await screen.findByRole('button', { name: /MCP not connected/i }))
+  await user.click(await findMcpStatusButton())
   await user.click(await screen.findByRole('button', { name: /set up your ai tool/i }))
   return await screen.findByRole('dialog', { name: /set up your ai tool/i })
 }
+
+describe('reaching the setup dialog', () => {
+  // The longer wait for the first status reading must not turn a missing button
+  // into a pass: with a connected client the footer never says "not connected".
+  it('still fails when the "MCP not connected" button never appears', async () => {
+    api.mcpStatus = vi.fn().mockResolvedValue(connectedSession())
+    renderApp()
+    // The footer did read its status; it just says something else.
+    await findMcpStatusButton(/MCP connected/i)
+
+    await expect(findMcpStatusButton(/MCP not connected/i, 1_500)).rejects.toThrow(
+      /Unable to find role="button"/,
+    )
+  })
+
+  // The case the CI failure was: a first reading slower than the 1 s default.
+  it('waits for a first status reading slower than the default wait', async () => {
+    const slow = api.mcpStatus
+    api.mcpStatus = vi
+      .fn()
+      .mockImplementation(
+        (path: string) => new Promise((resolve) => setTimeout(() => resolve(slow(path)), 1_500)),
+      )
+    renderApp()
+
+    expect(await findMcpStatusButton()).toBeTruthy()
+  })
+})
 
 describe('setting up an AI tool', () => {
   it('shows connection and skill installation as separate steps', async () => {

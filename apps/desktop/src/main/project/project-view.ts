@@ -1,5 +1,6 @@
 import {
   backlogOrderReport,
+  listPlanRecords,
   listTicketRecords,
   readTicket,
   selectNextTicket,
@@ -32,6 +33,7 @@ export async function buildView(project: Project): Promise<ProjectView> {
   archived.sort((a, b) => (a.archivedAt! < b.archivedAt! ? 1 : -1))
 
   const order = await backlogOrderReport(project)
+  const { plans } = await listPlanRecords(project)
   return {
     name: project.frontmatter.name,
     checkoutPath: project.root.path,
@@ -41,6 +43,11 @@ export async function buildView(project: Project): Promise<ProjectView> {
     nextTicketId: next.next?.frontmatter.id ?? null,
     nextExplanation: next.explanation,
     backlogOrderProblems: { duplicates: order.duplicates, unknown: order.unknown },
+    plans: plans.map((plan) => ({
+      id: plan.frontmatter.id,
+      title: plan.frontmatter.title,
+      ticketIds: [...new Set(plan.frontmatter.phases.flatMap((phase) => phase.tickets))],
+    })),
   }
 }
 

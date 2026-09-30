@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { KnightbookApi } from '../../shared/contract.js'
-import { makeApi, renderApp } from '../test/test-fixtures.js'
+import { findMcpStatusButton, makeApi, renderApp } from '../test/test-fixtures.js'
 
 /**
  * Copying the MCP configuration for one client. The snippet formats have their
@@ -21,7 +21,7 @@ beforeEach(() => {
 
 async function openCopyMenu() {
   renderApp()
-  await user.click(await screen.findByRole('button', { name: /MCP not connected/i }))
+  await user.click(await findMcpStatusButton())
   await user.click(await screen.findByRole('button', { name: /copy mcp configuration/i }))
   return await screen.findByRole('menu')
 }

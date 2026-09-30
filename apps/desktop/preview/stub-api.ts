@@ -3,7 +3,7 @@ import type { RememberedProject } from '../src/shared/project-setup-contract.js'
 import { documentsStub } from './documents-stub.js'
 import { setStubAllowed, stubMcpStatus } from './mcp-status-stub.js'
 import { record } from './record.js'
-import { plansStub } from './plans-stub.js'
+import { boardPlansStub, plansStub } from './plans-stub.js'
 import { skillSetupStub } from './skill-setup-stub.js'
 import { stubReviewChanges } from './review-changes-stub.js'
 import { stubTicketDetail } from './ticket-detail-stub.js'
@@ -71,6 +71,7 @@ const PROJECT: ProjectView = {
   nextTicketId: 'board',
   nextExplanation: '',
   backlogOrderProblems: { duplicates: [], unknown: [] },
+  plans: boardPlansStub,
   tickets: [
     ticket({
       id: 'board',

@@ -184,8 +184,14 @@ export function DocumentsView({
 
   const entries = (
     <IncludedEntries
+      rootPath={rootPath}
       listing={listing}
       busy={busy}
+      suggestedFolder={selected?.includes('/') ? selected.slice(0, selected.lastIndexOf('/')) : ''}
+      onCreated={(created) => {
+        setListing(created.documents)
+        choose(created.path)
+      }}
       onIncludeFiles={() =>
         void applyToManifest(() => window.knightbook.includeDocumentFiles(rootPath))
       }

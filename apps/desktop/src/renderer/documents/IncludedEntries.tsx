@@ -1,7 +1,9 @@
 import { ActionIcon, Button, Group, Menu, Modal, Stack, Text, Tooltip } from '@mantine/core'
-import { IconFilePlus, IconFolderPlus, IconPlus, IconX } from '@tabler/icons-react'
+import { IconFilePencil, IconFilePlus, IconFolderPlus, IconPlus, IconX } from '@tabler/icons-react'
 import { useState } from 'react'
 import type { DocumentListView } from '../../shared/contract.js'
+import type { CreatedDocumentView } from '../../shared/documents-contract.js'
+import { NewDocumentDialog } from './NewDocumentDialog.js'
 
 /**
  * The manifest entries, which are the things a person can actually add and
@@ -35,21 +37,29 @@ function entriesOf(listing: DocumentListView): Entry[] {
 }
 
 interface Props {
+  rootPath: string
   listing: DocumentListView
   busy: boolean
+  /** Where a new document is suggested: the folder of the one being read. */
+  suggestedFolder: string
   onIncludeFiles: () => void
   onIncludeFolder: () => void
   onRemove: (entry: string) => void
+  onCreated: (created: CreatedDocumentView) => void
 }
 
 export function IncludedEntries({
+  rootPath,
   listing,
   busy,
+  suggestedFolder,
   onIncludeFiles,
   onIncludeFolder,
   onRemove,
+  onCreated,
 }: Props) {
   const [pending, setPending] = useState<Entry | null>(null)
+  const [creating, setCreating] = useState(false)
   const entries = entriesOf(listing)
 
   return (
@@ -58,23 +68,44 @@ export function IncludedEntries({
         <Text size="xs" fw={600} c="var(--ps-text-muted)">
           Included from
         </Text>
-        <Menu position="bottom-end" withinPortal>
-          <Menu.Target>
-            <Button size="compact-xs" variant="subtle" leftSection={<IconPlus size={12} />}>
-              Include
-            </Button>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Item leftSection={<IconFilePlus size={14} />} onClick={onIncludeFiles}>
-              Markdown files…
-            </Menu.Item>
-            <Menu.Item leftSection={<IconFolderPlus size={14} />} onClick={onIncludeFolder}>
-              A folder…
-            </Menu.Item>
-            <Menu.Label>Files stay where they are.</Menu.Label>
-          </Menu.Dropdown>
-        </Menu>
+        <Group gap={4} wrap="nowrap">
+          <Button
+            size="compact-xs"
+            variant="subtle"
+            leftSection={<IconFilePencil size={12} />}
+            onClick={() => setCreating(true)}
+          >
+            New
+          </Button>
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <Button size="compact-xs" variant="subtle" leftSection={<IconPlus size={12} />}>
+                Include
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<IconFilePlus size={14} />} onClick={onIncludeFiles}>
+                Markdown files…
+              </Menu.Item>
+              <Menu.Item leftSection={<IconFolderPlus size={14} />} onClick={onIncludeFolder}>
+                A folder…
+              </Menu.Item>
+              <Menu.Label>Files stay where they are.</Menu.Label>
+            </Menu.Dropdown>
+          </Menu>
+        </Group>
       </Group>
+
+      <NewDocumentDialog
+        rootPath={rootPath}
+        opened={creating}
+        suggestedFolder={suggestedFolder}
+        onClose={() => setCreating(false)}
+        onCreated={(created) => {
+          setCreating(false)
+          onCreated(created)
+        }}
+      />
 
       {entries.length === 0 && (
         <Text size="xs" c="dimmed">

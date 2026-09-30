@@ -71,6 +71,9 @@ const api: KnightbookApi = {
     ipcRenderer.invoke('document:openExternally', rootPath, path),
   resolveLink: (rootPath, path) => ipcRenderer.invoke('link:resolve', rootPath, path),
   openExternalLink: (url) => ipcRenderer.invoke('link:openExternal', url),
+  readProjectImage: (rootPath, path) => ipcRenderer.invoke('image:read', rootPath, path),
+  createDocument: (rootPath, path, content) =>
+    ipcRenderer.invoke('document:create', rootPath, path, content),
 }
 
 contextBridge.exposeInMainWorld('knightbook', api)

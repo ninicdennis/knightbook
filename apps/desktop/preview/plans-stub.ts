@@ -4,7 +4,7 @@ import type {
   PlanView,
   ProgressView,
 } from '../src/shared/plans-contract.js'
-import type { TicketStatus } from '../src/shared/contract.js'
+import type { TicketStatus, BoardPlanView } from '../src/shared/contract.js'
 import { record } from './record.js'
 
 /**
@@ -107,6 +107,13 @@ const PLANS: PlanView[] = [
     [],
   ),
 ]
+
+/** The same plans as the board's filter sees them, so the two views agree. */
+export const boardPlansStub: BoardPlanView[] = PLANS.map((plan) => ({
+  id: plan.id,
+  title: plan.title,
+  ticketIds: [...new Set(plan.phases.flatMap((phase) => phase.tickets.map((ticket) => ticket.id)))],
+}))
 
 export const plansStub: PlansApi = {
   listPlans: async () => ({ ok: true, value: { plans: PLANS, problems: [] } }),

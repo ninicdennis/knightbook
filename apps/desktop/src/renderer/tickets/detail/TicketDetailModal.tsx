@@ -225,6 +225,7 @@ export function TicketDetailModal({
                     <MarkdownBody
                       compact
                       html={rendered.html}
+                      rootPath={rootPath}
                       onFollowLink={onFollowLink}
                       scrollTo={scrollTo}
                     />

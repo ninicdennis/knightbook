@@ -190,8 +190,16 @@ Document content is untrusted input, per technical design section 1:
   `javascript:`, `data:`, protocol-relative, or an absolute path — is shown as inert
   text with a visible note, never as a clickable `href`. `markdown.test.tsx` asserts
   each of these cases directly.
-- Images are not fetched. A document cannot cause a network request just by being
-  opened.
+- Only images inside the project are shown, and a document still cannot cause a
+  network request just by being opened. A relative image path, in Markdown
+  (`![alt](path)`) or a raw `<img src>`, is resolved against the file it is written
+  in, the same way a link is. The host then shows it only if it is inside the
+  project (symlinks included), is a PNG, JPEG, GIF or WebP by its bytes rather than
+  its name, and is 5 MB or smaller; the window receives it as a data URL, never a
+  file path. SVG is never shown, because it can carry scripts. Remote (`http`,
+  `https`, `//`) and `data:` images are never requested. Any image that is not
+  shown keeps a placeholder saying why. Showing an image reads the file and records
+  nothing, not even a review.
 - Frontmatter is shown separately from the rendered body, never treated as prose.
 
 ### Linking between documents and tickets

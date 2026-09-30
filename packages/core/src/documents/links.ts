@@ -49,21 +49,34 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
+/**
+ * The absolute path a document's project-relative reference names, or null when
+ * it is not inside the project. Links and images both go through this, so there
+ * is one boundary check for anything content can point at.
+ *
+ * A Windows separator or drive letter is refused rather than reinterpreted:
+ * Markdown uses forward slashes, and a path that only works on one platform is
+ * not a portable project reference. Traversal and symlinks that lead out of the
+ * project are both refused.
+ */
+export async function resolveContentPath(project: Project, path: string): Promise<string | null> {
+  try {
+    if (path.includes('\\') || /^[A-Za-z]:/.test(path)) return null
+    const absolute = resolveInRoot(project.root, path)
+    await assertRealPathInRoot(project.root, absolute)
+    return absolute
+  } catch {
+    return null
+  }
+}
+
 /** `path` is project-relative with forward slashes, already decoded once. */
 export async function resolveLinkDestination(
   project: Project,
   path: string,
 ): Promise<LinkDestination> {
-  // A Windows separator or drive letter is refused rather than reinterpreted:
-  // links in Markdown use forward slashes, and a path that only works on one
-  // platform is not a portable project link.
-  let absolute: string
-  try {
-    if (path.includes('\\') || /^[A-Za-z]:/.test(path)) throw new Error('not portable')
-    absolute = resolveInRoot(project.root, path)
-    // Traversal and symlinks that lead out of the project are both refused here.
-    await assertRealPathInRoot(project.root, absolute)
-  } catch {
+  const absolute = await resolveContentPath(project, path)
+  if (absolute === null) {
     return unavailable(
       'outside_project',
       `${path} is not inside this project, so it was not opened.`,

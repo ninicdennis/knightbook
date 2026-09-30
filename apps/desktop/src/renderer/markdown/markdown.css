@@ -256,8 +256,15 @@
   color: var(--mantine-color-orange-4);
 }
 
-.markdown-body .blocked-image {
+.markdown-body .blocked-image,
+.markdown-body span.project-image {
   color: var(--md-muted);
   font-size: 0.875em;
   font-style: italic;
+}
+
+/* An in-project image the host agreed to show; never wider than the text. */
+.markdown-body img.project-image {
+  max-width: 100%;
+  height: auto;
 }

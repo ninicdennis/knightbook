@@ -19,6 +19,7 @@ interface Props {
   refreshToken: number
   onOpenTicket: (id: string) => void
   onFollowLink: (request: LinkRequest) => Promise<string | null>
+  onViewOnBoard: (planId: string) => void
 }
 
 const NARROW_QUERY = '(max-width: 47.99em)'
@@ -50,6 +51,7 @@ export function PlansView({
   refreshToken,
   onOpenTicket,
   onFollowLink,
+  onViewOnBoard,
 }: Props) {
   const [loaded, setLoaded] = useState<Loaded>({ kind: 'loading' })
   const [attempt, setAttempt] = useState(0)
@@ -172,6 +174,7 @@ export function PlansView({
           plan={current}
           onOpenTicket={onOpenTicket}
           onFollowLink={onFollowLink}
+          onViewOnBoard={onViewOnBoard}
           {...(narrow ? { onBack: () => setPane('list') } : {})}
         />
       )}

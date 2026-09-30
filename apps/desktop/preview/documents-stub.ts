@@ -133,4 +133,23 @@ export const documentsStub: DocumentsApi & Pick<ReviewChangesApi, 'documentChang
     }
   },
   openExternalLink: async () => ({ ok: true, value: null }),
+  createDocument: async (_root, path) => {
+    record('createDocument', path)
+    return {
+      ok: false,
+      code: 'unavailable',
+      message: 'Documents are not created in the design preview.',
+    }
+  },
+  readProjectImage: async (_root, path) => {
+    record('readProjectImage', path)
+    return {
+      ok: true,
+      value: {
+        kind: 'unavailable',
+        reason: 'not_found',
+        message: `${path} is not available in the design preview.`,
+      },
+    }
+  },
 }

@@ -79,7 +79,9 @@ docs/              Specification, technical design, research, experiment finding
   reviewed, and `ticket_update` must not set Done. See "Three rules the code
   enforces" in [Using Knightbook with AI tools](docs/using-knightbook.md).
 - **Document content is untrusted.** Rendering stays sanitized, links are classified,
-  images are not fetched. `renderer/markdown/markdown.test.tsx` covers each case.
+  only in-project raster images are shown, read by the host after its checks and
+  handed over as data URLs; remote, `data:` and SVG images never load (D-034).
+  `renderer/markdown/markdown.test.tsx` covers each case.
 - **The skill must match the tools.** `packages/mcp/src/guidance.test.ts` fails when
   `skills/projectspace/SKILL.md` and the real tool list drift. Update the skill in the
   same change as the tools.

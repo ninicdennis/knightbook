@@ -182,3 +182,94 @@ describe('rendering', () => {
     expect(html).not.toContain('<object')
   })
 })
+
+/**
+ * Images (ticket 90e1db82). Rendering never produces a live <img>: an
+ * in-project path becomes a placeholder the host may fill after its checks, and
+ * everything else stays a note that says why it was not shown.
+ */
+describe('images', () => {
+  function placeholders(source: string, fromPath = 'docs/guide.md') {
+    const container = document.createElement('div')
+    container.innerHTML = renderMarkdown(source, fromPath).html
+    return {
+      container,
+      images: Array.from(container.querySelectorAll<HTMLElement>('[data-image]')),
+      blocked: Array.from(container.querySelectorAll<HTMLElement>('.blocked-image')),
+    }
+  }
+
+  it('resolves a Markdown image against the file it appears in', () => {
+    const { container, images } = placeholders('![The logo](assets/logo.png)')
+
+    expect(images.map((image) => image.getAttribute('data-image'))).toEqual([
+      'docs/assets/logo.png',
+    ])
+    expect(images[0]!.getAttribute('data-image-alt')).toBe('The logo')
+    expect(container.querySelector('img')).toBeNull()
+  })
+
+  it('resolves a raw HTML <img> the same way, keeping a plain pixel width', () => {
+    const { images } = placeholders(
+      '<img src="docs/assets/knightbook-logo.png" alt="Knightbook" width="192" />',
+      'README.md',
+    )
+
+    expect(images[0]!.getAttribute('data-image')).toBe('docs/assets/knightbook-logo.png')
+    expect(images[0]!.getAttribute('data-image-width')).toBe('192')
+  })
+
+  it('resolves an image in a ticket body from the ticket file', () => {
+    const { images } = placeholders(
+      '![Screenshot](../../docs/shots/board.png)',
+      '.projectspace/tickets/abc.md',
+    )
+
+    expect(images[0]!.getAttribute('data-image')).toBe('docs/shots/board.png')
+  })
+
+  it('drops a width that is not a plain number', () => {
+    const { images } = placeholders('<img src="a.png" width="100%" height="10;x:y">')
+
+    expect(images[0]!.hasAttribute('data-image-width')).toBe(false)
+    expect(images[0]!.hasAttribute('data-image-height')).toBe(false)
+  })
+
+  it('never requests a remote image, saying so', () => {
+    for (const src of [
+      'https://example.com/x.png',
+      'http://example.com/x.png',
+      '//example.com/x.png',
+    ]) {
+      const { images, blocked } = placeholders(`<img src="${src}" alt="remote">`)
+      expect(images, src).toEqual([])
+      expect(blocked[0]!.textContent, src).toContain('remote images are not loaded')
+    }
+  })
+
+  it('refuses data:, file:, absolute and escaping paths, saying so', () => {
+    for (const src of [
+      'data:image/png;base64,iVBORw0KGgo=',
+      'file:///C:/Windows/logo.png',
+      '/etc/logo.png',
+      '../../../outside.png',
+    ]) {
+      const { images, blocked } = placeholders(`![x](${src})`)
+      expect(images, src).toEqual([])
+      expect(blocked[0]!.textContent, src).toContain('only images inside this project are shown')
+    }
+  })
+
+  it('leaves an in-project SVG to the host, which refuses it by its content', () => {
+    const { images } = placeholders('![icon](assets/icon.svg)')
+
+    expect(images[0]!.getAttribute('data-image')).toBe('docs/assets/icon.svg')
+  })
+
+  it('turns an uppercase raw <IMG> into a placeholder too', () => {
+    const { container, images } = placeholders('<IMG SRC="assets/logo.png" ALT="Logo">')
+
+    expect(images).toHaveLength(1)
+    expect(container.querySelector('img')).toBeNull()
+  })
+})

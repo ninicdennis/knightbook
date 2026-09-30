@@ -53,6 +53,7 @@ export function project(overrides: Partial<ProjectView> = {}): ProjectView {
     nextTicketId: null,
     nextExplanation: '',
     backlogOrderProblems: { duplicates: [], unknown: [] },
+    plans: [],
     ...overrides,
   }
 }
@@ -232,6 +233,16 @@ export function makeApi(): KnightbookApi {
       value: { kind: 'document', path },
     })),
     openExternalLink: vi.fn().mockResolvedValue({ ok: true, value: null }),
+    createDocument: vi.fn(),
+    // No image exists unless a test provides one.
+    readProjectImage: vi.fn().mockImplementation(async (_root: string, path: string) => ({
+      ok: true,
+      value: {
+        kind: 'unavailable',
+        reason: 'not_found',
+        message: `${path} does not exist in this project.`,
+      },
+    })),
   }
 }
 
@@ -242,6 +253,26 @@ export function makeApi(): KnightbookApi {
  * down jsdom fails the run with "window is not defined". Honouring reduced
  * motion, which test-setup.ts reports, makes those changes synchronous instead.
  */
+/**
+ * How long to wait for the footer's first MCP reading. The button appears only
+ * after the project loads, the footer mounts and its first status read returns,
+ * and the first role query in a file walks a cold DOM. Locally that is under
+ * 200 ms, but on a busy CI runner with test files in parallel workers it passed
+ * the 1 s default once (ticket a79c7639). A longer bound only changes how long a
+ * genuinely missing button takes to fail, not whether it does. It stays well
+ * under Vitest's 5 s test timeout, so a missing button still fails with this
+ * query's own message and DOM dump rather than as a bare test timeout.
+ */
+export const FIRST_MCP_READING_MS = 3_000
+
+/** The footer's MCP status button, once its first reading has arrived. */
+export async function findMcpStatusButton(
+  name: RegExp = /MCP not connected/i,
+  timeout = FIRST_MCP_READING_MS,
+): Promise<HTMLElement> {
+  return await screen.findByRole('button', { name }, { timeout })
+}
+
 export function renderApp() {
   return render(
     <MantineProvider env="test" theme={{ respectReducedMotion: true }}>

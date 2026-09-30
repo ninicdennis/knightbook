@@ -1,6 +1,7 @@
 import type { ProjectView } from '../../shared/contract.js'
 import { ArchiveView } from '../board/ArchiveView.js'
 import { Board } from '../board/Board.js'
+import { rememberPlanFilter } from '../board/usePlanFilter.js'
 import type { useArchiveActions } from '../board/useArchiveActions.js'
 import { DocumentsView } from '../documents/DocumentsView.js'
 import type { BackTarget } from '../markdown/BackToSource.js'
@@ -54,6 +55,10 @@ export function ProjectViewSwitch({
           refreshToken={refreshToken}
           onOpenTicket={navigation.openTicket}
           onFollowLink={(request) => links.follow(null, request)}
+          onViewOnBoard={(planId) => {
+            rememberPlanFilter(project.checkoutPath, { kind: 'plan', id: planId })
+            navigation.setView('board')
+          }}
         />
       )
     case 'archive':
