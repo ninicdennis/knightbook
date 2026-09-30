@@ -121,9 +121,14 @@ real tool list drift apart.
 A plan is a roadmap, such as an MVP or a launch: freeform notes plus ordered
 phases, each grouping existing tickets. The **Plans** tab shows every plan with its
 phases, linked tickets and progress; clicking a ticket opens it. A ticket's own
-dialog lists the plans and phases it belongs to, and each one opens that plan. The app only reads
-plans for now. Ask your AI tool to create one (`plan_create`) and break it into
-phases (`plan_update`), or edit the plan's file with **Edit externally**.
+dialog lists the plans and phases it belongs to, and each one opens that plan.
+
+Create a plan with **New plan**, then **Add phase**. Each phase's menu renames,
+moves or removes it, the field under its tickets attaches a board ticket, and the
+cross beside a ticket detaches it. An AI tool can do the same with `plan_create`
+and `plan_update`. The plan's notes are edited in the file itself, with **Edit
+externally**. If the plan changed somewhere else since the pane read it, your change
+is not applied and the pane shows the current version.
 
 Progress is read from the tickets every time, so it cannot drift from the board.
 Each ticket counts once per plan, Verification is shown apart from Done, a
@@ -210,6 +215,13 @@ included document opens under Documents, a ticket file opens that ticket, and
 anything else (outside the project, not included, not Markdown, missing) says why
 instead of doing nothing. Following a link includes nothing and changes no status
 or review. After following one, **Back to …** returns to where you were.
+
+The app keeps a history of where you have been in the open project, as a browser
+does. **Back** and **Forward** sit at the start of the view tabs, and the mouse's
+side buttons, Alt+← / Alt+→ (Windows and Linux) and Cmd+[ / Cmd+] (macOS) do the
+same. A place that has since gone, such as a deleted document or an archived
+ticket, is skipped and the app says so. History starts again when you open another
+project, and is never saved.
 
 Link to a heading with a GitHub-style fragment: lowercase, punctuation dropped,
 spaces as hyphens, and `-1`, `-2` for a repeated heading. `#acceptance-criteria`

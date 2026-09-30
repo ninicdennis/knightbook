@@ -32,6 +32,10 @@ interface ColumnProps {
   onArchiveColumn: (() => void) | null
   /** Opens the new-ticket form. Only Backlog has one: new tickets always start there. */
   onNewTicket?: () => void
+  /** The column's own filter button, drawn in the heading. */
+  filterControl?: ReactNode
+  /** Says what the column's filter hides, above the list. */
+  filterNotice?: ReactNode
   children: ReactNode
 }
 
@@ -41,6 +45,8 @@ export function BoardColumn({
   quiet = false,
   onArchiveColumn,
   onNewTicket,
+  filterControl,
+  filterNotice,
   children,
 }: ColumnProps) {
   const { ref, isDropTarget } = useDroppable({ id: status })
@@ -94,6 +100,7 @@ export function BoardColumn({
               </ActionIcon>
             </Tooltip>
           )}
+          {filterControl}
           <Text size="sm" c="dimmed" fw={500} aria-label={`${count} in ${STATUS_LABEL[status]}`}>
             {count}
           </Text>
@@ -122,6 +129,8 @@ export function BoardColumn({
           )}
         </Group>
       </Group>
+
+      {filterNotice && <Box mb="xs">{filterNotice}</Box>}
 
       {/*
         The column is stretched to the row's height, so the list simply takes

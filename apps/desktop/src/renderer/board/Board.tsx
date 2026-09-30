@@ -7,6 +7,11 @@ import { orderDone } from './done-order.js'
 import { BoardColumn, EmptyColumn } from './BoardColumn.js'
 import { PlanFilterBar } from './PlanFilterBar.js'
 import { usePlanFilter } from './usePlanFilter.js'
+import { ColumnFilterButton } from './column-filter/ColumnFilterButton.js'
+import { ColumnFilterNotice } from './column-filter/ColumnFilterNotice.js'
+import { isFiltered, ticketMatchesColumnFilter } from './column-filter/column-filter.js'
+import { useColumnFilters } from './column-filter/useColumnFilters.js'
+import type { BacklogMove } from './column-filter/backlog-move.js'
 import { BacklogOrderProblems } from './BacklogOrderProblems.js'
 import { RecordProblems } from './RecordProblems.js'
 import { TicketCard } from './TicketCard.js'
@@ -28,8 +33,11 @@ interface BoardProps {
   busyTicketId: string | null
   onMove: (ticketId: string, status: MovableStatus) => void
   onComplete: (ticketId: string) => void
-  /** Manual backlog order, which is what "next up" follows. */
-  onReorder: (ticketId: string, to: 'top' | 'up' | 'down') => void
+  /**
+   * Manual backlog order, which is what "next up" follows. `visible` is the
+   * backlog as drawn, so a move in a filtered column passes a visible card.
+   */
+  onReorder: (ticketId: string, to: BacklogMove, visible: readonly string[]) => void
   /** D-017: the user says this did not pass verification, and why. */
   onReportIssue: (ticketId: string) => void
   onResolveIssue: (ticketId: string) => void
@@ -60,6 +68,14 @@ export function Board({
   const plan = usePlanFilter(project.checkoutPath, project.plans)
   const filtered = plan.filter.kind !== 'all'
   const shown = project.tickets.filter((ticket) => plan.matches(ticket.id))
+  // Each column's own filter narrows further, and only that column.
+  const columns = useColumnFilters(project.checkoutPath)
+  const drawn = (status: TicketStatus) =>
+    shown.filter(
+      (ticket) =>
+        ticket.status === status && ticketMatchesColumnFilter(ticket, columns.filters[status]),
+    )
+  const visibleBacklogIds = drawn('backlog').map((ticket) => ticket.id)
 
   const handleDragEnd = (event: { operation: { source: unknown; target: unknown } }) => {
     const source = event.operation.source as { id?: string } | null
@@ -89,7 +105,9 @@ export function Board({
         ticket={ticket}
         isNext={project.nextTicketId === ticket.id}
         busy={busyTicketId === ticket.id}
-        onReorder={ticket.status === 'backlog' ? (to) => onReorder(ticket.id, to) : null}
+        onReorder={
+          ticket.status === 'backlog' ? (to) => onReorder(ticket.id, to, visibleBacklogIds) : null
+        }
         atTop={backlogIds[0] === ticket.id}
         atBottom={backlogIds[backlogIds.length - 1] === ticket.id}
         onMove={(next) => onMove(ticket.id, next)}
@@ -102,6 +120,45 @@ export function Board({
       />
     </DraggableTicket>
   )
+
+  /**
+   * What a column lists. A column the plan filter empties and one whose own
+   * filter matches nothing each say which filter is responsible (the latter in
+   * its notice), so neither passes for a column with no tickets.
+   */
+  const columnBody = (
+    status: TicketStatus,
+    inColumn: number,
+    inPlan: number,
+    tickets: TicketView[],
+  ) => {
+    if (inPlan === 0 && inColumn > 0) {
+      return (
+        <Text size="xs" c="dimmed" style={{ lineHeight: 1.6 }}>
+          {inColumn === 1
+            ? '1 ticket here is hidden by the plan filter.'
+            : `${inColumn} tickets here are hidden by the plan filter.`}
+        </Text>
+      )
+    }
+    if (inPlan === 0) return <EmptyColumn status={status} project={project} />
+    if (tickets.length === 0) return null
+    if (status !== 'done') return tickets.map(card)
+
+    const listing = orderDone(tickets, doneExpanded)
+    return (
+      <>
+        {listing.visible.map(card)}
+        <DoneToggle
+          total={tickets.length}
+          hiddenCount={listing.hiddenCount}
+          hiddenUnattributed={listing.hiddenUnattributed}
+          expanded={doneExpanded}
+          onToggle={() => setDoneExpanded((open) => !open)}
+        />
+      </>
+    )
+  }
 
   return (
     <Stack gap="sm" style={{ height: '100%' }}>
@@ -118,44 +175,42 @@ export function Board({
         <Group align="stretch" gap="md" wrap="nowrap" style={{ flex: 1, minHeight: 0 }}>
           {COLUMNS.map((status) => {
             const inColumn = project.tickets.filter((ticket) => ticket.status === status)
-            const tickets = shown.filter((ticket) => ticket.status === status)
-            const listing = status === 'done' ? orderDone(tickets, doneExpanded) : null
+            const inPlan = shown.filter((ticket) => ticket.status === status)
+            const tickets = drawn(status)
+            const columnFilter = columns.filters[status]
+            const columnFiltered = isFiltered(columnFilter)
 
             return (
               <BoardColumn
                 key={status}
                 status={status}
                 // The total always shows, whether or not every card is on screen.
-                // Filtered, it is the matching total; the bar above says so.
+                // Filtered, it is the matching total; the plan bar or the
+                // column's own notice says so.
                 count={tickets.length}
                 quiet={status === 'done'}
                 // Archiving a whole column would include cards the filter hides,
                 // so it is offered on the unfiltered board only.
-                onArchiveColumn={filtered ? null : () => onArchiveColumn(status)}
+                onArchiveColumn={filtered || columnFiltered ? null : () => onArchiveColumn(status)}
                 {...(status === 'backlog' ? { onNewTicket } : {})}
-              >
-                {tickets.length === 0 && inColumn.length > 0 ? (
-                  <Text size="xs" c="dimmed" style={{ lineHeight: 1.6 }}>
-                    {inColumn.length === 1
-                      ? '1 ticket here is hidden by the plan filter.'
-                      : `${inColumn.length} tickets here are hidden by the plan filter.`}
-                  </Text>
-                ) : tickets.length === 0 ? (
-                  <EmptyColumn status={status} project={project} />
-                ) : listing ? (
-                  <>
-                    {listing.visible.map(card)}
-                    <DoneToggle
-                      total={tickets.length}
-                      hiddenCount={listing.hiddenCount}
-                      hiddenUnattributed={listing.hiddenUnattributed}
-                      expanded={doneExpanded}
-                      onToggle={() => setDoneExpanded((open) => !open)}
+                filterControl={
+                  <ColumnFilterButton
+                    status={status}
+                    filter={columnFilter}
+                    onChange={(next) => columns.setColumnFilter(status, next)}
+                  />
+                }
+                filterNotice={
+                  columnFiltered && inPlan.length > 0 ? (
+                    <ColumnFilterNotice
+                      shown={tickets.length}
+                      total={inPlan.length}
+                      onClear={() => columns.clearColumnFilter(status)}
                     />
-                  </>
-                ) : (
-                  tickets.map(card)
-                )}
+                  ) : null
+                }
+              >
+                {columnBody(status, inColumn.length, inPlan.length, tickets)}
               </BoardColumn>
             )
           })}

@@ -15,6 +15,7 @@ import { MarkdownBody } from '../../markdown/MarkdownBody.js'
 import type { BackTarget } from '../../markdown/BackToSource.js'
 import { ReadingModeSwitch, ReviewChanges, type ReadingMode } from '../../review/ReviewChanges.js'
 import { TicketBlocker } from '../editing/TicketBlocker.js'
+import { HISTORY_PLACE_ATTRIBUTE } from '../../history/useHistoryInput.js'
 import { TicketDetailActions, type EditTarget } from './TicketDetailActions.js'
 import { TicketDetailHeader } from './TicketDetailHeader.js'
 import { TicketSourceEditor, TicketSourceEditorActions } from '../editing/TicketSourceEditor.js'
@@ -160,6 +161,10 @@ export function TicketDetailModal({
        * path or identifier inside would widen the whole dialog rather than wrap.
        */}
       <Modal.Content
+        // A place in history while only being read; a draft pauses Back and Forward.
+        {...(edit.editing || editingLinks || editingBlocker
+          ? {}
+          : { [HISTORY_PLACE_ATTRIBUTE]: '' })}
         className="ps-reading"
         style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}
       >

@@ -5,7 +5,7 @@ import { rememberPlanFilter } from '../board/usePlanFilter.js'
 import type { useArchiveActions } from '../board/useArchiveActions.js'
 import { DocumentsView } from '../documents/DocumentsView.js'
 import type { BackTarget } from '../markdown/BackToSource.js'
-import type { LinkPlace, useLinkNavigation } from '../markdown/useLinkNavigation.js'
+import type { useLinkNavigation } from '../markdown/useLinkNavigation.js'
 import { PlansView } from '../plans/PlansView.js'
 import type { useTicketActions } from '../tickets/useTicketActions.js'
 import type { useProjectNavigation } from './useProjectNavigation.js'
@@ -17,7 +17,8 @@ interface Props {
   refreshToken: number
   navigation: ReturnType<typeof useProjectNavigation>
   links: ReturnType<typeof useLinkNavigation>
-  backAction: (place: LinkPlace | null) => BackTarget | null
+  /** The link-style way back, when the previous place was a document or ticket. */
+  backTarget: BackTarget | null
   actions: ReturnType<typeof useTicketActions>
   archive: ReturnType<typeof useArchiveActions>
   onNewTicket: () => void
@@ -31,7 +32,7 @@ export function ProjectViewSwitch({
   refreshToken,
   navigation,
   links,
-  backAction,
+  backTarget,
   actions,
   archive,
   onNewTicket,
@@ -43,8 +44,10 @@ export function ProjectViewSwitch({
           rootPath={rootPath}
           openTarget={navigation.documentTarget}
           refreshToken={refreshToken}
-          onFollowLink={(path, request) => links.follow({ kind: 'document', path }, request)}
-          backFor={(path) => backAction(links.backFrom({ kind: 'document', path }))}
+          onFollowLink={(_path, request) => links.follow(request)}
+          back={backTarget}
+          onChoose={(path) => navigation.openDocument(path)}
+          onShowing={navigation.recordDocument}
         />
       )
     case 'plans':
@@ -54,7 +57,9 @@ export function ProjectViewSwitch({
           openTarget={navigation.planTarget}
           refreshToken={refreshToken}
           onOpenTicket={navigation.openTicket}
-          onFollowLink={(request) => links.follow(null, request)}
+          onFollowLink={links.follow}
+          onChoose={navigation.openPlan}
+          tickets={project.tickets}
           onViewOnBoard={(planId) => {
             rememberPlanFilter(project.checkoutPath, { kind: 'plan', id: planId })
             navigation.setView('board')

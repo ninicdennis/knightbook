@@ -255,6 +255,7 @@ describe('View on board', () => {
       title: 'Desktop app',
       body: '# Desktop app\n',
       file: '.projectspace/plans/desktop.md',
+      revision: 'rev-1',
       progress: {
         total: 0,
         byStatus: { backlog: 0, in_progress: 0, verification: 0, done: 0 },

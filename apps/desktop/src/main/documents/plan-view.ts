@@ -57,6 +57,7 @@ function toPlanView(plan: Plan, tickets: TicketListing): PlanView {
     title: plan.frontmatter.title,
     body: plan.body,
     file: `${RESERVED_DIR}/plans/${plan.frontmatter.id}.md`,
+    revision: plan.revision,
     progress: toProgress(progress),
     phases: plan.frontmatter.phases.map((phase, index) => ({
       id: phase.id,

@@ -26,8 +26,12 @@ interface Props {
   refreshToken?: number
   /** Follows a link found in the document at `fromPath`; resolves to a failure message. */
   onFollowLink: (fromPath: string, request: LinkRequest) => Promise<string | null>
-  /** The way back to where a link to `path` was followed from, if any. */
-  backFor: (path: string) => { label: string; onBack: () => void } | null
+  /** The step back in history, when it was to a document or ticket. */
+  back?: { label: string; onBack: () => void } | null
+  /** The user chose a document from the list: a step in history. */
+  onChoose?: (path: string) => void
+  /** Whichever document is showing, including one the view chose by itself. */
+  onShowing?: (path: string | null) => void
 }
 
 /** Matches Mantine's `sm` breakpoint (48em), below which the panels take turns. */
@@ -38,7 +42,9 @@ export function DocumentsView({
   openTarget = null,
   refreshToken = 0,
   onFollowLink,
-  backFor,
+  back = null,
+  onChoose,
+  onShowing,
 }: Props) {
   const [listing, setListing] = useState<DocumentListView | null>(null)
   const [listError, setListError] = useState<string | null>(null)
@@ -95,6 +101,8 @@ export function DocumentsView({
     if (selected) void read(selected)
   }, [selected, read, refreshToken])
 
+  useEffect(() => onShowing?.(selected), [selected, onShowing])
+
   // Switching panes on a narrow window moves focus with it, so a keyboard user
   // lands on what just appeared instead of on a control that has gone.
   useEffect(() => {
@@ -108,6 +116,7 @@ export function DocumentsView({
   }, [pane, selected])
 
   const choose = (path: string) => {
+    onChoose?.(path)
     setSelected(path)
     moveFocus.current = narrow
     setPane('reader')
@@ -278,7 +287,7 @@ export function DocumentsView({
           onFollowLink={(request) => onFollowLink(selected, request)}
           // Only the document a link asked for scrolls to the link's heading.
           scrollTo={openTarget?.path === selected ? openTarget.scrollTo : null}
-          back={backFor(selected)}
+          back={back}
         />
       )}
     </div>

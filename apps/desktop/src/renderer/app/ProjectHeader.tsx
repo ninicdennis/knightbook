@@ -4,6 +4,7 @@ import { IconSearch } from '@tabler/icons-react'
 import { ProjectSwitcher } from '../projects/ProjectSwitcher.js'
 import { SettingsDrawer } from './SettingsDrawer.js'
 import { KnightbookMark } from './TitleBar.js'
+import { HistoryButtons } from '../history/HistoryButtons.js'
 import { SEARCH_SHORTCUT_LABEL } from './shortcuts.js'
 
 /**
@@ -35,6 +36,8 @@ interface Props {
   onSwitchProject: (path: string) => void
   onOpenFolder: () => void
   onOpenSearch: () => void
+  /** Back and Forward through this project's history of places. */
+  history: { canGoBack: boolean; canGoForward: boolean; onBack: () => void; onForward: () => void }
 }
 
 export function ProjectHeader({
@@ -47,6 +50,7 @@ export function ProjectHeader({
   onSwitchProject,
   onOpenFolder,
   onOpenSearch,
+  history,
 }: Props) {
   return (
     <div className="ps-shell-header">
@@ -68,43 +72,46 @@ export function ProjectHeader({
         </div>
       </div>
 
-      <Tabs
-        value={view}
-        onChange={(next) => next && onViewChange(next as View)}
-        variant="unstyled"
-        activateTabWithKeyboard={false}
-        classNames={{ list: 'ps-shell-tabs', tab: 'ps-shell-tab' }}
-      >
-        <Tabs.List aria-label="Project views">
-          <Tabs.Tab value="board">Board</Tabs.Tab>
-          <Tabs.Tab value="documents">Documents</Tabs.Tab>
-          <Tabs.Tab value="plans">Plans</Tabs.Tab>
-          {/*
-           * Set apart at the far end because it is not another way of looking at
-           * current work but where finished-with tickets are kept. The count is
-           * there because the archive is otherwise invisible: without it, a
-           * ticket that left the board looks lost rather than put away.
-           */}
-          <Tabs.Tab
-            value="archive"
-            className="ps-shell-tab-archive"
-            aria-label={
-              archivedCount > 0
-                ? `Archive, ${archivedCount} ${archivedCount === 1 ? 'ticket' : 'tickets'}`
-                : 'Archive'
-            }
-            rightSection={
-              archivedCount > 0 ? (
-                <span className="ps-shell-count" aria-hidden>
-                  {archivedCount}
-                </span>
-              ) : undefined
-            }
-          >
-            Archive
-          </Tabs.Tab>
-        </Tabs.List>
-      </Tabs>
+      <div className="ps-shell-nav">
+        <HistoryButtons {...history} />
+        <Tabs
+          value={view}
+          onChange={(next) => next && onViewChange(next as View)}
+          variant="unstyled"
+          activateTabWithKeyboard={false}
+          classNames={{ root: 'ps-shell-tabs-root', list: 'ps-shell-tabs', tab: 'ps-shell-tab' }}
+        >
+          <Tabs.List aria-label="Project views">
+            <Tabs.Tab value="board">Board</Tabs.Tab>
+            <Tabs.Tab value="documents">Documents</Tabs.Tab>
+            <Tabs.Tab value="plans">Plans</Tabs.Tab>
+            {/*
+             * Set apart at the far end because it is not another way of looking at
+             * current work but where finished-with tickets are kept. The count is
+             * there because the archive is otherwise invisible: without it, a
+             * ticket that left the board looks lost rather than put away.
+             */}
+            <Tabs.Tab
+              value="archive"
+              className="ps-shell-tab-archive"
+              aria-label={
+                archivedCount > 0
+                  ? `Archive, ${archivedCount} ${archivedCount === 1 ? 'ticket' : 'tickets'}`
+                  : 'Archive'
+              }
+              rightSection={
+                archivedCount > 0 ? (
+                  <span className="ps-shell-count" aria-hidden>
+                    {archivedCount}
+                  </span>
+                ) : undefined
+              }
+            >
+              Archive
+            </Tabs.Tab>
+          </Tabs.List>
+        </Tabs>
+      </div>
     </div>
   )
 }

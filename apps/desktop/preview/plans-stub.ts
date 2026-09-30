@@ -54,13 +54,15 @@ function plan(
   id: string,
   title: string,
   body: string,
-  phases: Array<{ id: string; title: string; value?: string; tickets: string[] }>,
+  phases: Array<{ id: string; title: string; value?: string | null; tickets: string[] }>,
+  revision = 'rev-1',
 ): PlanView {
   return {
     id,
     title,
     body,
     file: `.projectspace/plans/${id}.md`,
+    revision,
     progress: progress(phases.flatMap((phase) => phase.tickets)),
     phases: phases.map((phase) => ({
       id: phase.id,
@@ -73,7 +75,7 @@ function plan(
   }
 }
 
-const PLANS: PlanView[] = [
+let PLANS: PlanView[] = [
   plan(
     '7c1e0f52-4b8a-4c1d-9e0f-3a5b6c7d8e9f',
     'MVP',
@@ -115,8 +117,42 @@ export const boardPlansStub: BoardPlanView[] = PLANS.map((plan) => ({
   ticketIds: [...new Set(plan.phases.flatMap((phase) => phase.tickets.map((ticket) => ticket.id)))],
 }))
 
+let edits = 1
+
 export const plansStub: PlansApi = {
   listPlans: async () => ({ ok: true, value: { plans: PLANS, problems: [] } }),
+  // Edits are kept in memory for the session, so a layout review can use them.
+  createPlan: async (_rootPath, title) => {
+    record('createPlan', title)
+    const id = `0000000${(edits += 1)}-0000-4000-8000-000000000000`.slice(-36)
+    PLANS = [
+      ...PLANS,
+      plan(
+        id,
+        title,
+        `# ${title}
+`,
+        [],
+      ),
+    ]
+    return { ok: true, value: { id, plans: { plans: PLANS, problems: [] } } }
+  },
+  setPlanPhases: async (_rootPath, planId, phases) => {
+    record('setPlanPhases', planId)
+    let next = 0
+    PLANS = PLANS.map((current) =>
+      current.id === planId
+        ? plan(
+            current.id,
+            current.title,
+            current.body,
+            phases.map((phase) => ({ ...phase, id: phase.id ?? `new-${(next += 1)}` })),
+            `rev-${(edits += 1)}`,
+          )
+        : current,
+    )
+    return { ok: true, value: { plans: PLANS, problems: [] } }
+  },
   openPlanExternally: async (_rootPath, id) => {
     record('openPlanExternally', id)
     return { ok: true, value: null }

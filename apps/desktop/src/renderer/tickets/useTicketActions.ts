@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react'
 import type { MovableStatus, ProjectView, Result, TicketType } from '../../shared/contract.js'
 import type { TicketContentEdit, TicketLinksEdit } from '../../shared/ticket-edit-contract.js'
 import type { ScreenControls } from '../projects/screen.js'
+import { moveInBacklog, type BacklogMove } from '../board/column-filter/backlog-move.js'
 
 /**
  * Every change the board makes to a ticket, and the one path they share. Each
@@ -137,24 +138,18 @@ export function useTicketActions({
   /**
    * Manual backlog order. The whole backlog is sent in its new order rather than
    * a single move, so the host writes one list and the window never has to guess
-   * what the manifest already held.
+   * what the manifest already held. `visible` is the backlog as the board draws
+   * it, so a move in a filtered column steps past the cards the user can see.
    */
   const reorder = useCallback(
-    (ticketId: string, to: 'top' | 'up' | 'down') => {
+    (ticketId: string, to: BacklogMove, visible?: readonly string[]) => {
       if (screen.kind !== 'open') return
 
       const ids = screen.project.tickets
         .filter((candidate) => candidate.status === 'backlog')
         .map((candidate) => candidate.id)
-      const from = ids.indexOf(ticketId)
-      if (from === -1) return
-
-      const target = to === 'top' ? 0 : to === 'up' ? from - 1 : from + 1
-      if (target < 0 || target >= ids.length) return
-
-      const next = [...ids]
-      next.splice(from, 1)
-      next.splice(target, 0, ticketId)
+      const next = moveInBacklog(ids, ticketId, to, visible)
+      if (!next) return
       void apply(ticketId, () => window.knightbook.reorderBacklog(screen.path, next))
     },
     [screen, apply],

@@ -172,6 +172,18 @@
   background: var(--ps-card-bg-quiet);
 }
 
+/* Second row: Back and Forward, then the view tabs, which take the rest. */
+.ps-shell-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+}
+
+.ps-shell-tabs-root {
+  flex: 1;
+  min-width: 0;
+}
+
 /* Second row: plain tabs. Inactive labels use body text at reduced weight
    rather than the muted grey, so they stay easy to read; the active one is
    marked by an accent underline that sits on the header's bottom hairline. */

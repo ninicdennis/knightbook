@@ -1,10 +1,23 @@
-import { Alert, Button, Center, Code, Loader, Stack, Text, UnstyledButton } from '@mantine/core'
+import {
+  ActionIcon,
+  Alert,
+  Button,
+  Center,
+  Code,
+  Loader,
+  Stack,
+  Text,
+  Tooltip,
+  UnstyledButton,
+} from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import { IconAlertTriangle, IconMap } from '@tabler/icons-react'
+import { IconAlertTriangle, IconMap, IconPlus } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
 import type { PlansView as PlansListing } from '../../shared/plans-contract.js'
 import type { LinkRequest } from '../markdown/useLinkNavigation.js'
 import { PlanDetail } from './PlanDetail.js'
+import { TitleDialog } from './TitleDialog.js'
+import { usePlanEdits } from './usePlanEdits.js'
 
 /**
  * The project's plans beside the one being read, laid out like Documents. On a
@@ -20,6 +33,10 @@ interface Props {
   onOpenTicket: (id: string) => void
   onFollowLink: (request: LinkRequest) => Promise<string | null>
   onViewOnBoard: (planId: string) => void
+  /** The user chose a plan from the list: a step in history. */
+  onChoose?: (planId: string) => void
+  /** The board's active tickets, which are what a phase can attach. */
+  tickets?: readonly { id: string; title: string }[]
 }
 
 const NARROW_QUERY = '(max-width: 47.99em)'
@@ -29,17 +46,20 @@ type Loaded =
   | { kind: 'failed'; message: string }
   | { kind: 'ready'; listing: PlansListing }
 
-function NoPlans() {
+function NoPlans({ onNewPlan }: { onNewPlan: () => void }) {
   return (
     <Center style={{ height: '100%' }}>
       <Stack gap="xs" align="center" maw={440} ta="center">
         <IconMap size={28} opacity={0.5} aria-hidden />
         <Text fw={600}>No plans yet</Text>
         <Text size="sm" c="var(--ps-text-muted)">
-          A plan is a roadmap, such as an MVP or a launch, that groups tickets into phases. Ask your
-          AI tool to create one with <Code>plan_create</Code>, then to break it into phases. It
-          appears here, with progress read from the tickets.
+          A plan is a roadmap, such as an MVP or a launch, that groups tickets into phases. Create
+          one here, or ask your AI tool to with <Code>plan_create</Code>. Progress is read from the
+          tickets.
         </Text>
+        <Button size="xs" leftSection={<IconPlus size={14} />} onClick={onNewPlan}>
+          New plan
+        </Button>
       </Stack>
     </Center>
   )
@@ -52,12 +72,20 @@ export function PlansView({
   onOpenTicket,
   onFollowLink,
   onViewOnBoard,
+  onChoose,
+  tickets = [],
 }: Props) {
   const [loaded, setLoaded] = useState<Loaded>({ kind: 'loading' })
   const [attempt, setAttempt] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
   const narrow = useMediaQuery(NARROW_QUERY) ?? false
   const [pane, setPane] = useState<'list' | 'plan'>('list')
+  const [creating, setCreating] = useState(false)
+  const edits = usePlanEdits({
+    rootPath,
+    show: useCallback((listing: PlansListing) => setLoaded({ kind: 'ready', listing }), []),
+    reload: useCallback(() => setAttempt((n) => n + 1), []),
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -83,10 +111,14 @@ export function PlansView({
     setPane('plan')
   }, [openTarget])
 
-  const choose = useCallback((id: string) => {
-    setSelected(id)
-    setPane('plan')
-  }, [])
+  const choose = useCallback(
+    (id: string) => {
+      onChoose?.(id)
+      setSelected(id)
+      setPane('plan')
+    },
+    [onChoose],
+  )
 
   if (loaded.kind === 'loading') {
     return (
@@ -116,7 +148,40 @@ export function PlansView({
   }
 
   const { plans, problems } = loaded.listing
-  if (plans.length === 0 && problems.length === 0) return <NoPlans />
+  const newPlanDialog = creating && (
+    <TitleDialog
+      heading="New plan"
+      label="Plan title"
+      action="Create plan"
+      onClose={() => setCreating(false)}
+      onSubmit={async (title) => {
+        setCreating(false)
+        const id = await edits.createPlan(title)
+        if (id) choose(id)
+      }}
+    />
+  )
+  const editError = edits.error && (
+    <Alert
+      color="orange"
+      variant="light"
+      withCloseButton
+      onClose={edits.clearError}
+      icon={<IconAlertTriangle size={16} />}
+      m="sm"
+    >
+      {edits.error}
+    </Alert>
+  )
+  if (plans.length === 0 && problems.length === 0) {
+    return (
+      <>
+        {editError}
+        <NoPlans onNewPlan={() => setCreating(true)} />
+        {newPlanDialog}
+      </>
+    )
+  }
 
   const current = plans.find((plan) => plan.id === selected) ?? plans[0] ?? null
   const showList = !narrow || pane === 'list'
@@ -126,12 +191,25 @@ export function PlansView({
     <div className="ps-docs ps-reading" data-narrow={narrow || undefined}>
       {showList && (
         <nav className="ps-docs-nav" aria-label="Plans">
-          <div className="ps-docs-nav-heading">
+          <div className="ps-docs-nav-heading" style={{ alignItems: 'center', gap: 6 }}>
             <span>Plans</span>
-            <Text span size="xs" c="var(--ps-text-muted)">
+            <Text span size="xs" c="var(--ps-text-muted)" style={{ marginInlineStart: 'auto' }}>
               {plans.length}
             </Text>
+            <Tooltip label="New plan" withinPortal>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                aria-label="New plan"
+                disabled={edits.busy}
+                onClick={() => setCreating(true)}
+              >
+                <IconPlus size={14} />
+              </ActionIcon>
+            </Tooltip>
           </div>
+          {editError}
           <ul className="ps-docs-list">
             {plans.map((plan) => (
               <li key={plan.id}>
@@ -176,8 +254,12 @@ export function PlansView({
           onFollowLink={onFollowLink}
           onViewOnBoard={onViewOnBoard}
           {...(narrow ? { onBack: () => setPane('list') } : {})}
+          tickets={tickets}
+          busy={edits.busy}
+          onSavePhases={(phases) => void edits.savePhases(current.id, current.revision, phases)}
         />
       )}
+      {newPlanDialog}
     </div>
   )
 }

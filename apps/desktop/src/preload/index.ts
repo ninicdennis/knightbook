@@ -55,6 +55,9 @@ const api: KnightbookApi = {
   exportSkill: () => ipcRenderer.invoke('skill:export'),
   listPlans: (rootPath) => ipcRenderer.invoke('plans:list', rootPath),
   openPlanExternally: (rootPath, id) => ipcRenderer.invoke('plan:openExternally', rootPath, id),
+  createPlan: (rootPath, title) => ipcRenderer.invoke('plan:create', rootPath, title),
+  setPlanPhases: (rootPath, planId, phases, revision) =>
+    ipcRenderer.invoke('plan:setPhases', rootPath, planId, phases, revision),
 
   listDocuments: (rootPath) => ipcRenderer.invoke('documents:list', rootPath),
   includeDocumentFiles: (rootPath) => ipcRenderer.invoke('documents:includeFiles', rootPath),

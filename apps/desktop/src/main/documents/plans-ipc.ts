@@ -6,8 +6,8 @@ import { toPlansView } from './plan-view.js'
 import { planFileToOpen } from '../tickets/ticket-file.js'
 
 /**
- * Reading plans for the Plans pane. The window only reads them for now; plans
- * are written through MCP or in the user's own editor, like documents.
+ * Reading plans for the Plans pane. Creating plans and editing their phases is
+ * in plan-edit-ipc.ts; a plan's body is edited in the user's own editor.
  */
 export function registerPlanHandlers(): void {
   ipcMain.handle(
