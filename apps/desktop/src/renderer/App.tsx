@@ -15,8 +15,9 @@ import { useProjectRefresh } from './app/useProjectRefresh.js'
 import { useProjectScreen } from './projects/useProjectScreen.js'
 import { useWindowTitle } from './app/useWindowTitle.js'
 import { useArchiveActions } from './board/useArchiveActions.js'
-import type { BackTarget } from './markdown/BackToSource.js'
-import { useLinkNavigation, type LinkPlace } from './markdown/useLinkNavigation.js'
+import { useBackTarget } from './history/useBackTarget.js'
+import { useHistoryInput } from './history/useHistoryInput.js'
+import { useLinkNavigation } from './markdown/useLinkNavigation.js'
 import { McpStatusFooter } from './mcp/McpStatusFooter.js'
 import { TicketSearch } from './search/TicketSearch.js'
 import { useSearchShortcut } from './search/useSearchShortcut.js'
@@ -62,7 +63,7 @@ export function App() {
     busyTicketId,
   })
 
-  const navigation = useProjectNavigation(screen, load)
+  const navigation = useProjectNavigation(screen, load, setActionError)
   const { view, detailTicket, openTicket, closeTicket } = navigation
   const newTicket = useNewTicket(controls, openTicket)
 
@@ -81,11 +82,8 @@ export function App() {
     openDocument: navigation.openDocument,
     openTicket,
   })
-  const backAction = (place: LinkPlace | null): BackTarget | null =>
-    place && {
-      label: place.kind === 'ticket' ? place.title : place.path,
-      onBack: () => links.goBack(place),
-    }
+  useHistoryInput(screen.kind === 'open', navigation.goBack, navigation.goForward)
+  const backTarget = useBackTarget(screen, navigation)
 
   return (
     <AppShell
@@ -112,6 +110,12 @@ export function App() {
             onSwitchProject={navigation.switchProject}
             onOpenFolder={() => void choose()}
             onOpenSearch={search.open}
+            history={{
+              canGoBack: navigation.canGoBack,
+              canGoForward: navigation.canGoForward,
+              onBack: navigation.goBack,
+              onForward: navigation.goForward,
+            }}
           />
         </AppShell.Header>
       )}
@@ -173,7 +177,7 @@ export function App() {
                 refreshToken={refreshToken}
                 navigation={navigation}
                 links={links}
-                backAction={backAction}
+                backTarget={backTarget}
                 actions={actions}
                 archive={archive}
                 onNewTicket={newTicket.open}
@@ -224,14 +228,9 @@ export function App() {
           onResolveIssue={() => actions.resolveIssue(detailTicket.id)}
           onReview={(revision) => actions.review(detailTicket.id, revision)}
           onOpenPlan={navigation.openPlan}
-          onFollowLink={(request) =>
-            links.follow(
-              { kind: 'ticket', id: detailTicket.id, title: detailTicket.title },
-              request,
-            )
-          }
+          onFollowLink={links.follow}
           scrollTo={navigation.detailScroll}
-          back={backAction(links.backFrom({ kind: 'ticket', id: detailTicket.id }))}
+          back={backTarget}
         />
       )}
 

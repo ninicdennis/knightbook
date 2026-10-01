@@ -39,6 +39,7 @@ const MVP: PlanView = {
   title: 'MVP',
   body: '# MVP\n\nThe smallest useful version.\n',
   file: '.projectspace/plans/7c1e0f52-4b8a-4c1d-9e0f-3a5b6c7d8e9f.md',
+  revision: 'rev-1',
   progress: progress({
     total: 2,
     byStatus: { backlog: 0, in_progress: 0, verification: 1, done: 0 },
@@ -104,7 +105,7 @@ describe('the Plans pane', () => {
     await openPlans()
 
     const plan = await screen.findByRole('region', { name: 'MVP' })
-    await user.click(within(plan).getByRole('button', { name: /a ticket/i }))
+    await user.click(within(plan).getByRole('button', { name: /^A ticket/ }))
 
     expect(await screen.findByRole('dialog')).toBeTruthy()
     expect(api.readTicket).toHaveBeenCalledWith(CHECKOUT, TICKET_ID)

@@ -209,6 +209,8 @@ export function makeApi(): KnightbookApi {
     exportSkill: vi.fn().mockResolvedValue({ ok: true, value: null }),
     listPlans: vi.fn().mockResolvedValue({ ok: true, value: { plans: [], problems: [] } }),
     openPlanExternally: vi.fn().mockResolvedValue({ ok: true, value: null }),
+    createPlan: vi.fn(),
+    setPlanPhases: vi.fn(),
     listDocuments: vi
       .fn()
       .mockResolvedValue({ ok: true, value: { documents: [], problems: [], folderTitles: [] } }),

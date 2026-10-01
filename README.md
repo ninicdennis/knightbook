@@ -14,8 +14,8 @@ person decides what is done.
   the Backlog column or an AI tool. Only the user can accept work as Done, and each
   acceptance records who decided.
 - **Plans** such as an MVP or a launch, whose phases group existing tickets, with
-  progress read from the tickets themselves. The app shows them; your AI tool, or
-  your editor, writes them for now.
+  progress read from the tickets themselves. Create plans, add and arrange phases,
+  and attach tickets in the app or through your AI tool.
 - **Documents where they already are.** Existing Markdown is included by path and
   rendered read-only, with links between documents and tickets. Editing happens in
   your own editor; an AI tool can also create new documents through MCP.

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DocumentReadView, KnightbookApi, LinkDestinationView } from '../../shared/contract.js'
@@ -104,6 +104,23 @@ async function openTicket(body: string) {
   return dialog
 }
 
+describe('in the project history (ticket 855c3054)', () => {
+  it('makes Back to … the same step as the header Back, and Forward returns to the heading', async () => {
+    await openReadme()
+    await user.click(screen.getByRole('link', { name: 'the design notes' }))
+    await screen.findByRole('heading', { name: 'Open questions' })
+
+    await user.click(screen.getByRole('button', { name: 'Back to README.md' }))
+    await screen.findByRole('heading', { name: 'README' })
+    const forward = screen.getByRole('button', { name: 'Forward' })
+    expect(forward.hasAttribute('disabled')).toBe(false)
+
+    await user.click(forward)
+    const heading = await screen.findByRole('heading', { name: 'Open questions' })
+    await waitFor(() => expect(document.activeElement).toBe(heading))
+  })
+})
+
 describe('from a document', () => {
   it('opens another document at the linked heading, with a way back', async () => {
     await openReadme()
@@ -201,6 +218,29 @@ describe('from a ticket', () => {
 
     await user.click(within(next).getByRole('button', { name: 'Back to A ticket' }))
     expect(await within(await screen.findByRole('dialog')).findByRole('link')).toBeTruthy()
+  })
+
+  it('steps back and forward to an archived ticket a link led to', async () => {
+    // The linked ticket was archived before it was opened, as a Done one often is.
+    api.readProject = vi.fn().mockResolvedValue({
+      ok: true,
+      value: project({
+        tickets: [ticket()],
+        archivedTickets: [
+          ticket({ id: OTHER_ID, title: 'Another ticket', archivedAt: '2026-09-29' }),
+        ],
+      }),
+    })
+    const dialog = await openTicket(`Depends on [the other one](${OTHER_ID}.md).`)
+    await user.click(within(dialog).getByRole('link', { name: 'the other one' }))
+    expect(await within(await screen.findByRole('dialog')).findByText('Its own text.')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Back to A ticket' }))
+    await within(await screen.findByRole('dialog')).findByRole('link')
+    fireEvent.keyDown(window, { key: 'ArrowRight', altKey: true })
+
+    expect(await screen.findByText('Its own text.')).toBeTruthy()
+    expect(screen.queryByText(/has been archived/)).toBeNull()
   })
 
   it('jumps to a heading in the same ticket, and says when one is missing', async () => {

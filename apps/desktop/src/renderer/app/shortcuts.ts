@@ -28,3 +28,18 @@ export function isSearchShortcut(event: KeyboardEvent): boolean {
   // platform has exactly one, and the other chord may mean something else.
   return IS_MAC ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey
 }
+
+/**
+ * Back (-1) or Forward (+1) for the platform's own history chord, or null:
+ * Alt+← / Alt+→ on Windows and Linux, Cmd+[ / Cmd+] on macOS. As with search,
+ * each platform has exactly one pair.
+ */
+export function historyShortcut(event: KeyboardEvent, mac = IS_MAC): -1 | 1 | null {
+  if (event.shiftKey) return null
+  if (mac) {
+    if (!event.metaKey || event.ctrlKey || event.altKey) return null
+    return event.key === '[' ? -1 : event.key === ']' ? 1 : null
+  }
+  if (!event.altKey || event.ctrlKey || event.metaKey) return null
+  return event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : null
+}

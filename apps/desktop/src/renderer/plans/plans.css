@@ -46,3 +46,15 @@
   outline: 2px solid var(--mantine-primary-color-filled);
   outline-offset: 1px;
 }
+
+/* A ticket row with its detach button beside the part that opens the ticket. */
+.ps-plan-ticket-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ps-plan-ticket-row > .ps-plan-ticket-button {
+  flex: 1;
+  min-width: 0;
+}
