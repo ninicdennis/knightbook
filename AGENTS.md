@@ -56,8 +56,11 @@ the branch before merging anything platform-sensitive (window chrome, paths,
 packaging). Locally the packaged-app tests skip when no package exists; say so if
 you did not package.
 
-On a merge to `main`, the release workflow (`.github/workflows/release.yml`) calls CI
-for all three platforms. When the merged commit is a Conventional Commit it first
+On a merge to `main` that changes the desktop app (D-041: `apps/desktop`, `packages`,
+`skills/projectspace` or the build setup, listed in
+`apps/desktop/scripts/publishing/app-commits.mjs`), the release workflow
+(`.github/workflows/release.yml`) calls CI for all three platforms. Website, docs and
+board merges start no release, and their commits never count toward the version. When the merged commit is a Conventional Commit it first
 chooses the next version with semantic-release, has CI build the installers stamped
 with it (`pack:installers`), and then publishes a GitHub prerelease with every
 installer and a `SHA256SUMS.txt`. A manual CI run given a version builds the
@@ -128,7 +131,7 @@ docs/              Specification, technical design, research, experiment finding
   (or a `BREAKING CHANGE:` footer) for a breaking change. Pull requests are
   squash-merged, so the title becomes the commit on `main`, and the release workflow
   reads it to choose the version (D-040): `feat` is a minor release, `!` a major one,
-  every other type a patch. A title that is not a Conventional Commit fails the
+  every other type a patch, but only when the merge changes the app (D-041). A title that is not a Conventional Commit fails the
   `Pull request title` check and would release nothing. When suggesting or writing a
   title or message, check it with `printf '%s\n' "<title>" | pnpm exec commitlint`.
   Releases are only ever published by the workflow; never create tags or GitHub

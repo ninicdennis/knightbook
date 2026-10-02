@@ -1,5 +1,5 @@
 import { appendFile, writeFile } from 'node:fs/promises'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 /**
  * Works out the version a merge to `main` releases, without releasing anything.
@@ -17,7 +17,11 @@ import { pathToFileURL } from 'node:url'
  * pushed.
  */
 
-/** Every Conventional Commit type releases something: the user chose a release per merge. */
+/**
+ * Every Conventional Commit type that changes the app releases something: the user
+ * chose a release per app-changing merge (D-040, narrowed by D-041). Commits that
+ * leave the app alone are dropped earlier, by app-commits.mjs.
+ */
 const PATCH_TYPES = ['docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert']
 
 const PRESET = 'conventionalcommits'
@@ -35,15 +39,15 @@ export const releaseRules = [
   ...PATCH_TYPES.map((type) => ({ type, release: 'patch' })),
 ]
 
+/** semantic-release loads a plugin by path; this one wraps the analyzer and the notes. */
+const APP_COMMITS_PLUGIN = fileURLToPath(new URL('./app-commits.mjs', import.meta.url))
+
 export const releaseOptions = {
   branches: ['main'],
   tagFormat: 'v${version}',
   dryRun: true,
   ci: true,
-  plugins: [
-    ['@semantic-release/commit-analyzer', { preset: PRESET, releaseRules }],
-    ['@semantic-release/release-notes-generator', { preset: PRESET }],
-  ],
+  plugins: [[APP_COMMITS_PLUGIN, { preset: PRESET, releaseRules }]],
 }
 
 /**

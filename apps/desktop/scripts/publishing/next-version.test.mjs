@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { execFile } from 'node:child_process'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { promisify } from 'node:util'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import semanticRelease from 'semantic-release'
@@ -31,8 +31,10 @@ async function git(...args) {
   return stdout.trim()
 }
 
-async function commit(message) {
-  await writeFile(join(work, 'file.txt'), `${message}\n${Math.random()}\n`)
+/** Commits a change to `file`, which is inside the desktop app unless a test says otherwise. */
+async function commit(message, file = 'apps/desktop/file.txt') {
+  await mkdir(dirname(join(work, file)), { recursive: true })
+  await writeFile(join(work, file), `${message}\n${Math.random()}\n`)
   await git('add', '.')
   await git('commit', '-q', '-m', message)
   await git('push', '-q', 'origin', 'HEAD:main')
@@ -79,7 +81,7 @@ describe('the version a merge to main releases', () => {
     expect(decision.notes).not.toContain('1.0.0')
   })
 
-  it('releases a patch for a docs-only merge, since every merge releases', async () => {
+  it('releases a patch for a docs: commit that changes the app', async () => {
     await commit('feat: first feature')
     await git('tag', 'v0.1.0')
     await commit('docs: explain the board')
@@ -100,6 +102,44 @@ describe('the version a merge to main releases', () => {
     await git('tag', 'v0.1.0')
     await commit('feat!: change the record format')
     expect(await nextRelease()).toMatchObject({ version: '1.0.0' })
+  })
+
+  it('releases nothing for a merge that changes only the website or the docs', async () => {
+    await commit('feat: first feature')
+    await git('tag', 'v0.1.0')
+    await commit('feat: a new homepage', 'apps/website/src/pages/index.astro')
+    await commit('docs: explain the board', 'docs/guide.md')
+    expect(await nextRelease()).toEqual({ release: false })
+  })
+
+  it('leaves earlier website changes out of the next app release', async () => {
+    await commit('feat: first feature')
+    await git('tag', 'v0.1.0')
+    await commit('feat: a new homepage', 'apps/website/src/pages/index.astro')
+    await commit('fix: a desktop bug')
+
+    const decision = await nextRelease()
+    expect(decision).toMatchObject({ release: true, version: '0.1.1' })
+    expect(decision.notes).toContain('a desktop bug')
+    expect(decision.notes).not.toContain('homepage')
+  })
+
+  it('still counts an app change that arrives as a two-parent merge commit', async () => {
+    await commit('feat: first feature')
+    await git('tag', 'v0.1.0')
+    await git('checkout', '-q', '-b', 'topic')
+    await commit('wip', 'apps/desktop/other.txt')
+    await git('checkout', '-q', 'main')
+    await git('merge', '-q', '--no-ff', '-m', 'fix: a merged desktop change', 'topic')
+    await git('push', '-q', 'origin', 'HEAD:main')
+    expect(await nextRelease()).toMatchObject({ release: true, version: '0.1.1' })
+  })
+
+  it('counts a change to the shared lockfile as an app change', async () => {
+    await commit('feat: first feature')
+    await git('tag', 'v0.1.0')
+    await commit('chore: add the website dependencies', 'pnpm-lock.yaml')
+    expect(await nextRelease()).toMatchObject({ release: true, version: '0.1.1' })
   })
 
   it('releases nothing again when the workflow is re-run after its release was tagged', async () => {

@@ -10,9 +10,18 @@ reasoning.
 This section is for maintainers. The decision and its reasons are D-040 in the
 [specification](../project-workspace-spec.md).
 
-**What causes a release.** Every push to `main` runs `.github/workflows/release.yml`.
+**What causes a release.** A push to `main` that changes the desktop app runs
+`.github/workflows/release.yml` (D-041). The app is `apps/desktop`, `packages`,
+`skills/projectspace` and the build setup: root `package.json`, `pnpm-lock.yaml`,
+`pnpm-workspace.yaml`, `tsconfig.base.json`, and the CI and release workflows. That
+list lives in `APP_PATHS` in `apps/desktop/scripts/publishing/app-commits.mjs` and is
+repeated as the workflow's `paths` filter; a test fails if they differ. A push that
+changes only the website, `docs/`, the README or the board starts no release run.
+Its pull request's checks are what cover it.
+
 Pull requests are squash-merged, so the push is one commit whose message is the pull
-request's title. semantic-release reads the commits since the last `v*` tag:
+request's title. semantic-release reads the commits since the last `v*` tag, skips
+any that changed none of the app paths, and applies these rules to the rest:
 
 | Commit | Release |
 | --- | --- |

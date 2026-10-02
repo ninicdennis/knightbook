@@ -1,8 +1,9 @@
 name: Release
 
-# Every merge to main is checked on all three platforms and, when its commits call
-# for one, published as a GitHub prerelease (docs/proposals/release-automation.md,
-# decision D-040). Three stages, each waiting for the last:
+# Every merge to main that changes the desktop app is checked on all three
+# platforms and, when its commits call for one, published as a GitHub prerelease
+# (docs/proposals/release-automation.md, decisions D-040 and D-041). Three stages,
+# each waiting for the last:
 #
 # 1. `version`: semantic-release reads the Conventional Commit messages since the
 #    last v* tag and chooses the next version. It creates nothing.
@@ -13,10 +14,26 @@ name: Release
 #
 # A push whose commits are not Conventional Commits still runs `ci`, so main is
 # always checked, but publishes nothing.
+#
+# A push that touches none of the paths below changes nothing in the installers
+# (the website, docs, README, the board), so this workflow does not start for it,
+# and semantic-release leaves its commits out of the next version and notes. The
+# list must match APP_PATHS in apps/desktop/scripts/publishing/app-commits.mjs;
+# app-commits.test.mjs fails when they differ.
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'apps/desktop/**'
+      - 'packages/**'
+      - 'skills/projectspace/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig.base.json'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/release.yml'
 
 # One release at a time, never cancelled, so two quick merges cannot both pick
 # the same version. GitHub keeps only one waiting run: a third merge before the
