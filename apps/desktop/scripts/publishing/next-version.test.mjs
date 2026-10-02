@@ -69,10 +69,19 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  await rm(root, { recursive: true, force: true })
+  // Windows can hold a just-exited git process's files for a moment; retrying
+  // keeps one slow test from failing the next ones with EBUSY.
+  await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 })
 })
 
-describe('the version a merge to main releases', () => {
+/**
+ * Each test runs git and semantic-release several times. That takes 1 to 2
+ * seconds locally but went past vitest's 5-second default on GitHub's Windows
+ * runner, so these tests get a limit sized for a slow machine.
+ */
+const SLOW_RUNNER_TIMEOUT = 60_000
+
+describe('the version a merge to main releases', { timeout: SLOW_RUNNER_TIMEOUT }, () => {
   it('starts at 0.1.0 rather than 1.0.0', async () => {
     await commit('feat: first feature')
     const decision = await nextRelease()
