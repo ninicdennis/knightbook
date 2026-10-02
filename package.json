@@ -17,11 +17,14 @@
     "build:mcp": "pnpm --filter @knightbook/mcp build",
     "pack:dir": "pnpm build:mcp && pnpm --filter @knightbook/desktop pack:dir",
     "pack:dir:mac": "pnpm build:mcp && pnpm --filter @knightbook/desktop pack:dir:mac",
+    "pack:installers": "pnpm build:mcp && pnpm --filter @knightbook/desktop pack:installers",
     "start:packaged": "pnpm --filter @knightbook/desktop start:packaged",
     "preview:board": "pnpm --filter @knightbook/desktop preview:board",
     "experiment:editor": "pnpm --filter @knightbook/experiment-editor-preservation report"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "oxlint": "^1.83.0",
     "prettier": "^3.9.8"
   }

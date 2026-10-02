@@ -35,18 +35,30 @@ extraResources:
 
 asar: true
 
+# Installer names carry the version, OS and CPU and no spaces, so they work as
+# download URLs and the release workflow can check it has one of each
+# (scripts/publishing/release-assets.mjs). Windows is x64 only (D-028), so its CPU
+# is written out rather than left to ${arch}.
 win:
+  artifactName: Knightbook-${version}-windows-x64.${ext}
   target:
     - target: nsis
       arch: [x64]
 
 mac:
+  artifactName: Knightbook-${version}-macos-${arch}.${ext}
   target:
     - target: dmg
       arch: [arm64, x64]
   category: public.app-category.developer-tools
 
+# The deb refuses to build without a homepage (package.json `homepage`) and a
+# maintainer with an email. Both are shown by `apt show`. The homepage is the
+# repository until the website's domain is chosen (ticket 577513c8); the email is
+# GitHub's no-reply address, so no personal inbox is published.
 linux:
+  artifactName: Knightbook-${version}-linux-${arch}.${ext}
+  maintainer: Knightbook <40923967+ninicdennis@users.noreply.github.com>
   target:
     - target: AppImage
       arch: [x64]

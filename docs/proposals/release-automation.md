@@ -1,8 +1,80 @@
 # Future feature: releases after merge
 
-Status: deferred feature and implementation proposal. Researched 2026-09-19.
-No release workflow, credentials, or publishing configuration is enabled by this
-document.
+Status: implemented on 2026-10-01 as decision D-040 (ticket 356c7683), following
+the proposal below with the choices recorded under "How releases work". Researched
+2026-09-19. The rest of this document is the original proposal, kept for its
+reasoning.
+
+## How releases work
+
+This section is for maintainers. The decision and its reasons are D-040 in the
+[specification](../project-workspace-spec.md).
+
+**What causes a release.** Every push to `main` runs `.github/workflows/release.yml`.
+Pull requests are squash-merged, so the push is one commit whose message is the pull
+request's title. semantic-release reads the commits since the last `v*` tag:
+
+| Commit | Release |
+| --- | --- |
+| `feat!: …`, or a `BREAKING CHANGE:` footer | major |
+| `feat: …` | minor |
+| any other Conventional Commit type (`fix`, `docs`, `chore`, `ci`, `refactor`, `test`, `build`, `perf`, `style`, `revert`) | patch |
+| anything else | none; CI still runs, nothing is published |
+
+The first release is `0.1.0`. Every release is published as a GitHub prerelease. To
+start publishing stable releases, change `--prerelease` in
+`apps/desktop/scripts/publishing/publish-release.mjs`. The `Pull request title` workflow
+(`pr-title.yml`) runs commitlint on each pull-request title, so a title that would
+release nothing fails before merge. GitHub's own settings should allow squash merging
+only and use the pull request title as the squash commit's title; those settings are
+in the repository, not in this code.
+
+**The three stages.**
+
+1. `version` runs `apps/desktop/scripts/publishing/next-version.mjs`: semantic-release in
+   dry-run mode, which chooses the version and writes the release notes. It needs a
+   write token only because semantic-release checks that it could push, even in
+   dry-run mode; it creates no tag or commit.
+2. `ci` calls `ci.yml` with that version. Each platform stamps the version into the
+   desktop and MCP `package.json` files on the runner (never committed), runs every
+   check, builds the installers with `pnpm pack:installers`, tests the packaged app,
+   and keeps the installers as an artifact.
+3. `publish` runs `apps/desktop/scripts/publishing/publish-release.mjs` only if every
+   platform passed. It refuses to continue unless there is exactly one Windows x64
+   installer, one DMG per Mac CPU and one Linux deb, all of this version. It then
+   writes `SHA256SUMS.txt`, creates a draft prerelease targeting the tested commit,
+   uploads everything, checks the draft holds every file at the right size, and
+   publishes it. Publishing is what creates the tag.
+
+**Re-running and recovering.** Re-running a failed release workflow from the Actions
+tab is safe:
+
+- A release already published from the same commit with the same files is verified
+  and left alone; the run succeeds.
+- A draft left by a failed run is deleted and staged again. Drafts are never public.
+- A tag already at a different commit, or a published release whose files differ,
+  stops the run with an error and changes nothing. Do not delete published releases
+  or move tags to get past it; find out why first.
+- If a build fails, nothing is published. The next merge picks up its commits, since
+  the version is always calculated from the last tag.
+
+Releases run one at a time. GitHub keeps only one waiting run, so a third merge
+landing while one release runs and another waits replaces the waiting one; the next
+release then includes both merges' changes under one version.
+
+**Credentials.** Only the default `GITHUB_TOKEN` is used: `contents: write` for the
+version check and the publishing job, read-only everywhere else, including every
+pull-request run. There are no signing secrets yet; builds are unsigned (ticket
+a415fdb2).
+
+**Not covered.** The repository is private, so a release's files download only for
+signed-in accounts with access. Public downloads come from a separate bucket (ticket
+1ef49bc4). The app does not check for or install updates. A GitHub Release is only
+where the files are kept.
+
+**Building installers without publishing.** On the Actions tab, run CI on a branch
+with a version (for example `0.0.1`). It builds and tests the installers on all three
+platforms and keeps them as artifacts for seven days, but never publishes.
 
 ## Intended outcome
 

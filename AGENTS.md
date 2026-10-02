@@ -39,6 +39,8 @@ Node 24 and pnpm (the version pinned in `package.json`, via corepack).
 | `pnpm build:mcp` | Bundle the MCP server to `packages/mcp/dist/server.mjs` |
 | `pnpm pack:dir` | Build and produce the unpacked app under `apps/desktop/release/` |
 | `pnpm pack:dir:mac` | The same on macOS for both CPUs (arm64 and x64); CI's macOS job uses it |
+| `pnpm pack:installers --win` | Build the installers (`--mac`, `--linux deb` on those hosts) under `apps/desktop/release/`; the release build uses it |
+| `printf '%s\n' "<title>" \| pnpm exec commitlint` | Check a commit message or PR title is a Conventional Commit |
 | `pnpm start:packaged` | Open the last packaged app; rebuilds nothing |
 | `pnpm preview:board` | Board against stub data at `http://localhost:5199`, for layout review |
 | `pnpm --filter <package> test` | One package's tests, e.g. `@knightbook/core` |
@@ -53,6 +55,15 @@ free Actions allowance. Windows is where the app is used, so start a manual run 
 the branch before merging anything platform-sensitive (window chrome, paths,
 packaging). Locally the packaged-app tests skip when no package exists; say so if
 you did not package.
+
+On a merge to `main`, the release workflow (`.github/workflows/release.yml`) calls CI
+for all three platforms. When the merged commit is a Conventional Commit it first
+chooses the next version with semantic-release, has CI build the installers stamped
+with it (`pack:installers`), and then publishes a GitHub prerelease with every
+installer and a `SHA256SUMS.txt`. A manual CI run given a version builds the
+installers on a branch without publishing them. A separate workflow,
+`pr-title.yml`, checks pull-request titles with commitlint. How a release is chosen,
+retried and recovered is in [release automation](docs/proposals/release-automation.md).
 
 ## Layout
 
@@ -111,6 +122,17 @@ docs/              Specification, technical design, research, experiment finding
   missing data never looks like zero or success.
 - Work on a `feature/<name>` branch and leave commits and PRs to the user unless
   asked.
+- Commit messages and pull-request titles are
+  [Conventional Commits](https://www.conventionalcommits.org/): `feat: …`, `fix: …`,
+  `docs: …`, `refactor: …`, `test: …`, `ci: …`, `chore: …`, with `!` after the type
+  (or a `BREAKING CHANGE:` footer) for a breaking change. Pull requests are
+  squash-merged, so the title becomes the commit on `main`, and the release workflow
+  reads it to choose the version (D-040): `feat` is a minor release, `!` a major one,
+  every other type a patch. A title that is not a Conventional Commit fails the
+  `Pull request title` check and would release nothing. When suggesting or writing a
+  title or message, check it with `printf '%s\n' "<title>" | pnpm exec commitlint`.
+  Releases are only ever published by the workflow; never create tags or GitHub
+  Releases by hand.
 
 ## Gotchas
 

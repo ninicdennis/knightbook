@@ -18,6 +18,7 @@ import { parseLaunchMode, type LaunchMode } from './launch-mode.js'
 import { registerProjectsTool } from './projects-tool.js'
 import { createScope } from './scope.js'
 import { registerTools } from './tools.js'
+import packageJson from '../package.json' with { type: 'json' }
 
 /**
  * The separately launchable MCP process from technical design section 1. The AI
@@ -28,7 +29,12 @@ import { registerTools } from './tools.js'
  */
 
 const NAME = 'knightbook'
-const VERSION = '0.0.0'
+/**
+ * The release workflow stamps the product version into this package.json before
+ * bundling, and esbuild inlines it, so the server reports the version of the app
+ * it ships in. Outside a release it is 0.0.0.
+ */
+const VERSION = packageJson.version
 
 /** Activity is refreshed at most this often per project, so a burst of calls is one write. */
 const ACTIVITY_INTERVAL_MS = 5_000

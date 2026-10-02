@@ -1,0 +1,140 @@
+name: Release
+
+# Every merge to main is checked on all three platforms and, when its commits call
+# for one, published as a GitHub prerelease (docs/proposals/release-automation.md,
+# decision D-040). Three stages, each waiting for the last:
+#
+# 1. `version`: semantic-release reads the Conventional Commit messages since the
+#    last v* tag and chooses the next version. It creates nothing.
+# 2. `ci`: the CI workflow, given that version, runs every check, builds the
+#    installers stamped with it, and tests the packaged app on each platform.
+# 3. `publish`: only if all of that passed, one job creates the tag and the
+#    prerelease at the tested commit and attaches every installer.
+#
+# A push whose commits are not Conventional Commits still runs `ci`, so main is
+# always checked, but publishes nothing.
+
+on:
+  push:
+    branches: [main]
+
+# One release at a time, never cancelled, so two quick merges cannot both pick
+# the same version. GitHub keeps only one waiting run: a third merge before the
+# first finishes replaces the second's waiting run, and its release then carries
+# both merges' changes. Nothing is lost, but that merge gets no version of its own.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Choose the version
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # semantic-release checks that it could push to main even in dry-run mode, and
+    # gives up without that access. It pushes nothing: no tag, no commit.
+    permissions:
+      contents: write
+    outputs:
+      release: ${{ steps.next.outputs.release }}
+      version: ${{ steps.next.outputs.version }}
+      tag: ${{ steps.next.outputs.tag }}
+
+    steps:
+      # Full history and tags: the version depends on every commit since the last tag.
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      # Nothing here runs Electron, so its binary is not downloaded.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      # The token is given to this step alone, not to the install above.
+      - name: Choose the next version
+        id: next
+        working-directory: apps/desktop
+        run: node scripts/publishing/next-version.mjs "$RUNNER_TEMP/release-notes.md"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Keep the release notes
+        if: steps.next.outputs.release == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}/release-notes.md
+          if-no-files-found: error
+          retention-days: 7
+
+  ci:
+    name: CI
+    needs: version
+    uses: ./.github/workflows/ci.yml
+    with:
+      version: ${{ needs.version.outputs.release == 'true' && needs.version.outputs.version || '' }}
+
+  publish:
+    name: Publish the prerelease
+    needs: [version, ci]
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The only job that writes: it creates the tag and the release.
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Collect the installers
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: installers-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/release-assets
+
+      - name: Collect the release notes
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}
+
+      # Checks there is one installer per target before writing anything, then
+      # stages a draft, attaches every file and publishes it. A repeat run for an
+      # already published release verifies it and changes nothing.
+      - name: Publish the prerelease
+        run: >-
+          node apps/desktop/scripts/publishing/publish-release.mjs
+          "$TAG" "$VERSION" "$GITHUB_SHA"
+          "$RUNNER_TEMP/release-notes.md" "$RUNNER_TEMP/release-assets"
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+          VERSION: ${{ needs.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

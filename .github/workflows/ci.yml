@@ -1,26 +1,38 @@
 name: CI
 
-# Validates pull requests and pushes to main. It has no secrets, no publishing and
-# read-only repository access. Releases are a separate, deferred piece of work
-# (docs/proposals/release-automation.md) and must stay separate from this.
+# Validates pull requests, and every merge to main through the release workflow
+# (release.yml), which calls this one. It has no secrets, no publishing and
+# read-only repository access; publishing stays in release.yml's own job.
 #
 # Two jobs: `check` (lint, format, typecheck, every test suite) and `package`
 # (build the real app, then test it). `package` waits for `check`, so a broken
-# lint or test costs no packaging minutes.
+# lint or test costs no packaging minutes. Given a version, `package` builds the
+# installers instead of a bare folder, stamped with that version, and keeps them
+# as artifacts for release.yml to publish.
 #
-# Platforms follow the trigger, to stay inside the free Actions allowance:
+# Platforms follow the trigger, to stay inside the Actions allowance:
 # - pull requests run on Linux only;
-# - pushes to main (merges) run on Windows, Linux and macOS;
-# - a manual run ("Run workflow" on the Actions tab) runs all three on any branch.
+# - merges to main (through release.yml) run on Windows, Linux and macOS;
+# - a manual run ("Run workflow" on the Actions tab) runs all three on any branch,
+#   and with a version builds the installers without publishing them.
 # So a Windows- or macOS-only break shows up at merge, not on the pull request.
 # Start a manual run on the branch before merging anything platform-sensitive:
 # window chrome, paths, packaging.
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+  workflow_call:
+    inputs:
+      version:
+        description: Build installers stamped with this version
+        type: string
+        default: ''
   workflow_dispatch:
+    inputs:
+      version:
+        description: Optional. Build installers stamped with this version (for example 0.0.1); nothing is published
+        type: string
+        default: ''
 
 # A newer push to the same pull request makes the older run pointless. Runs on
 # main are never cancelled, so every merge gets a complete result.
@@ -93,16 +105,50 @@ jobs:
       - *setup-node
       - *install
 
+      # Only in the runner's copy: the version is never committed. Both package.json
+      # files are stamped, so the installers and the bundled MCP server report the
+      # same version.
+      - name: Stamp the release version
+        if: inputs.version
+        shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Not a release version: $VERSION" >&2
+            exit 1
+          fi
+          for dir in apps/desktop packages/mcp; do
+            (cd "$dir" && npm pkg set version="$VERSION")
+          done
+
       # Builds the MCP bundle itself before packaging. `--dir` alone packages only
       # the runner's own CPU, so macOS asks for both: the Intel app is otherwise
       # never packaged or checked before a release (ticket eca73450).
       - name: Build and package the desktop app
-        if: runner.os != 'macOS'
+        if: runner.os != 'macOS' && !inputs.version
         run: pnpm pack:dir
 
       - name: Build and package the desktop app for both Mac CPUs
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && !inputs.version
         run: pnpm pack:dir:mac
+
+      # The installers D-028 ships: Windows NSIS x64, both macOS DMGs, and the
+      # Linux deb (AppImage is configured but not released yet). They also leave
+      # the unpacked app beside them, which the packaged tests below use.
+      # Unsigned for now (ticket a415fdb2): discovery is off so a signing
+      # certificate that happens to be on a runner is never used by accident.
+      - name: Build the installers
+        if: inputs.version
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          case "$RUNNER_OS" in
+            Windows) pnpm pack:installers --win ;;
+            macOS) pnpm pack:installers --mac ;;
+            Linux) pnpm pack:installers --linux deb ;;
+          esac
 
       # Evidence, not a gate: whether the Intel app's own Node starts on this arm
       # runner, which needs Rosetta. The packaged tests read its header and do not
@@ -146,3 +192,17 @@ jobs:
           path: experiments/packaging/test-results/
           if-no-files-found: ignore
           retention-days: 14
+
+      # Only after the packaged tests passed. Named by OS so release.yml can
+      # collect all three; the publishing job checks it has one installer per target.
+      - name: Keep the installers
+        if: inputs.version
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: installers-${{ runner.os }}
+          path: |
+            apps/desktop/release/Knightbook-*.exe
+            apps/desktop/release/Knightbook-*.dmg
+            apps/desktop/release/Knightbook-*.deb
+          if-no-files-found: error
+          retention-days: 7
