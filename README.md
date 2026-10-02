@@ -71,6 +71,20 @@ Serves the board against **stub data** at `http://localhost:5199`, for reviewing
 layout in a browser. It reads no project and writes nothing. Add `?light` to the
 URL for the light scheme.
 
+### The website
+
+The public website is a static Astro site in `apps/website` (decision D-042).
+
+| Command | What it does |
+| --- | --- |
+| `pnpm dev:website` | Serves the site with live reload at `http://localhost:4321` |
+| `pnpm preview:website` | Builds the site and serves the built output at `http://localhost:4321`, as a host would |
+| `pnpm --filter @knightbook/website build` | Builds the static site to `apps/website/dist/` |
+
+`pnpm check` typechecks it and runs its tests, which build the whole site and check
+the HTML a visitor receives. Website-only merges do not release the desktop app
+(D-041).
+
 ## Checks
 
 ```bash

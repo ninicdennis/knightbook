@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../layout/BaseLayout.astro'
+import { downloadLink, primaryNavigation } from '../layout/navigation'
+
+/** Shown for any address the site does not have. It says so, then offers the main pages. */
+const destinations = [
+  { label: 'Home', href: '/' },
+  downloadLink,
+  ...primaryNavigation.filter((link) => !link.href.includes('#')),
+]
+---
+
+<BaseLayout
+  title="Page not found"
+  description="This page does not exist on the Knightbook website."
+>
+  <section class="kb-page not-found">
+    <h1>Page not found</h1>
+    <p>
+      There is no page at this address. It may have moved, or the link may have a typo. One of these
+      should get you back on track:
+    </p>
+    <ul>
+      {destinations.map((link) => (
+        <li>
+          <a href={link.href}>{link.label}</a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    padding-block: var(--kb-space-8) var(--kb-space-6);
+  }
+
+  ul {
+    display: grid;
+    gap: var(--kb-space-2);
+    padding-left: var(--kb-space-5);
+  }
+</style>

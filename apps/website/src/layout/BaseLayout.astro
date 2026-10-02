@@ -1,0 +1,67 @@
+---
+import { getImage } from 'astro:assets'
+import logo from '../../../../docs/assets/knightbook-logo.png'
+import SiteFooter from './SiteFooter.astro'
+import SiteHeader from './SiteHeader.astro'
+import './tokens.css'
+import './base.css'
+
+/**
+ * The frame every page shares: head metadata, a skip link as the first focusable
+ * element, the header, the page's own content in <main>, and the footer.
+ */
+interface Props {
+  /** The page's own title; " · Knightbook" is added, except on the homepage. */
+  title: string
+  description: string
+}
+
+const { title, description } = Astro.props
+const fullTitle = title === 'Knightbook' ? title : `${title} · Knightbook`
+const favicon = await getImage({ src: logo, width: 64, height: 64, format: 'png' })
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/png" href={favicon.src} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <SiteHeader />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>
+
+<style>
+  .skip-link {
+    position: absolute;
+    left: var(--kb-space-4);
+    top: -100px;
+    z-index: 10;
+    padding: var(--kb-space-2) var(--kb-space-4);
+    border-radius: var(--kb-radius);
+    background: var(--kb-surface);
+    color: var(--kb-text);
+    font-weight: 600;
+    box-shadow: var(--kb-shadow);
+  }
+
+  .skip-link:focus {
+    top: var(--kb-space-2);
+  }
+
+  main:focus {
+    outline: none;
+  }
+</style>

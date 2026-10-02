@@ -1,0 +1,139 @@
+---
+import { Image } from 'astro:assets'
+import logo from '../../../../docs/assets/knightbook-logo.png'
+import { downloadLink, primaryNavigation } from './navigation'
+
+/**
+ * The header on every page. Wide screens show the links inline; narrow screens
+ * fold them into a native <details> menu, which opens and closes without any
+ * JavaScript. Download stays visible at every width.
+ */
+---
+
+<header class="site-header">
+  <div class="kb-page bar">
+    <a class="brand" href="/">
+      <Image src={logo} alt="" width={32} height={32} densities={[1, 2]} loading="eager" />
+      <span>Knightbook</span>
+    </a>
+
+    <nav class="inline-nav" aria-label="Main">
+      <ul>
+        {primaryNavigation.map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <a class="kb-button download" href={downloadLink.href}>
+      {downloadLink.label}
+    </a>
+
+    <details class="menu">
+      <summary>Menu</summary>
+      <nav aria-label="Main">
+        <ul>
+          {primaryNavigation.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    background: var(--kb-surface);
+    border-bottom: 1px solid var(--kb-border);
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 0 var(--kb-space-4);
+    min-height: 64px;
+    padding-block: var(--kb-space-3);
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--kb-space-2);
+    margin-right: auto;
+    color: var(--kb-text);
+    font-size: 1.125rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .brand img {
+    border-radius: var(--kb-radius-sm);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .inline-nav ul {
+    display: flex;
+    gap: var(--kb-space-5);
+  }
+
+  .inline-nav a,
+  .menu a {
+    color: var(--kb-text);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .inline-nav a:hover,
+  .menu a:hover {
+    color: var(--kb-accent);
+    text-decoration: underline;
+  }
+
+  /* Hidden at widths where the other one is shown; display: none also removes it
+     from the accessibility tree, so a screen reader meets one menu, not two. */
+  .menu {
+    display: none;
+  }
+
+  @media (max-width: 720px) {
+    .inline-nav {
+      display: none;
+    }
+
+    .menu {
+      display: block;
+      order: 3;
+      width: 100%;
+    }
+
+    /* The browser's own display is kept: it draws the open/closed marker and keeps
+       the summary announced as a control that expands. */
+    .menu summary {
+      padding-block: var(--kb-space-2);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .menu ul {
+      display: grid;
+      gap: var(--kb-space-1);
+      padding-bottom: var(--kb-space-3);
+    }
+
+    .menu a {
+      display: block;
+      padding: var(--kb-space-2) 0;
+    }
+  }
+</style>

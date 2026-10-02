@@ -143,6 +143,23 @@ The comparison is a design judgment grounded in the projects' documented approac
 
 Milkdown handles Markdown editing separately from the UI kit. Its GFM preset includes tables and related Markdown structures. Tiptap Markdown remains a fallback if the preservation experiment rules Milkdown out. Kanban drag-and-drop is handled separately, with dnd-kit recommended below. [Milkdown GFM preset](https://milkdown.dev/docs/api/preset-gfm), [Tiptap Markdown](https://tiptap.dev/docs/editor/markdown/getting-started/basic-usage)
 
+### The public website (2026-10-01, D-042)
+
+The website is a static [Astro](https://astro.build/) site in `apps/website`, a workspace package beside the desktop app. The user chose Astro on 2026-09-29, when the Website plan was ticketed, and it went in with ticket 1e8e5e3b. It fits the requirements in the [landing page proposal](proposals/landing-page-and-user-documentation.md):
+
+- every page is HTML at build time, with no server;
+- guides can be Markdown;
+- no client-side JavaScript ships unless a component asks for it, so downloads and instructions work without JavaScript (proposal §8).
+
+How it is built:
+
+- **Layout.** The frame every page shares lives in `src/layout`: `BaseLayout.astro`, the header and footer, one navigation list, `tokens.css` and `base.css`. Pages live in `src/pages`, the folder Astro requires.
+- **Narrow screens.** The header folds its links into a native `<details>` menu, which needs no script. Download stays outside the menu, visible at every width.
+- **Tokens.** These are plain CSS custom properties. They are not Mantine: the desktop's component library is not shipped to a static site. The values follow `theme.ts` and `surfaces.css` (the `#5474b4` accent scale, the blue-grey surfaces, the system font stack). Dark follows the visitor's `prefers-color-scheme`.
+- **Logo.** `docs/assets/knightbook-logo.png` is the only source. Astro's image pipeline (sharp) resizes it at build time for the header (1× and 2×) and the favicon.
+- **Tests.** They build the whole site into a temporary folder and check the HTML a visitor would receive: no `<script>` and no `.js` file, a skip link first, the header links, the narrow-screen menu, and the 404 page. Checking the output is what proves the no-JavaScript requirement.
+- **Releases.** Website-only merges do not release the desktop app (D-041).
+
 ### Supporting-package shortlist
 
 These are feature-specific recommendations, not installed dependencies or a requirement to install everything at scaffolding. Resolve compatible versions together when implementing the relevant feature.

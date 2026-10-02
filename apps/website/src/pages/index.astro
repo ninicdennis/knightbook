@@ -1,0 +1,33 @@
+---
+import BaseLayout from '../layout/BaseLayout.astro'
+
+/*
+ * A minimal homepage so the layout has a page to frame. The hero, workflow,
+ * feature sections and FAQ arrive with ticket 36aabb4a.
+ */
+---
+
+<BaseLayout
+  title="Knightbook"
+  description="A desktop workspace that keeps project documents, decisions and a work board together, next to the AI tools you already use."
+>
+  <section class="kb-page hero">
+    <h1>Your project context, beyond the chat.</h1>
+    <p>
+      Keep project documents, decisions, and a work board together in a desktop workspace. Connect
+      your existing AI tools, keep your Markdown in your project folder, and decide when the work is
+      done.
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding-block: var(--kb-space-8) var(--kb-space-6);
+  }
+
+  .hero p {
+    font-size: 1.125rem;
+    color: var(--kb-muted);
+  }
+</style>

@@ -1,0 +1,64 @@
+/*
+ * The website's design tokens. Colours follow the desktop app (theme.ts and
+ * surfaces.css): the same muted blue accent scale and blue-grey surfaces, so the
+ * site and the app read as one product. Text colours are checked against the
+ * background and surface they sit on (4.5:1 or more).
+ *
+ * Light is the default; dark follows the visitor's system setting.
+ */
+:root {
+  color-scheme: light dark;
+
+  --kb-background: #eef0f4;
+  --kb-surface: #ffffff;
+  --kb-surface-quiet: #f7f8fa;
+  --kb-text: #1b1f27;
+  --kb-muted: #4a5263;
+  --kb-accent: #3a588f;
+  --kb-accent-strong: #2c4b80;
+  --kb-on-accent: #ffffff;
+  --kb-success: #2b6b3a;
+  --kb-warning: #7a4f00;
+  --kb-danger: #a12a2a;
+  --kb-border: rgba(16, 24, 40, 0.14);
+  --kb-focus: #3a588f;
+
+  --kb-radius-sm: 4px;
+  --kb-radius: 8px;
+  --kb-radius-lg: 12px;
+
+  --kb-space-1: 4px;
+  --kb-space-2: 8px;
+  --kb-space-3: 12px;
+  --kb-space-4: 16px;
+  --kb-space-5: 24px;
+  --kb-space-6: 32px;
+  --kb-space-7: 48px;
+  --kb-space-8: 72px;
+
+  --kb-shadow: 0 1px 2px rgba(16, 24, 40, 0.07);
+
+  --kb-font:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --kb-measure: 72ch;
+  --kb-page-width: 1120px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --kb-background: #14161a;
+    --kb-surface: #1c1f26;
+    --kb-surface-quiet: #181b21;
+    --kb-text: #e4e7ec;
+    --kb-muted: #b4bac6;
+    --kb-accent: #9fb3dc;
+    --kb-accent-strong: #b9c7e2;
+    --kb-on-accent: #14161a;
+    --kb-success: #8fd19e;
+    --kb-warning: #f2c46d;
+    --kb-danger: #f19a9a;
+    --kb-border: rgba(255, 255, 255, 0.12);
+    --kb-focus: #9fb3dc;
+    --kb-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+}

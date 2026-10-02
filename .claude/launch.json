@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["preview:board"],
       "port": 5199
+    },
+    {
+      "name": "website-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["preview:website"],
+      "port": 4321
     }
   ]
 }

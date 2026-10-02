@@ -43,6 +43,7 @@ Node 24 and pnpm (the version pinned in `package.json`, via corepack).
 | `printf '%s\n' "<title>" \| pnpm exec commitlint` | Check a commit message or PR title is a Conventional Commit |
 | `pnpm start:packaged` | Open the last packaged app; rebuilds nothing |
 | `pnpm preview:board` | Board against stub data at `http://localhost:5199`, for layout review |
+| `pnpm dev:website` / `pnpm preview:website` | The Astro website at `http://localhost:4321`, live or as built |
 | `pnpm --filter <package> test` | One package's tests, e.g. `@knightbook/core` |
 
 CI (`.github/workflows/ci.yml`) has two jobs. `check` runs install, `build:mcp` and
@@ -74,6 +75,7 @@ retried and recovered is in [release automation](docs/proposals/release-automati
 packages/core      Records, safe writes, dependencies, completion, documents, search, review
 packages/mcp       The stdio MCP server; bundles packages/core
 apps/desktop       Electron: src/main (host), src/preload, src/renderer (Mantine board), src/shared (contract)
+apps/website       The public website: static Astro, src/layout (frame, tokens) and src/pages
 skills/projectspace  The workflow skill shipped to AI tools
 experiments/       Editor-preservation and packaging experiments, kept as regression tests
 docs/              Specification, technical design, research, experiment findings

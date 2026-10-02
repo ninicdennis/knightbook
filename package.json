@@ -20,12 +20,15 @@
     "pack:installers": "pnpm build:mcp && pnpm --filter @knightbook/desktop pack:installers",
     "start:packaged": "pnpm --filter @knightbook/desktop start:packaged",
     "preview:board": "pnpm --filter @knightbook/desktop preview:board",
+    "dev:website": "pnpm --filter @knightbook/website dev",
+    "preview:website": "pnpm --filter @knightbook/website build && pnpm --filter @knightbook/website preview",
     "experiment:editor": "pnpm --filter @knightbook/experiment-editor-preservation report"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "oxlint": "^1.83.0",
-    "prettier": "^3.9.8"
+    "prettier": "^3.9.8",
+    "prettier-plugin-astro": "^1.1.0"
   }
 }
