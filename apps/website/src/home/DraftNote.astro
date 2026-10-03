@@ -1,0 +1,31 @@
+---
+import { DRAFTS, type DraftId } from './drafts'
+
+/**
+ * A visible marker for a place that waits on something real. A production build
+ * refuses to build while one remains (see drafts.ts), so it is only ever seen in
+ * a private preview.
+ */
+interface Props {
+  id: DraftId
+}
+
+const { id } = Astro.props
+---
+
+<span class="draft" data-draft={id}>
+  Draft: {DRAFTS[id]}
+</span>
+
+<style>
+  .draft {
+    display: inline-block;
+    padding: 2px var(--kb-space-2);
+    border: 1px dashed var(--kb-warning);
+    border-radius: var(--kb-radius-sm);
+    color: var(--kb-warning);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+</style>

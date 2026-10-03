@@ -1,0 +1,168 @@
+---
+import BaseLayout from '../../layout/BaseLayout.astro'
+import { releaseHistory } from '../../download/download-view'
+import { loadReleaseData } from '../../download/load-release-data'
+
+/**
+ * /releases/: the version history, read from the same release data as
+ * /download/, so there is one copy of each release's facts. Each release links
+ * to its authoritative release notes; a withdrawn one says why and which
+ * release to use instead.
+ */
+const history = releaseHistory(await loadReleaseData())
+
+function formatDate(date: string) {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString('en', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+---
+
+<BaseLayout
+  title="Releases"
+  description="Every Knightbook release, newest first, with its date, channel, known issues and release notes."
+>
+  <div class="kb-page releases">
+    <h1>Releases</h1>
+
+    {history.length === 0 ? (
+      <p class="empty">
+        There are no Knightbook releases yet. Each release will be listed here, newest first, with
+        its release notes.
+      </p>
+    ) : (
+      <ol class="history">
+        {history.map(({ release, useInstead }) => (
+          <li data-version={release.version} class:list={{ withdrawn: release.withdrawn }}>
+            <h2>
+              Knightbook {release.version}
+              {release.channel === 'preview' && <span class="label">Preview</span>}
+              {release.withdrawn && <span class="label withdrawn-label">Withdrawn</span>}
+            </h2>
+            <p class="meta">
+              <time datetime={release.date}>{formatDate(release.date)}</time>
+              <span>{release.channel === 'preview' ? 'Preview channel' : 'Stable channel'}</span>
+              <a href={release.notesUrl}>Release notes for {release.version}</a>
+            </p>
+
+            {release.withdrawn && (
+              <p class="notice">
+                Withdrawn: {release.withdrawnReason}{' '}
+                {useInstead ? (
+                  <>
+                    Use <a href="/download/">Knightbook {useInstead}</a> instead.
+                  </>
+                ) : (
+                  'There is no other release to use instead yet.'
+                )}
+              </p>
+            )}
+
+            {release.compatibilityChanges.length > 0 && (
+              <div class="group">
+                <h3>Compatibility changes</h3>
+                <ul>
+                  {release.compatibilityChanges.map((change) => (
+                    <li>{change}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {release.knownIssues.length > 0 && (
+              <div class="group">
+                <h3>Known issues</h3>
+                <ul>
+                  {release.knownIssues.map((issue) => (
+                    <li>{issue}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </li>
+        ))}
+      </ol>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .releases {
+    padding-block: var(--kb-space-8) 0;
+  }
+
+  .empty {
+    font-size: 1.0625rem;
+    color: var(--kb-muted);
+  }
+
+  .history {
+    display: grid;
+    gap: var(--kb-space-5);
+    max-width: 72ch;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .history > li {
+    padding: var(--kb-space-5);
+    background: var(--kb-surface);
+    border: 1px solid var(--kb-border);
+    border-radius: var(--kb-radius-lg);
+  }
+
+  h2 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--kb-space-3);
+    margin-bottom: var(--kb-space-2);
+    font-size: 1.25rem;
+  }
+
+  .label {
+    padding: 2px var(--kb-space-2);
+    border: 1px solid var(--kb-warning);
+    border-radius: var(--kb-radius-sm);
+    color: var(--kb-warning);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .withdrawn-label {
+    border-color: var(--kb-danger);
+    color: var(--kb-danger);
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--kb-space-1) var(--kb-space-4);
+    margin: 0;
+    color: var(--kb-muted);
+  }
+
+  .notice {
+    margin: var(--kb-space-4) 0 0;
+    padding-left: var(--kb-space-3);
+    border-left: 3px solid var(--kb-danger);
+  }
+
+  .group {
+    margin-top: var(--kb-space-4);
+  }
+
+  h3 {
+    margin-bottom: var(--kb-space-2);
+    font-size: 1rem;
+  }
+
+  .group ul {
+    margin: 0;
+    padding-left: var(--kb-space-5);
+  }
+</style>

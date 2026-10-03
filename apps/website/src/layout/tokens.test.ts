@@ -104,5 +104,25 @@ describe('the design tokens', () => {
         )
       }
     })
+
+    // The focus ring and the Download button's hover fill are essential boundaries
+    // of controls, which need 3:1 against what surrounds them.
+    it(`keep the focus ring and the button's hover fill at 3:1 or more in ${scheme}`, () => {
+      for (const [foreground, background] of [
+        ['focus', 'background'],
+        ['focus', 'surface'],
+        ['focus', 'surface-quiet'],
+        ['accent-strong', 'surface'],
+      ] as const) {
+        const ratio = contrast(tokens[foreground] ?? '', tokens[background] ?? '')
+        expect(ratio, `${foreground} on ${background}: ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(
+          3,
+        )
+      }
+    })
   }
+
+  it('lay pages out on a 1120px content width', () => {
+    expect(light['page-width']).toBe('1120px')
+  })
 })

@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process'
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -48,7 +48,10 @@ async function page(path: string) {
 
 async function filesUnder(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true, recursive: true })
-  return entries.filter((entry) => entry.isFile()).map((entry) => entry.name)
+  // Paths relative to the build folder, with forward slashes, such as "download/index.html".
+  return entries
+    .filter((entry) => entry.isFile())
+    .map((entry) => relative(directory, join(entry.parentPath, entry.name)).split(sep).join('/'))
 }
 
 beforeAll(async () => {
@@ -63,7 +66,21 @@ afterAll(async () => {
 describe('the built site', () => {
   it('is static HTML with no client-side JavaScript', async () => {
     const files = await filesUnder(outDir)
-    expect(files).toContain('index.html')
+    // Exactly the site's pages and one page per guide in src/content/docs; nothing
+    // else is generated.
+    const guides = (await readdir(join(SITE_ROOT, 'src', 'content', 'docs')))
+      .filter((name) => name.endsWith('.md'))
+      .map((name) => `docs/${name.replace(/\.md$/, '')}/index.html`)
+    expect(files.filter((name) => name.endsWith('.html')).sort()).toEqual(
+      [
+        '404.html',
+        'docs/index.html',
+        'download/index.html',
+        'index.html',
+        'releases/index.html',
+        ...guides,
+      ].sort(),
+    )
     expect(files.filter((name) => /\.m?js$/.test(name))).toEqual([])
 
     for (const path of ['index.html', '404.html']) {
@@ -81,38 +98,89 @@ describe('the built site', () => {
     }
   })
 
-  it('has a header with the wordmark, the main links and a Download action', async () => {
-    const html = await page('index.html')
-    // An empty alt marks the logo as decorative; the wordmark beside it names the link.
-    expect(html).toMatch(
-      /<a class="brand[^"]*" href="\/"[^>]*>\s*<img[^>]*\salt(?:="")?[\s>][\s\S]*?Knightbook<\/span>/,
-    )
-    const inlineNav = slice(html, /<nav class="inline-nav"[\s\S]*?<\/nav>/)
-    for (const [label, href] of MAIN_LINKS) expect(inlineNav).toMatch(linkTo(href, label))
-    expect(slice(html, /<header[\s\S]*?<\/header>/)).toMatch(
-      /<a class="kb-button download[^"]*" href="\/download\/"[^>]*>Download<\/a>/,
-    )
+  it('has the same header on every page: wordmark, main links and a Download action', async () => {
+    for (const path of ['index.html', '404.html']) {
+      const header = slice(await page(path), /<header[\s\S]*?<\/header>/)
+      // An empty alt marks the logo as decorative; the wordmark beside it names the link.
+      expect(header, path).toMatch(
+        /<a class="brand[^"]*" href="\/"[^>]*>\s*<img[^>]*\salt(?:="")?[\s>][\s\S]*?Knightbook<\/span>/,
+      )
+      const inlineNav = slice(header, /<nav class="inline-nav"[\s\S]*?<\/nav>/)
+      expect(inlineNav, path).toMatch(/^<nav class="inline-nav[^"]*" aria-label="Main"/)
+      for (const [label, href] of MAIN_LINKS) expect(inlineNav, path).toMatch(linkTo(href, label))
+      expect(header, path).toMatch(
+        /<a class="kb-button download[^"]*" href="\/download\/"[^>]*>Download<\/a>/,
+      )
+    }
   })
 
   it('folds the links into a menu that works without JavaScript on narrow screens', async () => {
-    const html = await page('index.html')
-    const menu = slice(html, /<details class="menu[\s\S]*?<\/details>/)
-    expect(menu).toMatch(/^<details class="menu[^"]*"[^>]*>\s*<summary[^>]*>Menu<\/summary>/)
-    for (const [label, href] of MAIN_LINKS) expect(menu).toMatch(linkTo(href, label))
-    // The Download action is outside the menu, so it stays visible when the menu is closed.
-    expect(menu).not.toContain('href="/download/"')
+    for (const path of ['index.html', '404.html']) {
+      const menu = slice(await page(path), /<details class="menu[\s\S]*?<\/details>/)
+      expect(menu, path).toMatch(
+        /^<details class="menu[^"]*"[^>]*>\s*<summary[^>]*>Menu<\/summary>\s*<nav aria-label="Main"/,
+      )
+      for (const [label, href] of MAIN_LINKS) expect(menu, path).toMatch(linkTo(href, label))
+      // The Download action is outside the menu, so it stays visible when the menu is closed.
+      expect(menu, path).not.toContain('href="/download/"')
+    }
   })
 
-  it('ends every page with a footer linking the main pages', async () => {
+  it('names the footer navigation for assistive technology', async () => {
+    for (const path of ['index.html', '404.html']) {
+      const footer = slice(await page(path), /<footer[\s\S]*?<\/footer>/)
+      expect(footer, path).toMatch(/<nav class="groups[^"]*" aria-label="Footer"/)
+    }
+  })
+
+  it('shows the cropped logo artwork, sized in the header and footer', async () => {
+    const html = await page('index.html')
+    // Built from the desktop app's derived icon, whose artwork fills the square,
+    // not the canonical PNG with its wide transparent margin.
+    const headerLogo = slice(slice(html, /<header[\s\S]*?<\/header>/), /<img[^>]*>/)
+    expect(headerLogo).toMatch(/src="\/_astro\/icon\./)
+    expect(headerLogo).toMatch(/width="32"[^>]*height="32"|height="32"[^>]*width="32"/)
+    const footerLogo = slice(slice(html, /<footer[\s\S]*?<\/footer>/), /<img[^>]*>/)
+    expect(footerLogo).toMatch(/src="\/_astro\/icon\./)
+  })
+
+  it('ends every page with the brand line and Product and Guides groups', async () => {
     for (const path of ['index.html', '404.html']) {
       const footer = slice(await page(path), /<footer class="site-footer[\s\S]*?<\/footer>/)
+      expect(footer, path).toMatch(/<a class="brand[^"]*" href="\/"[\s\S]*?Knightbook<\/span>/)
+      expect(footer, path).toContain('Project documents and a work board, together.')
+
+      const groups = [...footer.matchAll(/<h2[^>]*>([^<]+)<\/h2>\s*<ul[^>]*>([\s\S]*?)<\/ul>/g)]
+      expect(
+        groups.map((group) => group[1]),
+        path,
+      ).toEqual(['Product', 'Guides'])
+      const [product, guides] = groups.map((group) => group[2] ?? '')
       for (const [label, href] of [
         ['Download', '/download/'],
-        ['Documentation', '/docs/'],
+        ['How it works', '/#how-it-works'],
         ['Releases', '/releases/'],
       ]) {
-        expect(footer, path).toMatch(linkTo(href, label))
+        expect(product, path).toMatch(linkTo(href, label))
       }
+      expect(guides, path).toMatch(linkTo('/docs/', 'Documentation'))
+    }
+  })
+
+  it('invents no legal, support, privacy or source links while none exist', async () => {
+    for (const path of ['index.html', '404.html']) {
+      const html = await page(path)
+      expect(html, path).not.toMatch(/class="utility/)
+      expect(html, path).not.toMatch(/href="[^"]*(?:privacy|license|support|github\.com)/i)
+      expect(html, path).not.toMatch(/all rights reserved|©/i)
+    }
+  })
+
+  it('marks no header link as the current page on the homepage or 404', async () => {
+    // How it works is an anchor on the homepage, never a page of its own, and the
+    // other destinations are not built yet, so nothing here is "current".
+    for (const path of ['index.html', '404.html']) {
+      expect(await page(path), path).not.toContain('aria-current')
     }
   })
 

@@ -1,13 +1,9 @@
 ---
 import BaseLayout from '../layout/BaseLayout.astro'
-import { downloadLink, primaryNavigation } from '../layout/navigation'
+import { destinations as site } from '../layout/navigation'
 
 /** Shown for any address the site does not have. It says so, then offers the main pages. */
-const destinations = [
-  { label: 'Home', href: '/' },
-  downloadLink,
-  ...primaryNavigation.filter((link) => !link.href.includes('#')),
-]
+const destinations = [site.home, site.download, site.documentation, site.releases]
 ---
 
 <BaseLayout

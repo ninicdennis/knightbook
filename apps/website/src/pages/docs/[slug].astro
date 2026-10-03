@@ -1,0 +1,181 @@
+---
+import { render } from 'astro:content'
+import BaseLayout from '../../layout/BaseLayout.astro'
+import GuideNav from '../../docs/GuideNav.astro'
+import { publishedGuides, refuseBrokenGuideLinks, type Guide } from '../../docs/guides'
+
+/**
+ * One guide at /docs/<name>/. Every guide comes from src/content/docs; the
+ * build stops if any link between guides leads nowhere.
+ */
+export async function getStaticPaths() {
+  const guides = await publishedGuides()
+  refuseBrokenGuideLinks(guides)
+  return guides.map((guide) => ({ params: { slug: guide.id }, props: { guide, guides } }))
+}
+
+interface Props {
+  guide: Guide
+  guides: Guide[]
+}
+
+const { guide, guides } = Astro.props
+const { Content, headings } = await render(guide)
+const contents = headings.filter((heading) => heading.depth === 2 || heading.depth === 3)
+---
+
+<BaseLayout title={guide.data.title} description={guide.data.description}>
+  <div class="kb-page guide-layout">
+    <aside class="sidebar">
+      <GuideNav guides={guides} currentId={guide.id} />
+    </aside>
+
+    <details class="guides-menu">
+      <summary>Guides</summary>
+      <GuideNav guides={guides} currentId={guide.id} />
+    </details>
+
+    <article>
+      <p class="group">{guide.data.group}</p>
+      <h1>{guide.data.title}</h1>
+      {guide.data.draft ? (
+        <p class="draft" data-draft-guide={guide.id}>
+          Draft: this guide has not been written yet. It is not published in a production build.
+        </p>
+      ) : (
+        <p class="version">Written for Knightbook {guide.data.appVersion}</p>
+      )}
+
+      {contents.length > 0 && (
+        <nav class="contents" aria-label="On this page">
+          <p>On this page</p>
+          <ul>
+            {contents.map((heading) => (
+              <li class={heading.depth === 3 ? 'sub' : undefined}>
+                <a href={`#${heading.slug}`}>{heading.text}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
+      <div class="prose">
+        <Content />
+      </div>
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .guide-layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: var(--kb-space-7);
+    padding-block: var(--kb-space-7) 0;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: var(--kb-space-5);
+    align-self: start;
+  }
+
+  .guides-menu {
+    display: none;
+  }
+
+  article {
+    max-width: 72ch;
+    min-width: 0;
+  }
+
+  .group {
+    margin-bottom: var(--kb-space-2);
+    color: var(--kb-muted);
+    font-weight: 600;
+  }
+
+  .version {
+    color: var(--kb-muted);
+    font-size: 0.9375rem;
+  }
+
+  .draft {
+    padding: var(--kb-space-3) var(--kb-space-4);
+    border: 1px dashed var(--kb-warning);
+    border-radius: var(--kb-radius);
+    color: var(--kb-warning);
+    font-weight: 600;
+  }
+
+  .contents {
+    margin-block: var(--kb-space-5);
+    padding: var(--kb-space-4);
+    background: var(--kb-surface);
+    border: 1px solid var(--kb-border);
+    border-radius: var(--kb-radius);
+    font-size: 0.9375rem;
+  }
+
+  .contents p {
+    margin-bottom: var(--kb-space-2);
+    font-weight: 600;
+  }
+
+  .contents ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .contents li {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+  }
+
+  .contents .sub {
+    padding-left: var(--kb-space-4);
+  }
+
+  /* Anchored headings land below the top edge rather than flush against it. */
+  .prose :global(h2),
+  .prose :global(h3) {
+    scroll-margin-top: var(--kb-space-5);
+  }
+
+  .prose :global(h2) {
+    margin-top: var(--kb-space-7);
+  }
+
+  .prose :global(code) {
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 860px) {
+    .guide-layout {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--kb-space-4);
+    }
+
+    .sidebar {
+      display: none;
+    }
+
+    .guides-menu {
+      display: block;
+      padding: var(--kb-space-2) var(--kb-space-4);
+      background: var(--kb-surface);
+      border: 1px solid var(--kb-border);
+      border-radius: var(--kb-radius);
+    }
+
+    .guides-menu summary {
+      min-height: 44px;
+      display: list-item;
+      padding-block: var(--kb-space-2);
+      cursor: pointer;
+      font-weight: 600;
+    }
+  }
+</style>

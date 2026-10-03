@@ -1,0 +1,121 @@
+---
+import TargetCard from './TargetCard.astro'
+import type { ReleaseOffer } from './download-view'
+
+/**
+ * One release: its version, channel, date and authoritative release page, a
+ * preview's known issues, then a card for each launch platform.
+ */
+interface Props {
+  offer: ReleaseOffer
+  /** The heading level the version takes, so it fits where the offer is placed. */
+  headingLevel?: 2 | 3
+}
+
+const { offer, headingLevel = 2 } = Astro.props
+const { release, choices } = offer
+const Heading = `h${headingLevel}` as 'h2' | 'h3'
+const isPreview = release.channel === 'preview'
+const released = new Date(`${release.date}T00:00:00Z`).toLocaleDateString('en', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: 'UTC',
+})
+---
+
+<section class="offer" data-version={release.version} data-channel={release.channel}>
+  <Heading class="version">
+    Knightbook {release.version}
+    {isPreview && <span class="preview-label">Preview</span>}
+  </Heading>
+  <p class="meta">
+    <span>
+      Released <time datetime={release.date}>{released}</time>
+    </span>
+    <a href={release.notesUrl}>Release notes and all files for {release.version}</a>
+  </p>
+
+  {isPreview && (
+    <div class="known-issues">
+      <p>
+        <strong>This is a preview build.</strong> It may change before a stable release. Known
+        issues:
+      </p>
+      <ul>
+        {release.knownIssues.map((issue) => (
+          <li>{issue}</li>
+        ))}
+      </ul>
+    </div>
+  )}
+
+  <ul class="cards">
+    {choices.map((choice) => (
+      <TargetCard choice={choice} version={release.version} />
+    ))}
+  </ul>
+</section>
+
+<style>
+  .offer {
+    display: grid;
+    gap: var(--kb-space-4);
+  }
+
+  .version {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--kb-space-3);
+    margin: 0;
+  }
+
+  .preview-label {
+    padding: 2px var(--kb-space-2);
+    border: 1px solid var(--kb-warning);
+    border-radius: var(--kb-radius-sm);
+    color: var(--kb-warning);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  /* The date and the link sit apart by spacing, so no separator character can be
+     lost when the markup is reformatted. */
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--kb-space-1) var(--kb-space-4);
+    margin: 0;
+    color: var(--kb-muted);
+  }
+
+  .known-issues {
+    padding: var(--kb-space-4);
+    border-left: 3px solid var(--kb-warning);
+    background: var(--kb-surface);
+    border-radius: var(--kb-radius-sm);
+  }
+
+  .known-issues ul {
+    margin: 0;
+    padding-left: var(--kb-space-5);
+  }
+
+  /* Always the four launch platforms: two by two on wide screens, one column of
+     labelled cards on narrow ones, never three and an orphan. */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--kb-space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (max-width: 720px) {
+    .cards {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

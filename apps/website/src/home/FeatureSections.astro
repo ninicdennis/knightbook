@@ -1,0 +1,156 @@
+---
+import ScreenshotSlot from './ScreenshotSlot.astro'
+
+/**
+ * The three explanations the brief asks for, each with its own evidence: a real
+ * document screenshot (reserved until it exists), a plain-text ticket example
+ * that does not pretend to be the app's screen, and the workflow states with
+ * Verification emphasised. Claims stay within the landing-page proposal §2.
+ */
+const states = ['Backlog', 'In progress', 'Verification', 'Done']
+---
+
+<section class="kb-page feature split" aria-labelledby="files-title">
+  <div class="text">
+    <h2 id="files-title">Files you can keep using</h2>
+    <p>
+      Documents stay ordinary Markdown files in your project folder. Include the documentation you
+      already have where it is, without moving it into a new structure. Read and review it in
+      Knightbook, and edit it in the editor you already use.
+    </p>
+  </div>
+  <ScreenshotSlot
+    draft="documentScreenshot"
+    caption="A project document, read in Knightbook."
+    aspectRatio="4 / 3"
+  />
+</section>
+
+<section class="kb-page feature split" aria-labelledby="shared-title">
+  <div class="text">
+    <h2 id="shared-title">A shared view of the work</h2>
+    <p>
+      Documents and tickets give the next session, yours or an AI tool's, the context the last one
+      left behind. The board shows where each piece of work stands and what it depends on.
+    </p>
+  </div>
+  <div class="example" aria-label="An example ticket, as plain text">
+    <p class="example-title">Example ticket: Export the board as CSV</p>
+    <dl>
+      <dt>Outcome</dt>
+      <dd>Anyone can open the board's tickets in a spreadsheet.</dd>
+      <dt>Acceptance criteria</dt>
+      <dd>Every ticket appears once, with its title, status and type.</dd>
+      <dt>Handoff</dt>
+      <dd>What changed, how it was checked, what was not checked, and what to look at.</dd>
+    </dl>
+  </div>
+</section>
+
+<section class="kb-page feature" aria-labelledby="decision-title">
+  <h2 id="decision-title">Your completion decision</h2>
+  <p>
+    An AI tool moves finished work to Verification with the evidence it gathered. Passing checks is
+    not acceptance: you decide whether the work is done. Reviewing content is a separate decision,
+    recorded on its own.
+  </p>
+  <ol class="states" aria-label="Ticket states, in order">
+    {states.map((state) => (
+      <li class={state === 'Verification' ? 'emphasis' : undefined}>
+        {state}
+        {state === 'Verification' && <span class="who">You decide what happens next</span>}
+      </li>
+    ))}
+  </ol>
+</section>
+
+<style>
+  .feature {
+    padding-block: 72px;
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--kb-space-7);
+    align-items: center;
+  }
+
+  h2 {
+    font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.125rem);
+  }
+
+  p {
+    font-size: 1.0625rem;
+  }
+
+  .example {
+    padding: var(--kb-space-5);
+    background: var(--kb-surface);
+    border: 1px solid var(--kb-border);
+    border-radius: var(--kb-radius-lg);
+  }
+
+  .example-title {
+    margin-bottom: var(--kb-space-3);
+    font-weight: 600;
+  }
+
+  dl {
+    display: grid;
+    gap: var(--kb-space-1);
+    margin: 0;
+  }
+
+  dt {
+    margin-top: var(--kb-space-2);
+    color: var(--kb-muted);
+    font-size: 0.9375rem;
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  .states {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--kb-space-3);
+    margin: var(--kb-space-5) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .states li {
+    display: grid;
+    gap: 2px;
+    padding: var(--kb-space-3) var(--kb-space-4);
+    border: 1px solid var(--kb-border);
+    border-radius: var(--kb-radius);
+    background: var(--kb-surface);
+    font-weight: 600;
+  }
+
+  .states .emphasis {
+    border: 2px solid var(--kb-accent);
+  }
+
+  .who {
+    color: var(--kb-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  @media (max-width: 900px) {
+    .split {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .feature {
+      padding-block: 48px;
+    }
+  }
+</style>

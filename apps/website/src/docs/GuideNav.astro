@@ -1,0 +1,76 @@
+---
+import { groupGuides, guideHref, type Guide } from './guides'
+
+/**
+ * The guides list, grouped as on /docs/. Used twice by the guide layout: as the
+ * sidebar on wide screens and inside a native <details> on narrow ones. Only
+ * one is displayed at a time, so assistive technology meets one "Guides"
+ * navigation.
+ */
+interface Props {
+  guides: Guide[]
+  currentId: string
+}
+
+const { guides, currentId } = Astro.props
+---
+
+<nav aria-label="Guides">
+  <p class="all">
+    <a href="/docs/">All guides</a>
+  </p>
+  {groupGuides(guides).map(({ group, guides: inGroup }) => (
+    <div class="group">
+      <p class="group-title">{group}</p>
+      <ul>
+        {inGroup.map((guide) => (
+          <li>
+            <a href={guideHref(guide)} aria-current={guide.id === currentId ? 'page' : undefined}>
+              {guide.data.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
+</nav>
+
+<style>
+  nav {
+    display: grid;
+    gap: var(--kb-space-4);
+    font-size: 0.9375rem;
+  }
+
+  p {
+    margin: 0;
+  }
+
+  .group-title {
+    margin-bottom: var(--kb-space-1);
+    color: var(--kb-text);
+    font-weight: 600;
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    color: var(--kb-muted);
+    text-decoration: none;
+  }
+
+  a:hover,
+  a[aria-current='page'] {
+    color: var(--kb-text);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.3em;
+  }
+</style>

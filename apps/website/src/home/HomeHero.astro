@@ -1,0 +1,79 @@
+---
+import DownloadAction from '../download/DownloadAction.astro'
+import DraftNote from './DraftNote.astro'
+import ScreenshotSlot from './ScreenshotSlot.astro'
+
+/**
+ * The hero: the statement and actions on the left, the board on the right.
+ * Below 900px it stacks in reading order: headline, paragraph, actions, image.
+ * Copy is the landing-page proposal's §4 text.
+ */
+---
+
+<section class="kb-page hero" aria-labelledby="hero-title">
+  <div class="copy">
+    <h1 id="hero-title">Your project context, beyond the chat.</h1>
+    <p class="lead">
+      Keep project documents, decisions, and a work board together in a desktop workspace. Connect
+      your existing AI tools, keep your Markdown in your project folder, and decide when the work is
+      done.
+    </p>
+    <DownloadAction />
+    <p class="secondary">
+      <a href="/docs/getting-started/">Read the getting-started guide</a>
+      <DraftNote id="gettingStartedGuide" />
+    </p>
+  </div>
+  <ScreenshotSlot
+    draft="boardScreenshot"
+    caption="See what is planned, what is in progress, and what is ready for you to verify."
+    aspectRatio="16 / 10"
+  />
+</section>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 42fr) minmax(0, 58fr);
+    gap: var(--kb-space-7) 44px;
+    align-items: center;
+    padding-block: var(--kb-space-8) 88px;
+  }
+
+  h1 {
+    max-width: 14ch;
+    margin-bottom: var(--kb-space-5);
+    font-size: clamp(2.125rem, 1.3rem + 2.6vw, 3.5rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .lead {
+    max-width: 44ch;
+    margin-bottom: var(--kb-space-6);
+    color: var(--kb-muted);
+    font-size: 1.125rem;
+  }
+
+  .secondary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--kb-space-2) var(--kb-space-3);
+    margin: var(--kb-space-4) 0 0;
+  }
+
+  .secondary a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 500;
+  }
+
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+      padding-block: var(--kb-space-7) 56px;
+    }
+  }
+</style>

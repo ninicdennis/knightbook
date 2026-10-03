@@ -1,33 +1,70 @@
 ---
 import BaseLayout from '../layout/BaseLayout.astro'
+import DownloadAction from '../download/DownloadAction.astro'
+import DraftNote from '../home/DraftNote.astro'
+import Faq from '../home/Faq.astro'
+import FeatureSections from '../home/FeatureSections.astro'
+import HomeHero from '../home/HomeHero.astro'
+import HowItWorks from '../home/HowItWorks.astro'
+import { refuseDraftsInProduction } from '../home/drafts'
 
 /*
- * A minimal homepage so the layout has a page to frame. The hero, workflow,
- * feature sections and FAQ arrive with ticket 36aabb4a.
+ * The homepage, in the order of the design brief: hero, how it works, three
+ * explanations, FAQ, closing action. Every draft it shows is listed here, so a
+ * production build fails and names them all until each place is real.
  */
+refuseDraftsInProduction([
+  'boardScreenshot',
+  'documentScreenshot',
+  'gettingStartedGuide',
+  'faqWindowClosed',
+  'faqSupport',
+  'faqLicense',
+])
 ---
 
 <BaseLayout
   title="Knightbook"
   description="A desktop workspace that keeps project documents, decisions and a work board together, next to the AI tools you already use."
 >
-  <section class="kb-page hero">
-    <h1>Your project context, beyond the chat.</h1>
-    <p>
-      Keep project documents, decisions, and a work board together in a desktop workspace. Connect
-      your existing AI tools, keep your Markdown in your project folder, and decide when the work is
-      done.
+  <HomeHero />
+  <HowItWorks />
+  <FeatureSections />
+  <Faq />
+
+  <section class="kb-page closing" aria-labelledby="closing-title">
+    <h2 id="closing-title">Keep the next session connected to the project.</h2>
+    <DownloadAction />
+    <p class="guide">
+      <a href="/docs/getting-started/">Read the getting-started guide</a>
+      <DraftNote id="gettingStartedGuide" />
     </p>
   </section>
 </BaseLayout>
 
 <style>
-  .hero {
-    padding-block: var(--kb-space-8) var(--kb-space-6);
+  .closing {
+    padding-block: 88px 0;
   }
 
-  .hero p {
-    font-size: 1.125rem;
-    color: var(--kb-muted);
+  .closing h2 {
+    max-width: 24ch;
+    margin-bottom: var(--kb-space-5);
+    font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.125rem);
+  }
+
+  .guide {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--kb-space-2) var(--kb-space-3);
+    margin: var(--kb-space-4) 0 0;
+  }
+
+  .guide a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 500;
   }
 </style>

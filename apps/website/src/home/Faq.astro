@@ -1,0 +1,118 @@
+---
+import DraftNote from './DraftNote.astro'
+import type { DraftId } from './drafts'
+
+/**
+ * The eight questions from the landing-page proposal §4, each answered within
+ * its stated boundary. Answers that wait on evidence or a decision say only what
+ * is known and carry a draft marker, which a production build refuses.
+ * Native <details>, so every answer opens without JavaScript.
+ */
+interface Entry {
+  question: string
+  answer: string
+  draft?: DraftId
+}
+
+const entries: Entry[] = [
+  {
+    question: 'Does Knightbook include an AI assistant?',
+    answer:
+      'No. Planning and coding happen in the AI tool you already use. Knightbook keeps the project context and work records that tool reads and updates.',
+  },
+  {
+    question: 'Can I use an existing repository?',
+    answer:
+      "Yes. Choose its local folder. Setting it up adds a .projectspace folder for Knightbook's records; your code and existing Markdown stay where they are, and you choose which documents to include.",
+  },
+  {
+    question: 'Where are my files?',
+    answer:
+      "In the project folder you choose. Your documents stay where they are, and Knightbook's tickets and records sit beside them in .projectspace. An AI tool you connect, and its provider, handle what they read under their own terms.",
+  },
+  {
+    question: 'Can I edit documents?',
+    answer:
+      'Read and review them in Knightbook, and edit them in your usual editor; Knightbook shows the changes when you come back to it. Editing formatted documents inside the app is not part of the current release.',
+  },
+  {
+    question: 'Does the app need to stay open?',
+    answer:
+      "It is designed not to: your AI tool starts Knightbook's connection itself, separately from the window.",
+    draft: 'faqWindowClosed',
+  },
+  {
+    question: 'Does it sync across computers?',
+    answer:
+      'No. Your project is ordinary files in a folder. Move them between computers yourself, for example with Git; Knightbook does not sync them or run Git for you.',
+  },
+  {
+    question: 'Which systems and AI clients work?',
+    answer:
+      'Knightbook is built for Windows, macOS and Linux, and connects to AI tools that support MCP. The systems and tools that have been tested will be listed here.',
+    draft: 'faqSupport',
+  },
+  {
+    question: 'Is it free, and what is the license?',
+    answer: 'The price and license are not decided yet.',
+    draft: 'faqLicense',
+  },
+]
+---
+
+<section class="kb-page faq" aria-labelledby="faq-title">
+  <h2 id="faq-title">Questions, answered</h2>
+  <div class="list">
+    {entries.map((entry) => (
+      <details>
+        <summary>{entry.question}</summary>
+        <p>{entry.answer}</p>
+        {entry.draft && <DraftNote id={entry.draft} />}
+      </details>
+    ))}
+  </div>
+</section>
+
+<style>
+  .faq {
+    padding-block: 88px;
+  }
+
+  h2 {
+    font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.125rem);
+    margin-bottom: var(--kb-space-5);
+  }
+
+  .list {
+    max-width: 72ch;
+    border-top: 1px solid var(--kb-border);
+  }
+
+  details {
+    border-bottom: 1px solid var(--kb-border);
+  }
+
+  summary {
+    display: list-item;
+    min-height: 44px;
+    padding-block: var(--kb-space-4);
+    cursor: pointer;
+    font-size: 1.0625rem;
+    font-weight: 600;
+  }
+
+  details p {
+    margin-bottom: var(--kb-space-3);
+    color: var(--kb-muted);
+  }
+
+  details[open] {
+    padding-bottom: var(--kb-space-4);
+  }
+
+  @media (max-width: 560px) {
+    .faq {
+      padding-block: 56px;
+    }
+  }
+</style>

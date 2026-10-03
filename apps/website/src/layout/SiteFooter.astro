@@ -1,26 +1,50 @@
 ---
-import { downloadLink, primaryNavigation } from './navigation'
+import { Image } from 'astro:assets'
+import logo from './logo'
+import { footerGroups, utilityLinks } from './navigation'
 
 /**
- * The footer on every page. License and support links join `footerLinks` once
- * they are chosen (tickets a677c856 and c125336d); until then nothing stands in
- * for them, so no link points at an undecided page.
+ * The end of every page: the brand with one line on what Knightbook is, then the
+ * destinations grouped as Product and Guides. The utility row (Privacy, License,
+ * Support) is drawn only when it has destinations; none exist yet, so no link
+ * points at an undecided page and no legal statement is invented.
  */
-const footerLinks = [downloadLink, ...primaryNavigation.filter((link) => !link.href.includes('#'))]
 ---
 
 <footer class="site-footer">
-  <div class="kb-page row">
-    <p class="name">Knightbook</p>
-    <nav aria-label="Footer">
-      <ul>
-        {footerLinks.map((link) => (
+  <div class="kb-page layout">
+    <div class="brand-block">
+      <a class="brand" href="/">
+        <Image src={logo} alt="" width={28} height={28} densities={[1, 2, 3]} />
+        <span>Knightbook</span>
+      </a>
+      <p class="tagline">Project documents and a work board, together.</p>
+    </div>
+
+    <nav class="groups" aria-label="Footer">
+      {footerGroups.map((group) => (
+        <div class="group">
+          <h2>{group.title}</h2>
+          <ul>
+            {group.links.map((link) => (
+              <li>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+
+    {utilityLinks.length > 0 && (
+      <ul class="utility">
+        {utilityLinks.map((link) => (
           <li>
             <a href={link.href}>{link.label}</a>
           </li>
         ))}
       </ul>
-    </nav>
+    )}
   </div>
 </footer>
 
@@ -32,30 +56,82 @@ const footerLinks = [downloadLink, ...primaryNavigation.filter((link) => !link.h
     color: var(--kb-muted);
   }
 
-  .row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--kb-space-4);
-    padding-block: var(--kb-space-5);
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--kb-space-6) var(--kb-space-7);
+    padding-block: 56px;
   }
 
-  .name {
-    margin: 0;
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--kb-text);
+    font-size: 1.125rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .tagline {
+    margin: var(--kb-space-3) 0 0;
+    font-size: 0.9375rem;
+  }
+
+  .groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(9rem, auto));
+    gap: var(--kb-space-5) var(--kb-space-7);
+  }
+
+  h2 {
+    margin: 0 0 var(--kb-space-2);
+    color: var(--kb-text);
+    font-size: 0.9375rem;
     font-weight: 600;
   }
 
   ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--kb-space-5);
     list-style: none;
     margin: 0;
     padding: 0;
   }
 
-  a {
+  .group a,
+  .utility a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
     color: var(--kb-muted);
+    font-size: 0.9375rem;
+    text-decoration: none;
+  }
+
+  /* Quiet at rest, like the header's links; the underline appears on hover. */
+  .group a:hover,
+  .utility a:hover {
+    color: var(--kb-text);
+    text-decoration: underline;
+  }
+
+  .utility {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--kb-space-5);
+    padding-top: var(--kb-space-4);
+    border-top: 1px solid var(--kb-border);
+  }
+
+  @media (max-width: 720px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr);
+      padding-block: var(--kb-space-7);
+    }
+
+    .groups {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--kb-space-5);
+    }
   }
 </style>

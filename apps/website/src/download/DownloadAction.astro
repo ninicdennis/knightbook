@@ -1,0 +1,70 @@
+---
+import { downloadView } from './download-view'
+import { loadReleaseData } from './load-release-data'
+
+/**
+ * The homepage's download action, from the same release data as /download/.
+ *
+ * With a release, it is a button to the download page naming the version, with
+ * a Preview label beside it when the release is a preview. It cannot know the
+ * visitor's computer without JavaScript, so it never names a platform; the
+ * download page lists every build. With no release it is plain status text, not
+ * a disabled button posing as a download. "All downloads" is always present.
+ */
+const { recommended } = downloadView(await loadReleaseData())
+const release = recommended?.release
+---
+
+<div class="download-action">
+  {release ? (
+    <a class="kb-button primary" href="/download/">
+      Download Knightbook {release.version}
+    </a>
+  ) : (
+    <p class="status">Downloads are not available yet</p>
+  )}
+  {release?.channel === 'preview' && <span class="preview-label">Preview</span>}
+  <a class="all" href="/download/">
+    All downloads
+  </a>
+</div>
+
+<style>
+  .download-action {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--kb-space-3) var(--kb-space-4);
+  }
+
+  .primary {
+    min-height: 48px;
+    padding-inline: var(--kb-space-5);
+    font-size: 1.0625rem;
+  }
+
+  /* Plain text with a rule, not a box: it must not look like a button that
+     might download something. */
+  .status {
+    margin: 0;
+    padding-left: var(--kb-space-3);
+    border-left: 3px solid var(--kb-muted);
+    font-weight: 600;
+  }
+
+  .preview-label {
+    padding: 2px var(--kb-space-2);
+    border: 1px solid var(--kb-warning);
+    border-radius: var(--kb-radius-sm);
+    color: var(--kb-warning);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .all {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 500;
+  }
+</style>

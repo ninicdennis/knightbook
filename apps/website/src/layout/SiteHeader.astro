@@ -1,33 +1,47 @@
 ---
 import { Image } from 'astro:assets'
-import logo from '../../../../docs/assets/knightbook-logo.png'
-import { downloadLink, primaryNavigation } from './navigation'
+import logo from './logo'
+import { downloadLink, isCurrentPage, primaryNavigation, type NavigationLink } from './navigation'
 
 /**
- * The header on every page. Wide screens show the links inline; narrow screens
- * fold them into a native <details> menu, which opens and closes without any
- * JavaScript. Download stays visible at every width.
+ * The header on every page, aligned to the page grid. Wide screens show the
+ * links inline. Below 720px the brand and Download keep the first row and the
+ * links move into a native <details> Menu on a second row, which opens and
+ * closes without JavaScript. Only one of the two navigations is displayed at a
+ * time, so assistive technology meets one "Main" navigation, not two.
  */
+interface Props {
+  /** The path being shown, to mark the current destination with aria-current. */
+  pathname: string
+}
+
+const { pathname } = Astro.props
+const currentIf = (link: NavigationLink) =>
+  isCurrentPage(link, pathname) ? ('page' as const) : undefined
+const links = primaryNavigation.map((link) => ({ ...link, current: currentIf(link) }))
+const downloadCurrent = currentIf(downloadLink)
 ---
 
 <header class="site-header">
   <div class="kb-page bar">
     <a class="brand" href="/">
-      <Image src={logo} alt="" width={32} height={32} densities={[1, 2]} loading="eager" />
+      <Image src={logo} alt="" width={32} height={32} densities={[1, 2, 3]} loading="eager" />
       <span>Knightbook</span>
     </a>
 
     <nav class="inline-nav" aria-label="Main">
       <ul>
-        {primaryNavigation.map((link) => (
+        {links.map((link) => (
           <li>
-            <a href={link.href}>{link.label}</a>
+            <a href={link.href} aria-current={link.current}>
+              {link.label}
+            </a>
           </li>
         ))}
       </ul>
     </nav>
 
-    <a class="kb-button download" href={downloadLink.href}>
+    <a class="kb-button download" href={downloadLink.href} aria-current={downloadCurrent}>
       {downloadLink.label}
     </a>
 
@@ -35,9 +49,11 @@ import { downloadLink, primaryNavigation } from './navigation'
       <summary>Menu</summary>
       <nav aria-label="Main">
         <ul>
-          {primaryNavigation.map((link) => (
+          {links.map((link) => (
             <li>
-              <a href={link.href}>{link.label}</a>
+              <a href={link.href} aria-current={link.current}>
+                {link.label}
+              </a>
             </li>
           ))}
         </ul>
@@ -54,26 +70,28 @@ import { downloadLink, primaryNavigation } from './navigation'
 
   .bar {
     display: flex;
-    align-items: center;
-    gap: 0 var(--kb-space-4);
-    min-height: 64px;
-    padding-block: var(--kb-space-3);
     flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--kb-space-6);
+    min-height: 76px;
+    padding-block: var(--kb-space-3);
   }
 
   .brand {
     display: inline-flex;
     align-items: center;
-    gap: var(--kb-space-2);
+    gap: 11px;
+    min-height: 44px;
     margin-right: auto;
     color: var(--kb-text);
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     font-weight: 600;
+    letter-spacing: -0.01em;
     text-decoration: none;
   }
 
   .brand img {
-    border-radius: var(--kb-radius-sm);
+    flex: none;
   }
 
   ul {
@@ -84,56 +102,85 @@ import { downloadLink, primaryNavigation } from './navigation'
 
   .inline-nav ul {
     display: flex;
-    gap: var(--kb-space-5);
+    gap: 28px;
   }
 
   .inline-nav a,
   .menu a {
-    color: var(--kb-text);
-    text-decoration: none;
+    color: var(--kb-muted);
+    font-size: 1rem;
     font-weight: 500;
+    text-decoration: none;
+  }
+
+  .inline-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 
   .inline-nav a:hover,
-  .menu a:hover {
-    color: var(--kb-accent);
+  .menu a:hover,
+  .inline-nav a[aria-current='page'],
+  .menu a[aria-current='page'] {
+    color: var(--kb-text);
     text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.35em;
   }
 
-  /* Hidden at widths where the other one is shown; display: none also removes it
-     from the accessibility tree, so a screen reader meets one menu, not two. */
+  .download {
+    min-height: 44px;
+    padding-inline: 18px;
+  }
+
   .menu {
     display: none;
   }
 
   @media (max-width: 720px) {
+    .bar {
+      gap: 0 var(--kb-space-3);
+      min-height: 64px;
+    }
+
     .inline-nav {
       display: none;
+    }
+
+    .download {
+      padding-inline: 14px;
     }
 
     .menu {
       display: block;
       order: 3;
       width: 100%;
+      margin-top: var(--kb-space-1);
+      border-top: 1px solid var(--kb-border);
     }
 
     /* The browser's own display is kept: it draws the open/closed marker and keeps
        the summary announced as a control that expands. */
     .menu summary {
-      padding-block: var(--kb-space-2);
+      padding-block: 11px;
       cursor: pointer;
       font-weight: 600;
     }
 
     .menu ul {
-      display: grid;
-      gap: var(--kb-space-1);
-      padding-bottom: var(--kb-space-3);
+      padding-bottom: var(--kb-space-2);
+    }
+
+    .menu li + li {
+      border-top: 1px solid var(--kb-border);
     }
 
     .menu a {
-      display: block;
-      padding: var(--kb-space-2) 0;
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      color: var(--kb-text);
     }
   }
 </style>

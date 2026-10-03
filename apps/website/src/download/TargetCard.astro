@@ -1,0 +1,152 @@
+---
+import {
+  checksumCommand,
+  checksumShell,
+  formatSize,
+  SIGNING_LABEL,
+  type TargetChoice,
+} from './download-view'
+
+/**
+ * One platform's download. When the release has no build for this platform the
+ * card says so and links nothing: another platform's file is never offered in
+ * its place, and an Intel build is never labelled Apple silicon.
+ */
+interface Props {
+  choice: TargetChoice
+  version: string
+}
+
+const { choice, version } = Astro.props
+const { target, asset } = choice
+const label = `${target.name}, ${target.cpu}`
+---
+
+<li class="card" data-target={target.key}>
+  <h3>
+    {target.name}
+    <span class="cpu">{target.cpu}</span>
+  </h3>
+
+  {asset ? (
+    <>
+      <a
+        class="kb-button"
+        href={asset.url}
+        aria-label={`Download Knightbook ${version} for ${label}`}
+      >
+        Download
+      </a>
+      <dl>
+        <dt>File</dt>
+        <dd class="filename">{asset.filename}</dd>
+        <dt>Size</dt>
+        <dd>{formatSize(asset.size)}</dd>
+        <dt>Requires</dt>
+        <dd>{asset.minimumOs}</dd>
+        <dt>Signing</dt>
+        <dd>{SIGNING_LABEL[asset.signing]}</dd>
+        <dt>SHA-256</dt>
+        <dd>
+          <code class="checksum">{asset.sha256}</code>
+        </dd>
+      </dl>
+      <details class="verify">
+        <summary>How to check this file</summary>
+        <p>
+          After downloading, run this in {checksumShell(asset)} in the folder that holds the file,
+          and compare the result with the SHA-256 above. If they differ, do not install it.
+        </p>
+        <pre><code>{checksumCommand(asset)}</code></pre>
+      </details>
+    </>
+  ) : (
+    <p class="unavailable">
+      Knightbook {version} has no build for {label}.
+    </p>
+  )}
+</li>
+
+<style>
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--kb-space-3);
+    min-width: 0;
+    padding: var(--kb-space-5);
+    background: var(--kb-surface);
+    border: 1px solid var(--kb-border);
+    border-radius: var(--kb-radius-lg);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+
+  .cpu {
+    display: block;
+    color: var(--kb-muted);
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
+
+  .kb-button {
+    align-self: flex-start;
+    min-height: 44px;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--kb-space-1) var(--kb-space-3);
+    margin: 0;
+    font-size: 0.9375rem;
+  }
+
+  dt {
+    color: var(--kb-muted);
+  }
+
+  dd {
+    margin: 0;
+    min-width: 0;
+  }
+
+  /* Long filenames and checksums wrap inside the card rather than widen the page. */
+  .filename,
+  .checksum {
+    overflow-wrap: anywhere;
+  }
+
+  .checksum {
+    font-size: 0.8125rem;
+  }
+
+  .verify summary {
+    min-height: 44px;
+    display: list-item;
+    padding-block: var(--kb-space-2);
+    cursor: pointer;
+    color: var(--kb-accent);
+  }
+
+  .verify p {
+    font-size: 0.9375rem;
+  }
+
+  pre {
+    margin: 0;
+    padding: var(--kb-space-3);
+    background: var(--kb-surface-quiet);
+    border-radius: var(--kb-radius);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 0.8125rem;
+  }
+
+  .unavailable {
+    margin: 0;
+    color: var(--kb-muted);
+  }
+</style>

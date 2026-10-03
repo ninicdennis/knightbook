@@ -1,0 +1,85 @@
+---
+import BaseLayout from '../../layout/BaseLayout.astro'
+import { groupGuides, guideHref, publishedGuides } from '../../docs/guides'
+
+/** /docs/: every published guide, grouped as Start here, Everyday use, AI setup and Troubleshooting. */
+const groups = groupGuides(await publishedGuides())
+const idFor = (group: string) => `group-${group.toLowerCase().replace(/\s+/g, '-')}`
+---
+
+<BaseLayout
+  title="Documentation"
+  description="Guides to installing Knightbook, working in a project, connecting an AI tool and fixing problems."
+>
+  <div class="kb-page docs-index">
+    <h1>Documentation</h1>
+    <p class="intro">Guides to installing Knightbook and using it day to day.</p>
+
+    {groups.length === 0 ? (
+      <p class="empty">The guides are being written and will be listed here.</p>
+    ) : (
+      groups.map(({ group, guides }) => (
+        <section aria-labelledby={idFor(group)}>
+          <h2 id={idFor(group)}>{group}</h2>
+          <ul>
+            {guides.map((guide) => (
+              <li>
+                <a href={guideHref(guide)}>{guide.data.title}</a>
+                {guide.data.draft && <span class="draft">Draft</span>}
+                <p>{guide.data.description}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .docs-index {
+    padding-block: var(--kb-space-8) 0;
+  }
+
+  .intro {
+    font-size: 1.0625rem;
+    color: var(--kb-muted);
+  }
+
+  section {
+    margin-top: var(--kb-space-6);
+    max-width: 72ch;
+  }
+
+  ul {
+    display: grid;
+    gap: var(--kb-space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li a {
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  li p {
+    margin: var(--kb-space-1) 0 0;
+    color: var(--kb-muted);
+  }
+
+  .draft {
+    margin-left: var(--kb-space-2);
+    padding: 1px var(--kb-space-2);
+    border: 1px dashed var(--kb-warning);
+    border-radius: var(--kb-radius-sm);
+    color: var(--kb-warning);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .empty {
+    color: var(--kb-muted);
+  }
+</style>

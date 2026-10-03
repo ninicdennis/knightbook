@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../../layout/BaseLayout.astro'
+import ReleaseOffer from '../../download/ReleaseOffer.astro'
+import { downloadView } from '../../download/download-view'
+import { loadReleaseData } from '../../download/load-release-data'
+
+/**
+ * /download/: every desktop build of the recommended release, from the
+ * checked-in release data. All links are plain links, so the page works without
+ * JavaScript, and no build is chosen for the visitor: the page cannot know a
+ * computer's CPU for certain, so it lists every platform and names each one.
+ */
+const view = downloadView(await loadReleaseData())
+---
+
+<BaseLayout
+  title="Download"
+  description="Download Knightbook for Windows, macOS or Linux, with each file's size, checksum and signing state."
+>
+  <div class="kb-page download">
+    <header class="intro">
+      <h1>Download Knightbook</h1>
+      <p>
+        Knightbook is a desktop app for Windows, macOS and Linux. Choose the build for your computer
+        below. On a phone or tablet? Open this page on the computer you want to use it on.
+      </p>
+    </header>
+
+    {view.recommended ? (
+      <ReleaseOffer offer={view.recommended} />
+    ) : (
+      <section class="notice" aria-labelledby="not-available">
+        <h2 id="not-available">Downloads are not available yet</h2>
+        <p>
+          There is no published release of Knightbook to download yet. When there is, each build for
+          Windows, macOS and Linux will be listed here with its size, checksum and signing state.
+        </p>
+      </section>
+    )}
+
+    {view.optInPreview && (
+      <details class="opt-in">
+        <summary>Try the preview: Knightbook {view.optInPreview.release.version}</summary>
+        <p>
+          The stable release above is recommended. The preview has newer changes and known issues;
+          install it only if you want to try them.
+        </p>
+        <ReleaseOffer offer={view.optInPreview} headingLevel={3} />
+      </details>
+    )}
+
+    {view.withdrawn.length > 0 && (
+      <section class="withdrawn" aria-labelledby="withdrawn">
+        <h2 id="withdrawn">Withdrawn releases</h2>
+        <p>These releases were withdrawn and are not offered. Do not install them.</p>
+        <ul>
+          {view.withdrawn.map((release) => (
+            <li data-version={release.version}>
+              <strong>Knightbook {release.version}</strong>: {release.withdrawnReason}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .download {
+    display: grid;
+    gap: var(--kb-space-7);
+    padding-block: var(--kb-space-8) 0;
+  }
+
+  .intro p {
+    font-size: 1.0625rem;
+    color: var(--kb-muted);
+  }
+
+  .notice {
+    padding: var(--kb-space-5);
+    background: var(--kb-surface);
+    border: 1px solid var(--kb-border);
+    border-radius: var(--kb-radius-lg);
+  }
+
+  .notice p {
+    margin: 0;
+  }
+
+  .opt-in {
+    padding: var(--kb-space-4) var(--kb-space-5);
+    background: var(--kb-surface-quiet);
+    border: 1px solid var(--kb-border);
+    border-radius: var(--kb-radius-lg);
+  }
+
+  .opt-in summary {
+    min-height: 44px;
+    padding-block: var(--kb-space-2);
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .withdrawn ul {
+    padding-left: var(--kb-space-5);
+  }
+</style>

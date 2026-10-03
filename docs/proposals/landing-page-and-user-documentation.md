@@ -482,3 +482,13 @@ Before a public launch, require evidence that:
 
 The immediate deliverable is this reviewable plan. Website implementation,
 release publishing, and ticket creation remain separate follow-up work.
+
+## 12. Homepage and shared shell design follow-up (2026-10-02)
+
+[Homepage, header, and footer design brief](website-homepage-design.md) supplies
+the proposed palette, typography, responsive layout, image treatment, and shared
+navigation design for this content plan. It preserves this proposal's product
+claims and release requirements. The Website plan links a separate header/footer
+ticket that can begin after the scaffold, and the existing homepage ticket remains
+behind release-data/download-page work. The design is documented for assessment,
+not recorded as accepted or implemented.

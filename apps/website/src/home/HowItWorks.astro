@@ -1,0 +1,130 @@
+---
+import DraftNote from './DraftNote.astro'
+
+/**
+ * The four-step workflow, at the anchor the header's "How it works" links to.
+ * Numbered, because it is an order. MCP is explained once, beside the step
+ * that needs it; setup belongs in the guide, not here.
+ */
+const steps = [
+  {
+    title: 'Open your project',
+    body: 'Choose the folder where your project lives. It can be an existing repository; your code and documents stay where they are.',
+  },
+  {
+    title: 'Keep the context together',
+    body: 'Include the Markdown documents you already have, and capture planned work as tickets on the board.',
+  },
+  {
+    title: 'Work with your AI tool',
+    body: 'Connect a compatible AI tool and ask it to read the project and work on a ticket.',
+    note: 'MCP is the connection that lets a compatible AI tool read and update this project.',
+  },
+  {
+    title: 'Verify and decide',
+    body: 'The tool hands finished work back to Verification with what it changed and checked. You review it in your usual tools and decide whether it is done.',
+  },
+]
+---
+
+<section class="kb-page how" id="how-it-works" aria-labelledby="how-title">
+  <h2 id="how-title">How it works</h2>
+  <ol>
+    {steps.map((step, index) => (
+      <li>
+        <span class="number" aria-hidden="true">
+          {index + 1}
+        </span>
+        <h3>{step.title}</h3>
+        <p>{step.body}</p>
+        {step.note && <p class="note">{step.note}</p>}
+      </li>
+    ))}
+  </ol>
+  <p class="guide">
+    <a href="/docs/getting-started/">Follow the getting-started guide</a>
+    <DraftNote id="gettingStartedGuide" />
+  </p>
+</section>
+
+<style>
+  .how {
+    padding-block: 88px;
+    scroll-margin-top: var(--kb-space-5);
+  }
+
+  h2 {
+    font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.125rem);
+    margin-bottom: var(--kb-space-6);
+  }
+
+  ol {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--kb-space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    align-content: start;
+    gap: var(--kb-space-2);
+    padding-top: var(--kb-space-4);
+    border-top: 2px solid var(--kb-border);
+  }
+
+  .number {
+    color: var(--kb-accent);
+    font-size: 0.9375rem;
+    font-weight: 700;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+
+  li p {
+    margin: 0;
+    color: var(--kb-muted);
+  }
+
+  li .note {
+    margin-top: var(--kb-space-2);
+    color: var(--kb-text);
+    font-size: 0.9375rem;
+  }
+
+  .guide {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--kb-space-2) var(--kb-space-3);
+    margin: var(--kb-space-6) 0 0;
+  }
+
+  .guide a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 500;
+  }
+
+  @media (max-width: 900px) {
+    ol {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 560px) {
+    .how {
+      padding-block: 56px;
+    }
+
+    ol {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

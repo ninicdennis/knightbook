@@ -1,6 +1,6 @@
 ---
 import { getImage } from 'astro:assets'
-import logo from '../../../../docs/assets/knightbook-logo.png'
+import logo from './logo'
 import SiteFooter from './SiteFooter.astro'
 import SiteHeader from './SiteHeader.astro'
 import './tokens.css'
@@ -35,7 +35,7 @@ const favicon = await getImage({ src: logo, width: 64, height: 64, format: 'png'
     <a class="skip-link" href="#main">
       Skip to content
     </a>
-    <SiteHeader />
+    <SiteHeader pathname={Astro.url.pathname} />
     <main id="main" tabindex="-1">
       <slot />
     </main>

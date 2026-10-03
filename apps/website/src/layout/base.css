@@ -70,11 +70,13 @@ img {
   height: auto;
 }
 
+/* The page grid: content up to --kb-page-width wide, plus a gutter that grows
+   with the screen, so the header, content and footer share one left edge. */
 .kb-page {
   width: 100%;
-  max-width: var(--kb-page-width);
+  max-width: calc(var(--kb-page-width) + 2 * var(--kb-gutter));
   margin-inline: auto;
-  padding-inline: var(--kb-space-4);
+  padding-inline: var(--kb-gutter);
 }
 
 /* A link styled as the page's main action. Used for Download wherever it appears. */
