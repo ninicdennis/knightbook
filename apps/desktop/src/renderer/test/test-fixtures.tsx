@@ -204,6 +204,7 @@ export function makeApi(): KnightbookApi {
     mcpStatus: vi.fn().mockResolvedValue(mcpStatus()),
     readSettings: vi.fn().mockResolvedValue({ colorScheme: 'auto' }),
     saveSettings: vi.fn().mockResolvedValue({ ok: true, value: { colorScheme: 'auto' } }),
+    appVersion: vi.fn().mockResolvedValue('0.0.0'),
     showProjectInWindowTitle: vi.fn().mockResolvedValue(undefined),
     skillSetup: vi.fn().mockResolvedValue({ ok: true, value: skillSetup() }),
     installSkill: vi.fn(),

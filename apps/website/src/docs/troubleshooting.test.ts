@@ -65,7 +65,7 @@ const headingIds = () => new Set([...guide.matchAll(/<h[23] id="([^"]+)"/g)].map
 describe('the troubleshooting guide', () => {
   it('is published as written, for the release it describes', () => {
     expect(guide).not.toContain('data-draft-guide')
-    expect(guide).toMatch(/>Written for Knightbook 0\.1\.1</)
+    expect(guide).toMatch(/>Written for Knightbook 0\.2\.0</)
   })
 
   it.each(SYMPTOMS)(
@@ -98,6 +98,9 @@ describe('the troubleshooting guide', () => {
     ])
       expect(asks, item).toContain(item)
     expect(asks).toMatch(/error, redacted/)
+    // Ticket b411cc60: the app shows its version in Settings, under About.
+    expect(asks).toContain('<strong>Settings</strong>')
+    expect(asks).toContain('<strong>About</strong>')
     for (const item of ['A whole private project', 'Credentials', 'Unredacted client logs'])
       expect(never, item).toContain(item)
   })

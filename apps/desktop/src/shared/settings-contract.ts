@@ -23,6 +23,12 @@ export interface SettingsApi {
   readSettings(): Promise<AppSettings>
   /** Merges the given fields into the stored settings and returns the stored result. */
   saveSettings(patch: Partial<AppSettings>): Promise<Result<AppSettings>>
+  /**
+   * The version of the running app, as Electron's `app.getVersion()` reports it
+   * from the packaged `package.json`. Release builds are stamped with their
+   * release version; anything else reads 0.0.0.
+   */
+  appVersion(): Promise<string>
   /** Names the open project and its checkout folder in the window title; null claims no project. */
   showProjectInWindowTitle(project: WindowTitleProject | null): Promise<void>
 }
