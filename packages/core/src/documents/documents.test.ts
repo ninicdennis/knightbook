@@ -1,8 +1,9 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   includeDocuments,
+  includePickedPaths,
   listIncludedDocuments,
   readDocument,
   removeFromWorkspace,
@@ -81,6 +82,31 @@ describe('including existing documents in place', () => {
     await withFixtureProject(async (project) => {
       const error = await includeDocuments(project, ['.projectspace']).catch((e) => e)
       expect(error.code).toBe('outside_project')
+    })
+  })
+
+  // The app's file picker hands back absolute paths, which `includeDocuments` refuses.
+  it('includes a folder and a file picked as absolute paths', async () => {
+    await withFixtureProject(async (project) => {
+      await seedRepository(project)
+      const updated = await includePickedPaths(project, [
+        join(project.root.path, 'docs'),
+        join(project.root.path, 'README.md'),
+      ])
+      expect(updated.frontmatter.documents_include).toEqual(['docs', 'README.md'])
+    })
+  })
+
+  it('refuses a picked absolute path outside the project and stores nothing', async () => {
+    await withFixtureProject(async (project) => {
+      await seedRepository(project)
+      const outside = join(dirname(project.root.path), 'elsewhere.md')
+      const error = await includePickedPaths(project, [
+        join(project.root.path, 'README.md'),
+        outside,
+      ]).catch((e) => e)
+      expect(error.code).toBe('outside_project')
+      expect(project.frontmatter.documents_include).toEqual([])
     })
   })
 

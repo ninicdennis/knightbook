@@ -1,7 +1,7 @@
 import { dialog, ipcMain, shell } from 'electron'
 import {
   documentRecordId,
-  includeDocuments,
+  includePickedPaths,
   listFolderTitles,
   listIncludedDocuments,
   openProject,
@@ -50,8 +50,9 @@ export async function buildListing(project: Project): Promise<DocumentListView> 
 
 /**
  * Decision D-011: including is a manifest edit, never a copy or a move. The
- * picker opens at the project root and `includeDocuments` refuses anything that
- * resolves outside it, so a path chosen elsewhere is reported rather than stored.
+ * picker opens at the project root and hands back absolute paths, which
+ * `includePickedPaths` makes project-relative; anything that resolves outside the
+ * root is reported rather than stored.
  */
 async function pickAndInclude(
   rootPath: string,
@@ -70,7 +71,7 @@ async function pickAndInclude(
   // list exactly as it was.
   if (chosen.canceled || chosen.filePaths.length === 0) return await buildListing(project)
 
-  return await buildListing(await includeDocuments(project, chosen.filePaths))
+  return await buildListing(await includePickedPaths(project, chosen.filePaths))
 }
 
 export function registerDocumentHandlers(): void {

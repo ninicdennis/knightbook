@@ -1,5 +1,6 @@
 import { realpath } from 'node:fs/promises'
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import path, { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import type { PlatformPath } from 'node:path'
 import { ProjectError } from './errors.js'
 
 /**
@@ -97,6 +98,42 @@ export async function assertRealPathInRoot(root: ProjectRoot, absolutePath: stri
 
 export function toProjectRelative(root: ProjectRoot, absolutePath: string): string {
   return relative(root.path, absolutePath).split(sep).join('/')
+}
+
+/**
+ * The project-relative form of an absolute path, such as one picked in a file
+ * dialog, which names the folder the way the platform does (`C:\Users\...\docs`
+ * on Windows). Separators become forward slashes for the manifest. A path outside
+ * the root, including one on another drive, is refused rather than stored. `paths`
+ * is the platform's path module, swappable so the Windows rules are tested anywhere.
+ */
+export function relativeToRoot(
+  rootPath: string,
+  absolutePath: string,
+  paths: Pick<PlatformPath, 'isAbsolute' | 'relative' | 'sep'> = path,
+): string {
+  const back = paths.relative(rootPath, absolutePath)
+  if (back === '..' || back.startsWith(`..${paths.sep}`) || paths.isAbsolute(back)) {
+    throw new ProjectError('outside_project', `Path is outside the project: ${absolutePath}`)
+  }
+  return back.split(paths.sep).join('/')
+}
+
+/**
+ * Like `relativeToRoot`, after resolving symlinks, because the root is stored as
+ * its real path and a picked path may reach the same folder another way.
+ */
+export async function projectRelativeFromAbsolute(
+  root: ProjectRoot,
+  absolutePath: string,
+): Promise<string> {
+  let real: string
+  try {
+    real = await realpath(absolutePath)
+  } catch {
+    real = resolve(absolutePath) // Missing: the include step reports it by name.
+  }
+  return relativeToRoot(root.path, real)
 }
 
 export const reservedPaths = {

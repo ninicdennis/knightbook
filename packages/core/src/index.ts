@@ -1,5 +1,7 @@
 export { ProjectError, isProjectError, type ProjectErrorCode } from './records/errors.js'
 export {
+  projectRelativeFromAbsolute,
+  relativeToRoot,
   RESERVED_DIR,
   reservedPaths,
   resolveInRoot,
@@ -102,6 +104,7 @@ export {
 } from './records/schema.js'
 export {
   includeDocuments,
+  includePickedPaths,
   createDocument,
   listIncludedDocuments,
   readDocument,

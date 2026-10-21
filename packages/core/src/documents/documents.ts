@@ -4,6 +4,7 @@ import { ProjectError } from '../records/errors.js'
 import { parseRecord, serializeRecord } from '../records/frontmatter.js'
 import {
   assertRealPathInRoot,
+  projectRelativeFromAbsolute,
   RESERVED_DIR,
   reservedPaths,
   resolveInRoot,
@@ -88,6 +89,23 @@ export async function includeDocuments(project: Project, paths: string[]): Promi
   if (next.length === current.size) return project
 
   return await saveInclusions(project, next)
+}
+
+/**
+ * Includes paths picked in the app's file dialog. The dialog hands back absolute
+ * paths in the platform's form, while the manifest and `includeDocuments` take
+ * project-relative ones, so each is made relative first. One outside the project
+ * is still refused, not stored.
+ */
+export async function includePickedPaths(
+  project: Project,
+  absolutePaths: string[],
+): Promise<Project> {
+  const relative = []
+  for (const picked of absolutePaths) {
+    relative.push(await projectRelativeFromAbsolute(project.root, picked))
+  }
+  return await includeDocuments(project, relative)
 }
 
 /** Removes a manifest entry. The source file is deliberately left untouched. */
