@@ -6,7 +6,7 @@ FSL-1.1-ALv2
 
 ## Notice
 
-Copyright 2026 Denny (github.com/ninicdennis)
+Copyright 2026 Dennis Ninic
 
 ## Terms and Conditions
 
