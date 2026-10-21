@@ -151,7 +151,7 @@ describe('the documentation section', () => {
 
   it('marks placeholder guides as drafts, on the index and on the guide', async () => {
     const index = await page(real, 'docs/index.html')
-    expect(index.match(/<span class="draft[^"]*"[^>]*>Draft</g)).toHaveLength(3)
+    expect(index.match(/<span class="draft[^"]*"[^>]*>Draft</g)).toHaveLength(2)
     const guide = await page(real, 'docs/getting-started/index.html')
     expect(guide).toMatch(
       /data-draft-guide="getting-started"[^>]*>\s*Draft: this guide has not been written yet/,
@@ -166,6 +166,51 @@ describe('the documentation section', () => {
     expect(guide).not.toContain('data-draft-guide')
     expect(guide).toMatch(/>Written for Knightbook 0\.1\.1</)
     expect(guide).toMatch(new RegExp(`<h2 id="${heading}"`))
+  })
+
+  it('publishes the installation guide with a section per platform, updating and removing', async () => {
+    const guide = await page(real, 'docs/installation/index.html')
+    expect(guide).not.toContain('data-draft-guide')
+    expect(guide).toMatch(/>Written for Knightbook 0\.2\.0</)
+    for (const heading of [
+      'choosing-a-download',
+      'windows',
+      'macos',
+      'linux',
+      'updating',
+      'removing-knightbook',
+      'what-stays-the-apps-settings',
+      'what-stays-your-projects',
+    ]) {
+      expect(guide, heading).toMatch(new RegExp(`<h2 id="${heading}"|<h3 id="${heading}"`))
+    }
+    // One installer name per target the release must carry (release-assets.mjs).
+    for (const name of [
+      'Knightbook-&lt;version&gt;-windows-x64.exe',
+      'Knightbook-&lt;version&gt;-macos-arm64.dmg',
+      'Knightbook-&lt;version&gt;-macos-x64.dmg',
+      'Knightbook-&lt;version&gt;-linux-amd64.deb',
+    ]) {
+      expect(guide, name).toContain(name)
+    }
+    expect(guide).toContain('Knightbook has no updater yet')
+    expect(guide).toContain('<strong>Not yet checked')
+  })
+
+  it('never tells readers to turn off a protection for the whole computer', async () => {
+    const text = (await page(real, 'docs/installation/index.html')).replace(/<[^>]+>/g, ' ')
+    for (const advice of [
+      /spctl\s+--master-disable/i,
+      /--global-disable/i,
+      /xattr\s+-[a-z]*[cd]/i,
+      /\bAnywhere\b/,
+      /turn off (?:SmartScreen|Microsoft Defender|Windows Defender)/i,
+      /disable (?:Gatekeeper|SmartScreen|Defender)/i,
+    ]) {
+      expect(text, String(advice)).not.toMatch(advice)
+    }
+    expect(text).toMatch(/Do not turn off Gatekeeper or other protections for\s+the whole Mac/)
+    expect(text).toContain('report it')
   })
 
   it('tells readers to commit .projectspace and ignore only its coordination files', async () => {

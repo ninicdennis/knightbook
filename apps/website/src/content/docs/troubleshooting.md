@@ -31,7 +31,7 @@ whatever you try can be undone.
   - A Mac with Apple silicon: `Knightbook-<version>-macos-arm64.dmg`
   - An Intel Mac: `Knightbook-<version>-macos-x64.dmg`
   - Debian or Ubuntu on an Intel or AMD processor:
-    `Knightbook-<version>-linux-x64.deb`
+    `Knightbook-<version>-linux-amd64.deb`
 - Check the download is complete. The [download page](/download/) lists each file's
   size and SHA-256 checksum, with the command that prints it on your system. A
   different checksum means the file is incomplete or not the one published.
