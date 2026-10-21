@@ -155,5 +155,7 @@ describe('the title and description check', () => {
     expect(String((failure as { stderr?: string }).stderr ?? failure)).toMatch(
       /docs\/two\/index\.html has the same title as docs\/one\/index\.html|docs\/one\/index\.html has the same title as docs\/two\/index\.html/,
     )
-  })
+    // A whole `astro build`, like the other build-in-a-test cases; the default 5 s
+    // was enough on Linux and not on Windows.
+  }, 120_000)
 })
