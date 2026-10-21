@@ -34,6 +34,10 @@ on:
       - 'tsconfig.base.json'
       - '.github/workflows/ci.yml'
       - '.github/workflows/release.yml'
+  # A manual start from the Actions tab, for a release whose run failed for a
+  # reason outside the app (a broken check, a lost runner). Re-running that run
+  # would test its original commit again; this starts from main as it is now.
+  workflow_dispatch:
 
 # One release at a time, never cancelled, so two quick merges cannot both pick
 # the same version. GitHub keeps only one waiting run: a third merge before the
@@ -49,6 +53,8 @@ permissions:
 jobs:
   version:
     name: Choose the version
+    # A manual start may name any branch; only main is ever released.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # semantic-release checks that it could push to main even in dry-run mode, and
