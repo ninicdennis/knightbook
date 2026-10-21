@@ -32,13 +32,15 @@ const ASTRO_BIN = join(
 
 const RELEASES = [fixtureRelease('0.3.0'), fixtureRelease('0.4.0', { channel: 'preview' })]
 
-/** One page per template. The privacy page joins this list once it exists (ticket 1aefd5aa). */
+/** One page per template. */
 const PAGES = [
   ['home', '/'],
   ['download', '/download/'],
   ['docs index', '/docs/'],
   ['guide', '/docs/tickets-and-verification/'],
   ['releases', '/releases/'],
+  ['license', '/license/'],
+  ['privacy', '/privacy/'],
   ['not found', '/no-such-page/'],
 ] as const
 

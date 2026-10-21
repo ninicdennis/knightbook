@@ -94,6 +94,9 @@ describe('the download page', () => {
         'Knightbook is a desktop app for Windows, macOS and Linux.',
       )
       expect(pages[state], state).toContain('On a phone or tablet?')
+      expect(pages[state], state).toMatch(
+        /Knightbook is free\. Its source code is public under the <a href="\/license\/"[^>]*>Functional Source License<\/a>\./,
+      )
     }
     for (const target of ['windows-x64', 'macos-arm64', 'macos-x64', 'linux-x64']) {
       expect(card(pages.stable, target), target).not.toBe('')
@@ -104,19 +107,19 @@ describe('the download page', () => {
     const html = pages.stable
     expect(installerLinks(html).sort()).toEqual(
       [
-        'https://downloads.example.test/releases/0.3.0/Knightbook-0.3.0-linux-x64.deb',
-        'https://downloads.example.test/releases/0.3.0/Knightbook-0.3.0-macos-arm64.dmg',
-        'https://downloads.example.test/releases/0.3.0/Knightbook-0.3.0-macos-x64.dmg',
-        'https://downloads.example.test/releases/0.3.0/Knightbook-0.3.0-windows-x64.exe',
+        'https://github.com/ninicdennis/knightbook/releases/download/v0.3.0/Knightbook-0.3.0-linux-x64.deb',
+        'https://github.com/ninicdennis/knightbook/releases/download/v0.3.0/Knightbook-0.3.0-macos-arm64.dmg',
+        'https://github.com/ninicdennis/knightbook/releases/download/v0.3.0/Knightbook-0.3.0-macos-x64.dmg',
+        'https://github.com/ninicdennis/knightbook/releases/download/v0.3.0/Knightbook-0.3.0-windows-x64.exe',
       ].sort(),
     )
     // An Intel build is never offered as Apple silicon, nor the other way round.
     expect(installerLinks(card(html, 'macos-arm64'))).toEqual([
-      'https://downloads.example.test/releases/0.3.0/Knightbook-0.3.0-macos-arm64.dmg',
+      'https://github.com/ninicdennis/knightbook/releases/download/v0.3.0/Knightbook-0.3.0-macos-arm64.dmg',
     ])
     expect(card(html, 'macos-arm64')).toContain('Apple silicon')
     expect(installerLinks(card(html, 'macos-x64'))).toEqual([
-      'https://downloads.example.test/releases/0.3.0/Knightbook-0.3.0-macos-x64.dmg',
+      'https://github.com/ninicdennis/knightbook/releases/download/v0.3.0/Knightbook-0.3.0-macos-x64.dmg',
     ])
     expect(card(html, 'macos-x64')).toContain('Intel')
 
@@ -167,7 +170,7 @@ describe('the download page', () => {
     expect(appleSilicon).toContain('has no build for macOS, Apple silicon')
     expect(appleSilicon).not.toContain('x64.dmg')
     expect(installerLinks(card(html, 'macos-x64'))).toEqual([
-      'https://downloads.example.test/releases/0.3.0/Knightbook-0.3.0-macos-x64.dmg',
+      'https://github.com/ninicdennis/knightbook/releases/download/v0.3.0/Knightbook-0.3.0-macos-x64.dmg',
     ])
   })
 
@@ -193,11 +196,11 @@ describe('the download page', () => {
     const optIn = html.match(/<details class="opt-in[\s\S]*?<\/details>\s*<\/div>/)?.[0] ?? ''
     expect(optIn).toMatch(/^<details class="opt-in[^"]*"(?![^>]*\sopen)[^>]*>/)
     expect(optIn).toContain('Try the preview: Knightbook 0.4.0')
-    expect(installerLinks(optIn).every((href) => href.includes('/0.4.0/'))).toBe(true)
+    expect(installerLinks(optIn).every((href) => href.includes('/v0.4.0/'))).toBe(true)
     expect(installerLinks(optIn)).toHaveLength(4)
 
     const outside = html.replace(optIn, '')
-    expect(installerLinks(outside).every((href) => href.includes('/0.3.0/'))).toBe(true)
+    expect(installerLinks(outside).every((href) => href.includes('/v0.3.0/'))).toBe(true)
     expect(installerLinks(outside)).toHaveLength(4)
   })
 

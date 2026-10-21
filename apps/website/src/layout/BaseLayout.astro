@@ -1,5 +1,6 @@
 ---
 import { getImage } from 'astro:assets'
+import { isProductionBuild } from '../home/drafts'
 import logo from './logo'
 import SiteFooter from './SiteFooter.astro'
 import SiteHeader from './SiteHeader.astro'
@@ -9,16 +10,27 @@ import './base.css'
 /**
  * The frame every page shares: head metadata, a skip link as the first focusable
  * element, the header, the page's own content in <main>, and the footer.
+ *
+ * Any build that is not production is a preview (D-044): every page asks search
+ * engines not to index it and says it is a preview, so a preview someone opens
+ * from a pull request's artifact is never mistaken for the published site.
  */
 interface Props {
   /** The page's own title; " · Knightbook" is added, except on the homepage. */
   title: string
   description: string
+  /** False for a page with no address of its own, such as the 404 page. */
+  canonical?: boolean
 }
 
-const { title, description } = Astro.props
+const { title, description, canonical = true } = Astro.props
 const fullTitle = title === 'Knightbook' ? title : `${title} · Knightbook`
 const favicon = await getImage({ src: logo, width: 64, height: 64, format: 'png' })
+const preview = !isProductionBuild()
+const url = new URL(Astro.url.pathname, Astro.site)
+// The approved mark for link previews (ticket 0f142dd8), at a size every service accepts.
+const socialImage = await getImage({ src: logo, width: 512, height: 512, format: 'png' })
+const socialImageUrl = new URL(socialImage.src, Astro.site)
 ---
 
 <!doctype html>
@@ -29,12 +41,32 @@ const favicon = await getImage({ src: logo, width: 64, height: 64, format: 'png'
     <meta name="color-scheme" content="light dark" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    {preview && <meta name="robots" content="noindex, nofollow" />}
+    {canonical && <link rel="canonical" href={url.href} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Knightbook" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    {canonical && <meta property="og:url" content={url.href} />}
+    <meta property="og:image" content={socialImageUrl.href} />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta
+      property="og:image:alt"
+      content="The Knightbook logo: a white chess knight on a navy book cover"
+    />
+    <meta name="twitter:card" content="summary" />
     <link rel="icon" type="image/png" href={favicon.src} />
   </head>
   <body>
     <a class="skip-link" href="#main">
       Skip to content
     </a>
+    {preview && (
+      <p class="preview-banner" role="note">
+        Preview build. This is not the published Knightbook website.
+      </p>
+    )}
     <SiteHeader pathname={Astro.url.pathname} />
     <main id="main" tabindex="-1">
       <slot />
@@ -59,6 +91,17 @@ const favicon = await getImage({ src: logo, width: 64, height: 64, format: 'png'
 
   .skip-link:focus {
     top: var(--kb-space-2);
+  }
+
+  .preview-banner {
+    margin: 0;
+    padding: var(--kb-space-2) var(--kb-space-4);
+    background: var(--kb-surface-quiet);
+    border-bottom: 2px dashed var(--kb-warning);
+    color: var(--kb-text);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
   }
 
   main:focus {

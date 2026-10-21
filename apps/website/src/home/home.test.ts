@@ -98,6 +98,14 @@ describe('the homepage', () => {
     expect(hero).toMatch(/href="\/docs\/getting-started\/"[^>]*>Read the getting-started guide</)
   })
 
+  it('says Knightbook is free and links the license beside each download action', () => {
+    for (const id of ['hero-title', 'closing-title']) {
+      expect(section(homes.checkedIn, id), id).toMatch(
+        /<p class="terms"[^>]*>Free, with the source code available under the <a href="\/license\/"[^>]*>FSL<\/a>\.<\/p>/,
+      )
+    }
+  })
+
   it('puts the copy and actions before the image, so they come first when stacked', () => {
     const hero = section(homes.checkedIn, 'hero-title')
     const order = ['<h1', 'class="lead', 'class="download-action', '<figure'].map((mark) =>
@@ -223,7 +231,9 @@ describe('the homepage', () => {
       /have been tested will be listed here/,
     )
     expect(answer('Which systems and AI clients work?')).not.toMatch(/every|all AI|any AI/i)
-    expect(answer('Is it free, and what is the license?')).toMatch(/not decided yet/)
+    expect(answer('Is it free, and what is the license?')).toMatch(
+      /Yes, Knightbook is free\..*Functional Source License \(FSL-1\.1-ALv2\).*except offering it.*competing commercial product.*Apache License 2\.0/,
+    )
   })
 
   it('answers the eight questions in native expandable rows', () => {
