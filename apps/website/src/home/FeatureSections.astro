@@ -1,9 +1,11 @@
 ---
-import ScreenshotSlot from './ScreenshotSlot.astro'
+import Screenshot from './Screenshot.astro'
+import documentDark from './screenshots/document-dark.png'
+import documentLight from './screenshots/document-light.png'
 
 /**
  * The three explanations the brief asks for, each with its own evidence: a real
- * document screenshot (reserved until it exists), a plain-text ticket example
+ * document screenshot, a plain-text ticket example
  * that does not pretend to be the app's screen, and the workflow states with
  * Verification emphasised. Claims stay within the landing-page proposal §2.
  */
@@ -19,10 +21,13 @@ const states = ['Backlog', 'In progress', 'Verification', 'Done']
       Knightbook, and edit it in the editor you already use.
     </p>
   </div>
-  <ScreenshotSlot
-    draft="documentScreenshot"
+  <Screenshot
+    light={documentLight}
+    dark={documentDark}
+    alt="The Documents view in Knightbook: a folder tree of the project's Markdown files on the left, and the README rendered on the right, marked Changed since review and Read-only, with Mark reviewed and Edit externally buttons."
     caption="A project document, read in Knightbook."
-    aspectRatio="4 / 3"
+    sizes="(max-width: 900px) calc(100vw - 32px), 640px"
+    draft="documentScreenshot"
   />
 </section>
 

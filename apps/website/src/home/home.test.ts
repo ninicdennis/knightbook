@@ -171,6 +171,7 @@ describe('the homepage', () => {
     expect(files).toMatch(/ordinary Markdown files in your project folder/)
     expect(files).toMatch(/edit it in the editor you already use/)
     expect(section(homes.checkedIn, 'files-title')).toContain('data-draft="documentScreenshot"')
+    expect(section(homes.checkedIn, 'files-title')).toMatch(/<img[^>]+alt="The Documents view/)
     const shared = visibleText(section(homes.checkedIn, 'shared-title'))
     expect(shared).toMatch(/context the last one left behind/)
     expect(shared).toMatch(/what it depends on/)
@@ -264,6 +265,26 @@ describe('the homepage', () => {
       expect(text, claim).not.toContain(claim)
     }
     expect(text).not.toMatch(/\d[\d,.]*\s*k?\+?\s*(users|teams|developers|downloads|projects)\b/)
+  })
+
+  it('shows real screenshots, light and dark, resized, each with alt text', () => {
+    for (const [id, alt] of [
+      ['hero-title', 'The Knightbook board with four columns'],
+      ['files-title', 'The Documents view in Knightbook'],
+    ]) {
+      const picture = section(homes.checkedIn, id).match(/<picture[\s\S]*?<\/picture>/)?.[0] ?? ''
+      const dark = picture.match(
+        /<source media="\(prefers-color-scheme: dark\)"[^>]*srcset="([^"]+)"/,
+      )
+      const light = picture.match(/<img[^>]*srcset="([^"]+)"/)
+      expect(dark?.[1], id).toMatch(/\.webp 640w, .*\.webp 1920w$/)
+      expect(light?.[1], id).toMatch(/\.webp 640w, .*\.webp 1920w$/)
+      expect(dark?.[1], id).not.toEqual(light?.[1])
+      expect(picture, id).toMatch(new RegExp(`<img[^>]+alt="${alt}[^"]+"`))
+      expect(picture, id).toMatch(/<img[^>]+width="1280"[^>]+height="800"/)
+    }
+    expect(section(homes.checkedIn, 'hero-title')).toMatch(/<img[^>]+loading="eager"/)
+    expect(section(homes.checkedIn, 'files-title')).toMatch(/<img[^>]+loading="lazy"/)
   })
 
   it('marks every draft visibly, and only drafts that are listed', () => {

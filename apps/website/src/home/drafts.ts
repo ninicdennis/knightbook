@@ -8,8 +8,10 @@
  * published as if it were the product. Remove an entry once its place is real.
  */
 export const DRAFTS = {
-  boardScreenshot: 'Board screenshot of a fictional sample project, from ticket 90c7aba5',
-  documentScreenshot: 'Document screenshot of a fictional sample project, from ticket 90c7aba5',
+  boardScreenshot:
+    "Interim board screenshot of Knightbook's own project; replace with a fictional sample project (ticket 90c7aba5)",
+  documentScreenshot:
+    "Interim document screenshot of Knightbook's own project; replace with a fictional sample project (ticket 90c7aba5)",
   gettingStartedGuide: 'The getting-started guide at /docs/getting-started/, from ticket dc8fbede',
   faqWindowClosed:
     'Whether the AI tool works with the window closed, confirmed on a clean install (ticket ebc80cc9)',

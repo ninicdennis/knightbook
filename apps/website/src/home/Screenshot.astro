@@ -1,0 +1,89 @@
+---
+import type { ImageMetadata } from 'astro'
+import { getImage } from 'astro:assets'
+import DraftNote from './DraftNote.astro'
+import type { DraftId } from './drafts'
+
+/**
+ * A real screenshot of the app, light or dark to match the visitor's system
+ * scheme, resized at build time into a few widths so the browser fetches only
+ * what it shows. The alt text describes what the image shows; the surrounding
+ * copy never depends on it. An interim capture keeps its draft marker, so a
+ * production build still refuses it (see drafts.ts).
+ */
+interface Props {
+  light: ImageMetadata
+  dark: ImageMetadata
+  alt: string
+  caption: string
+  /** The image's displayed width at each breakpoint, as the `sizes` attribute. */
+  sizes: string
+  draft?: DraftId
+  /** Above the fold: load it straight away instead of lazily. */
+  eager?: boolean
+}
+
+const { light, dark, alt, caption, sizes, draft, eager = false } = Astro.props
+const WIDTHS = [640, 960, 1280, 1920]
+
+async function srcset(src: ImageMetadata) {
+  const widths = WIDTHS.filter((w) => w <= src.width)
+  const sized = await Promise.all(
+    widths.map((width) => getImage({ src, width, format: 'webp', quality: 82 })),
+  )
+  return sized.map((image, i) => `${image.src} ${widths[i]}w`).join(', ')
+}
+
+const [lightSet, darkSet, fallback] = await Promise.all([
+  srcset(light),
+  srcset(dark),
+  getImage({ src: light, width: 1280, format: 'webp', quality: 82 }),
+])
+const height = Math.round(1280 * (light.height / light.width))
+---
+
+<figure class="screenshot">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" type="image/webp" srcset={darkSet} sizes={sizes} />
+    <img
+      src={fallback.src}
+      srcset={lightSet}
+      sizes={sizes}
+      width="1280"
+      height={height}
+      alt={alt}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+    />
+  </picture>
+  <figcaption>
+    {caption}
+    {draft && <DraftNote id={draft} />}
+  </figcaption>
+</figure>
+
+<style>
+  .screenshot {
+    margin: 0;
+    min-width: 0;
+  }
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--kb-surface);
+    border: 1px solid var(--kb-border);
+    border-radius: var(--kb-radius-lg);
+  }
+
+  figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--kb-space-2) var(--kb-space-3);
+    margin-top: var(--kb-space-3);
+    color: var(--kb-muted);
+    font-size: 0.9375rem;
+  }
+</style>
