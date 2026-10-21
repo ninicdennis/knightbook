@@ -1,13 +1,13 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { readFile, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { fixtureRelease } from '../download/test-releases'
 import { DRAFTS } from './drafts'
+import { buildTempDir } from '../test/build-dir.js'
 
 /**
  * Builds the real site and checks the homepage a visitor would receive: with
@@ -41,7 +41,7 @@ function build(outDir: string, env: NodeJS.ProcessEnv) {
 }
 
 beforeAll(async () => {
-  workDir = await mkdtemp(join(tmpdir(), 'knightbook-home-'))
+  workDir = await buildTempDir('knightbook-home-')
   for (const [state, releases] of Object.entries(STATES) as [State, unknown[] | null][]) {
     const env: NodeJS.ProcessEnv = { ...process.env }
     delete env.KNIGHTBOOK_RELEASE_DATA_FOR_TESTS

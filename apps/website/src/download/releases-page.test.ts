@@ -1,12 +1,12 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { readFile, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { fixtureRelease } from './test-releases'
+import { buildTempDir } from '../test/build-dir.js'
 
 /**
  * Builds the real site from the checked-in release data and from a history
@@ -55,7 +55,7 @@ async function releasesPage(name: string, releases: unknown[] | null) {
 }
 
 beforeAll(async () => {
-  workDir = await mkdtemp(join(tmpdir(), 'knightbook-releases-'))
+  workDir = await buildTempDir('knightbook-releases-')
   empty = await releasesPage('empty', [])
   history = await releasesPage('history', HISTORY)
   onlyWithdrawn = await releasesPage('onlyWithdrawn', [HISTORY[2]])

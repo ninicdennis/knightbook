@@ -3,3 +3,9 @@
 # out. Without this, a Windows checkout (core.autocrlf=true, GitHub's Windows
 # runners included) turns them into CRLF and the tests fail.
 experiments/editor-preservation/fixtures/** text eol=lf
+
+# The website's tests read its sources and the workflows as text and match LF
+# line endings; a Windows checkout would otherwise turn them into CRLF.
+# `text=auto` leaves binary files such as the screenshots alone.
+apps/website/** text=auto eol=lf
+.github/** text=auto eol=lf

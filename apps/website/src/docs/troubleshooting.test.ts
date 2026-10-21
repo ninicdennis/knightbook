@@ -1,11 +1,11 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
+import { readdir, readFile, rm } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { buildTempDir } from '../test/build-dir.js'
 
 /**
  * The troubleshooting guide, built from the real guides: one anchored entry per
@@ -40,7 +40,7 @@ let outDir: string
 let guide: string
 
 beforeAll(async () => {
-  outDir = await mkdtemp(join(tmpdir(), 'knightbook-troubleshooting-'))
+  outDir = await buildTempDir('knightbook-troubleshooting-')
   const env: NodeJS.ProcessEnv = { ...process.env }
   delete env.KNIGHTBOOK_DOCS_DIR_FOR_TESTS
   delete env.KNIGHTBOOK_SITE_STAGE
