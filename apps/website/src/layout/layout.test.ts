@@ -80,6 +80,7 @@ describe('the built site', () => {
         'releases/index.html',
         'license/index.html',
         'privacy/index.html',
+        'downloads/index.html',
         ...guides,
       ].sort(),
     )
@@ -93,6 +94,11 @@ describe('the built site', () => {
   it('marks every page of a preview build noindex and labels it a preview (D-044)', async () => {
     for (const path of (await filesUnder(outDir)).filter((name) => name.endsWith('.html'))) {
       const html = await page(path)
+      // A redirect page (redirects.ts) is Astro's own, already noindex, with nothing to label.
+      if (/http-equiv="refresh"/.test(html)) {
+        expect(html, path).toMatch(/<meta name="robots" content="noindex"/)
+        continue
+      }
       expect(html, path).toMatch(/<meta name="robots" content="noindex, nofollow"/)
       expect(html, path).toMatch(
         /<p class="preview-banner[^"]*" role="note"[^>]*>\s*Preview build\. This is not the published Knightbook website\.\s*<\/p>/,
