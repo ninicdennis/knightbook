@@ -3,7 +3,7 @@ title: Troubleshooting and support
 description: What to check when installing, connecting or opening a project goes wrong, and how to ask for help.
 group: Troubleshooting
 order: 1
-appVersion: 0.1.1
+appVersion: 0.2.0
 ---
 
 Each section below starts from what you see, then gives the same four things:
@@ -302,8 +302,10 @@ instead.
 
 ### What to include
 
-- **The Knightbook version.** The app does not show it yet. It is in the
-  installer's file name, such as `Knightbook-0.1.1-windows-x64.exe`.
+- **The Knightbook version.** With a project open, open **Settings** with the
+  gear at the top right of the window; the version is under **About**, such as
+  "Knightbook 0.2.0". If the app will not start or no project opens, it is in the
+  installer's file name, such as `Knightbook-0.2.0-windows-x64.exe`.
 - **Your operating system, its version, and the processor**, such as Windows 11
   x64, macOS 15 on Apple silicon, or Ubuntu 24.04 x64.
 - **The AI client and its version**, if one is involved.

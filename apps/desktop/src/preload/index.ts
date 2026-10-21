@@ -48,6 +48,7 @@ const api: KnightbookApi = {
   mcpStatus: (rootPath) => ipcRenderer.invoke('mcp:status', rootPath),
   readSettings: () => ipcRenderer.invoke('app:readSettings'),
   saveSettings: (patch) => ipcRenderer.invoke('app:saveSettings', patch),
+  appVersion: () => ipcRenderer.invoke('app:version'),
   showProjectInWindowTitle: (project) => ipcRenderer.invoke('window:showProjectInTitle', project),
   skillSetup: (rootPath) => ipcRenderer.invoke('skill:setup', rootPath),
   installSkill: (rootPath, target, expected) =>

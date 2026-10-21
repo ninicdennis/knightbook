@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { app, ipcMain } from 'electron'
 import { DEFAULT_SETTINGS, readSettings, saveSettings } from './app-state.js'
 import { guard } from '../guard.js'
 import { applyColorScheme } from '../window/window-theme.js'
@@ -27,6 +27,7 @@ function parsePatch(input: unknown): Partial<AppSettings> {
 
 export function registerSettingsHandlers(): void {
   ipcMain.handle('app:readSettings', async () => await readSettings())
+  ipcMain.handle('app:version', () => app.getVersion())
 
   ipcMain.handle(
     'app:saveSettings',

@@ -164,7 +164,9 @@ version over the old one. To hear about new releases, watch the
 [releases on GitHub](https://github.com/ninicdennis/knightbook/releases), or check
 the [releases page](/releases/).
 
-1. **Find the version you have.** On Windows, look for Knightbook under **Settings**,
+1. **Find the version you have.** In the app, open a project, then **Settings**
+   with the gear at the top right; the version is under **About**. Without the
+   app open: on Windows, look for Knightbook under **Settings**,
    **Apps**, **Installed apps** (not yet checked). On macOS, open the **Knightbook**
    menu and choose **About Knightbook** (not yet checked). On Linux, run
    `dpkg -s knightbook` and read the `Version` line.

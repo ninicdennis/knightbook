@@ -77,3 +77,36 @@ describe('the settings screen', () => {
     expect(document.documentElement.getAttribute('data-mantine-color-scheme')).toBe('dark')
   })
 })
+
+/**
+ * Ticket b411cc60: someone reporting a problem reads the version here. Each case
+ * gives the host a different answer, so the line has to show what it was told.
+ */
+describe('the version in settings', () => {
+  it('shows the version the host reports', async () => {
+    api.appVersion = vi.fn().mockResolvedValue('0.10.3')
+    const dialog = await openSettings()
+
+    expect(dialog.textContent).toContain('About')
+    const line = await screen.findByTestId('app-version')
+    expect(line.textContent).toBe('Knightbook 0.10.3')
+    expect(api.appVersion).toHaveBeenCalled()
+  })
+
+  it('labels an unstamped build as unreleased rather than as version 0.0.0', async () => {
+    api.appVersion = vi.fn().mockResolvedValue('0.0.0')
+    await openSettings()
+
+    const line = await screen.findByTestId('app-version')
+    expect(line.textContent).toContain('Knightbook 0.0.0')
+    expect(line.textContent).toContain('a development build, not a release')
+  })
+
+  it('says the version could not be read instead of leaving it blank', async () => {
+    api.appVersion = vi.fn().mockRejectedValue(new Error('no handler'))
+    await openSettings()
+
+    expect(await screen.findByText('The version could not be read.')).toBeTruthy()
+    expect(screen.queryByTestId('app-version')).toBeNull()
+  })
+})

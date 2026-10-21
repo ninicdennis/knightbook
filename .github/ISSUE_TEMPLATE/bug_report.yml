@@ -14,7 +14,7 @@ body:
     id: version
     attributes:
       label: Knightbook version
-      description: The version in the installer's file name, such as Knightbook-0.4.0-windows-x64.exe.
+      description: With a project open, open Settings (the gear at the top right of the window); the version is under About. If the app will not start or no project opens, use the version in the installer's file name, such as Knightbook-0.4.0-windows-x64.exe.
       placeholder: 0.4.0
     validations:
       required: true

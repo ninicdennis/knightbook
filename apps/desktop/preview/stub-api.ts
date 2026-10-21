@@ -353,6 +353,7 @@ export const stubApi: KnightbookApi = {
     record('saveSettings', patch)
     return { ok: true, value: { colorScheme: patch.colorScheme ?? 'auto' } }
   },
+  appVersion: async () => '0.0.0',
   showProjectInWindowTitle: async (project) => {
     record('showProjectInWindowTitle', project)
   },
