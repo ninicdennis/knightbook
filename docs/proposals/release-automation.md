@@ -66,6 +66,11 @@ tab is safe:
   or move tags to get past it; find out why first.
 - If a build fails, nothing is published. The next merge picks up its commits, since
   the version is always calculated from the last tag.
+- If a run failed for a reason outside the app, such as a broken check later fixed
+  in a merge that changes no app path, re-running it tests the same old commit and
+  fails again. Start the Release workflow by hand instead ("Run workflow" on the
+  Actions tab, added 2026-10-21 after the website tests broke the Windows check): it
+  releases main as it is now. A manual start on any other branch releases nothing.
 
 Releases run one at a time. GitHub keeps only one waiting run, so a third merge
 landing while one release runs and another waits replaces the waiting one; the next
