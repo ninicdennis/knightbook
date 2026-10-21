@@ -7,6 +7,12 @@ project: its Markdown documents and a Kanban board of tickets, kept as ordinary
 files in the repository. AI clients reach it through a bundled MCP server; the
 person decides what is done.
 
+Knightbook is free, and its source is available under the
+[Functional Source License](#license). Installers for Windows, macOS and Linux are
+on the [releases page](https://github.com/ninicdennis/knightbook/releases). To
+report a problem, open an [issue](https://github.com/ninicdennis/knightbook/issues/new/choose);
+for a security problem, see [SECURITY.md](SECURITY.md).
+
 ## What it does
 
 - **A board of tickets** in Backlog, In progress, Verification and Done, with
@@ -32,6 +38,9 @@ The [specification](docs/project-workspace-spec.md) and
 behaviour and decisions.
 
 ## Getting started
+
+This section is for building Knightbook from source. To use it, install a release
+instead.
 
 You need **Node 24 or newer** and **pnpm 12.4.2**, the version pinned in
 `package.json`. Corepack, which ships with Node, provides that pnpm:
@@ -173,8 +182,18 @@ purpose, because renaming them would migrate files in every existing project
 | [UI and UX direction](docs/research/ui-ux-design-direction.md) | Visual and interaction principles for the app |
 | [Packaging findings](docs/experiments/packaging-findings.md) | How the bundled runtime and MCP server ship, and what was tested where |
 | [Editor preservation findings](docs/experiments/editor-preservation-findings.md) | Why the formatted editor is blocked, and what would unblock it |
-| [Release automation](docs/proposals/release-automation.md) | A proposal for building and publishing releases; not enabled |
+| [Release automation](docs/proposals/release-automation.md) | How a merge to `main` chooses a version, builds the installers and publishes a release |
 | [AGENTS.md](AGENTS.md) | Working agreement for AI tools changing this repository |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to report a problem or propose a change |
+| [SECURITY.md](SECURITY.md) | How to report a vulnerability privately |
 
 This repository tracks its own work in Knightbook: open this folder in the app to
 see its board.
+
+## License
+
+Knightbook is licensed under the [Functional Source License, version 1.1, with the
+Apache 2.0 future license](LICENSE.md) (FSL-1.1-ALv2), decision D-043. You may use,
+change and share it for any purpose except offering it, or something built from it,
+as a commercial product or service that competes with it. Two years after each
+version is released, that version is also available under the Apache License 2.0.
