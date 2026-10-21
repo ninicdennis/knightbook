@@ -1,8 +1,9 @@
 import { mkdir, mkdtemp, readFile, realpath, rm, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, win32 } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { resolveProjectRoot } from './paths.js'
+import { ProjectError } from './errors.js'
+import { relativeToRoot, resolveProjectRoot } from './paths.js'
 import { initializeProject } from './project.js'
 
 /**
@@ -62,5 +63,41 @@ describe('resolving a project root that does not exist yet', () => {
       'utf8',
     )
     expect(manifest).toContain('"Linked"')
+  })
+})
+
+/**
+ * Found on Windows: including a folder through the app's picker failed with "Path
+ * must be project-relative: C:\Users\Denny\Projects\car-meet-app\docs". The dialog
+ * returns absolute paths in the platform's form; these use Windows rules on any OS.
+ */
+describe('making a picked absolute path project-relative', () => {
+  const root = 'C:\\Users\\Denny\\Projects\\car-meet-app'
+
+  it('turns a folder or file under the root into a forward-slash relative path', () => {
+    expect(relativeToRoot(root, `${root}\\docs`, win32)).toBe('docs')
+    expect(relativeToRoot(root, `${root}\\docs\\guides\\setup.md`, win32)).toBe(
+      'docs/guides/setup.md',
+    )
+  })
+
+  it('matches the root regardless of letter case, as Windows does', () => {
+    expect(relativeToRoot(root, 'c:\\users\\denny\\projects\\car-meet-app\\docs', win32)).toBe(
+      'docs',
+    )
+  })
+
+  it('keeps a folder whose name merely starts with two dots', () => {
+    expect(relativeToRoot(root, `${root}\\..notes`, win32)).toBe('..notes')
+  })
+
+  it('refuses a path beside the root, on another drive, or above it', () => {
+    for (const outside of [
+      'C:\\Users\\Denny\\Projects\\car-meet-app-old\\docs',
+      'D:\\car-meet-app\\docs',
+      'C:\\Users\\Denny\\Projects',
+    ]) {
+      expect(() => relativeToRoot(root, outside, win32)).toThrow(ProjectError)
+    }
   })
 })
