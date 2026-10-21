@@ -262,12 +262,29 @@ no AppArmor and no system D-Bus.
 | Remove | `apt remove` deleted `/opt/Knightbook`, the launcher and the command. `~/.config/Knightbook` and the project's `.projectspace/` stayed |
 | Purge | `apt purge` removed nothing more; `~/.config/Knightbook` stayed |
 
-Two names come from the package name `@knightbook/desktop` rather than the product
-name: the executable and launcher are `@knightbookdesktop`. The same rule makes
+Two names came from the package name `@knightbook/desktop` rather than the product
+name: the executable and launcher were `@knightbookdesktop`. The same rule made
 electron-builder's per-user Windows install folder `%LOCALAPPDATA%\Programs\@knightbookdesktop`
 (read from the NSIS template and electron-builder 26.15.3's `getWindowsInstallationDirName`;
 not seen on Windows). Both are saved in users' MCP configurations, so changing them
 after the first public release breaks those configurations.
+
+Fixed before 0.2.0 (ticket `3250b7d5`): `extraMetadata.name: Knightbook` and
+`linux.executableName: knightbook` in `electron-builder.yml`. Checked the same way, on
+the same kind of container:
+
+| Check | What was seen |
+| --- | --- |
+| Deb | Package `knightbook`, command `/usr/bin/knightbook` (through `update-alternatives`), launcher `/usr/share/applications/knightbook.desktop` running `/opt/Knightbook/knightbook`. `/opt/Knightbook` unchanged |
+| Launch | Settings still in `~/.config/Knightbook` (the app calls `app.setName`); the MCP command still `/opt/Knightbook/resources/mcp/node` |
+| Upgrade from the old name | A deb built with the old package name, then the new one installed over it: `/usr/bin/@knightbookdesktop` and its launcher were removed, the new ones added, `app-state.json` kept |
+| Windows installer | Built on Linux (`--win nsis`) up to the uninstaller, which needs Wine. The `makensis` defines were `APP_FILENAME=Knightbook` (was `@knightbookdesktop`) and `PRODUCT_FILENAME=Knightbook`, so the per-user folder is `%LOCALAPPDATA%\Programs\Knightbook\Knightbook.exe`; the uninstall registry key, from `appId`, did not change |
+
+An existing Windows install keeps its folder on update: the NSIS installer reuses the
+`InstallLocation` saved under that unchanged registry key. Only a 0.1.x prerelease
+install has the old folder; uninstalling it and installing again moves it. None of
+this has been seen on Windows itself. `scripts/installed-names.test.mjs` asks
+electron-builder's own config loader and naming rules for these names.
 
 Not covered: a real desktop and its menu, the window itself, a real AI client, the
 AppArmor profile the package installs on Ubuntu 24 and later, and the published release
