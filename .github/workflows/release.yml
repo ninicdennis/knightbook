@@ -1,48 +1,29 @@
 name: Release
 
-# Every merge to main that changes the desktop app is checked on all three
-# platforms and, when its commits call for one, published as a GitHub prerelease
-# (docs/proposals/release-automation.md, decisions D-040 and D-041). Three stages,
-# each waiting for the last:
+# A release is started by hand: "Run workflow" on the Actions tab, from main
+# (decision D-048; docs/proposals/release-automation.md). Merging to main builds
+# nothing, so several merges cost nothing until the maintainer decides main is
+# ready, and then one release carries all of them. Three stages, each waiting for
+# the last:
 #
 # 1. `version`: semantic-release reads the Conventional Commit messages since the
-#    last v* tag and chooses the next version. It creates nothing.
+#    last v* tag and chooses the next version. It creates nothing. Commits that
+#    touch none of APP_PATHS in apps/desktop/scripts/publishing/app-commits.mjs
+#    (the website, docs, README, the board) are left out of the version and notes.
 # 2. `ci`: the CI workflow, given that version, runs every check, builds the
 #    installers stamped with it, and tests the packaged app on each platform.
 # 3. `publish`: only if all of that passed, one job creates the tag and the
 #    prerelease at the tested commit and attaches every installer.
 #
-# A push whose commits are not Conventional Commits still runs `ci`, so main is
-# always checked, but publishes nothing.
-#
-# A push that touches none of the paths below changes nothing in the installers
-# (the website, docs, README, the board), so this workflow does not start for it,
-# and semantic-release leaves its commits out of the next version and notes. The
-# list must match APP_PATHS in apps/desktop/scripts/publishing/app-commits.mjs;
-# app-commits.test.mjs fails when they differ.
+# When nothing since the last tag calls for a release, `version` says so and the
+# run stops there: nothing is built and nothing is published.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/desktop/**'
-      - 'packages/**'
-      - 'skills/projectspace/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - 'tsconfig.base.json'
-      - '.github/workflows/ci.yml'
-      - '.github/workflows/release.yml'
-  # A manual start from the Actions tab, for a release whose run failed for a
-  # reason outside the app (a broken check, a lost runner). Re-running that run
-  # would test its original commit again; this starts from main as it is now.
   workflow_dispatch:
 
-# One release at a time, never cancelled, so two quick merges cannot both pick
-# the same version. GitHub keeps only one waiting run: a third merge before the
-# first finishes replaces the second's waiting run, and its release then carries
-# both merges' changes. Nothing is lost, but that merge gets no version of its own.
+# One release at a time, never cancelled, so two presses cannot both pick the
+# same version. A second press waits for the first, then finds nothing new since
+# the tag the first created and stops after `version`.
 concurrency:
   group: release
   cancel-in-progress: false
@@ -110,9 +91,11 @@ jobs:
   ci:
     name: CI
     needs: version
+    # Nothing to release means nothing to build: no runner minutes on three platforms.
+    if: needs.version.outputs.release == 'true'
     uses: ./.github/workflows/ci.yml
     with:
-      version: ${{ needs.version.outputs.release == 'true' && needs.version.outputs.version || '' }}
+      version: ${{ needs.version.outputs.version }}
 
   publish:
     name: Publish the prerelease

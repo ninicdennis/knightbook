@@ -8,8 +8,8 @@ name: Website
 #   private preview build makes it (drafts shown and marked, every page `noindex`
 #   and labelled as a preview), kept as a downloadable artifact, because Pages has
 #   no preview URLs. Its tests run in CI's `check` job, so they are not repeated.
-# - A merge to main runs the website's tests, since website-only merges start no
-#   CI run (D-041). If the DEPLOY_WEBSITE repository variable is 'true', it then
+# - A merge to main runs the website's tests, since merges to main start no
+#   CI run (D-048). If the DEPLOY_WEBSITE repository variable is 'true', it then
 #   makes the production build, which refuses to build while any draft remains,
 #   and deploys it. Until launch that variable is unset, so main gets a preview
 #   build and nothing is published.

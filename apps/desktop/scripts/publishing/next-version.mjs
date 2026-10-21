@@ -18,9 +18,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  */
 
 /**
- * Every Conventional Commit type that changes the app releases something: the user
- * chose a release per app-changing merge (D-040, narrowed by D-041). Commits that
- * leave the app alone are dropped earlier, by app-commits.mjs.
+ * Every Conventional Commit type that changes the app releases something when a
+ * release is started (D-040, D-041, D-048). Commits that leave the app alone are
+ * dropped earlier, by app-commits.mjs.
  */
 const PATCH_TYPES = ['docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert']
 

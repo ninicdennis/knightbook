@@ -16,8 +16,8 @@ const run = promisify(execFile)
 
 /**
  * What goes into the installers, or decides how they are built. A folder ends in
- * `/`. `.github/workflows/release.yml` repeats this list as its `paths` filter,
- * and app-commits.test.mjs fails if the two differ.
+ * `/`. Releases are started by hand (D-048), so this list no longer decides when
+ * the release workflow runs, only which commits count toward its version and notes.
  */
 export const APP_PATHS = [
   'apps/desktop/',

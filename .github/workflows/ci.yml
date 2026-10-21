@@ -1,6 +1,6 @@
 name: CI
 
-# Validates pull requests, and every merge to main through the release workflow
+# Validates pull requests, and every release through the release workflow
 # (release.yml), which calls this one. It has no secrets, no publishing and
 # read-only repository access; publishing stays in release.yml's own job.
 #
@@ -12,10 +12,12 @@ name: CI
 #
 # Platforms follow the trigger, to stay inside the Actions allowance:
 # - pull requests run on Linux only;
-# - merges to main (through release.yml) run on Windows, Linux and macOS;
+# - a release (started by hand through release.yml) runs on Windows, Linux and
+#   macOS;
 # - a manual run ("Run workflow" on the Actions tab) runs all three on any branch,
 #   and with a version builds the installers without publishing them.
-# So a Windows- or macOS-only break shows up at merge, not on the pull request.
+# A merge to main runs nothing here (D-048). So a Windows- or macOS-only break
+# shows up at the next release, not on the pull request.
 # Start a manual run on the branch before merging anything platform-sensitive:
 # window chrome, paths, packaging.
 on:
@@ -35,7 +37,7 @@ on:
         default: ''
 
 # A newer push to the same pull request makes the older run pointless. Runs on
-# main are never cancelled, so every merge gets a complete result.
+# main are never cancelled, so every release gets a complete result.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}

@@ -91,8 +91,8 @@ The public website is a static Astro site in `apps/website` (decision D-042).
 | `pnpm --filter @knightbook/website build` | Builds the static site to `apps/website/dist/` |
 
 `pnpm check` typechecks it and runs its tests, which build the whole site and check
-the HTML a visitor receives. Website-only merges do not release the desktop app
-(D-041).
+the HTML a visitor receives. Website-only changes never count toward a desktop app
+release (D-041), and releases are only started by hand (D-048).
 
 The site is hosted on GitHub Pages (D-044) and deployed by the
 [Website workflow](.github/workflows/website.yml). A pull request that changes the
@@ -193,7 +193,7 @@ purpose, because renaming them would migrate files in every existing project
 | [UI and UX direction](docs/research/ui-ux-design-direction.md) | Visual and interaction principles for the app |
 | [Packaging findings](docs/experiments/packaging-findings.md) | How the bundled runtime and MCP server ship, and what was tested where |
 | [Editor preservation findings](docs/experiments/editor-preservation-findings.md) | Why the formatted editor is blocked, and what would unblock it |
-| [Release automation](docs/proposals/release-automation.md) | How a merge to `main` chooses a version, builds the installers and publishes a release |
+| [Release automation](docs/proposals/release-automation.md) | How a release started from `main` chooses a version, builds the installers and publishes it |
 | [AGENTS.md](AGENTS.md) | Working agreement for AI tools changing this repository |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report a problem or propose a change |
 | [CLA.md](CLA.md) | The Contributor License Agreement every contribution needs |
