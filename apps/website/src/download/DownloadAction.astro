@@ -9,7 +9,8 @@ import { loadReleaseData } from './load-release-data'
  * a Preview label beside it when the release is a preview. It cannot know the
  * visitor's computer without JavaScript, so it never names a platform; the
  * download page lists every build. With no release it is plain status text, not
- * a disabled button posing as a download. "All downloads" is always present.
+ * a disabled button posing as a download. "All downloads" is always present,
+ * and so is the line saying Knightbook is free and under which license (D-043).
  */
 const { recommended } = downloadView(await loadReleaseData())
 const release = recommended?.release
@@ -28,6 +29,9 @@ const release = recommended?.release
     All downloads
   </a>
 </div>
+<p class="terms">
+  Free, with the source code available under the <a href="/license/">FSL</a>.
+</p>
 
 <style>
   .download-action {
@@ -59,6 +63,12 @@ const release = recommended?.release
     color: var(--kb-warning);
     font-size: 0.875rem;
     font-weight: 600;
+  }
+
+  .terms {
+    margin: var(--kb-space-3) 0 0;
+    color: var(--kb-muted);
+    font-size: 0.9375rem;
   }
 
   .all {

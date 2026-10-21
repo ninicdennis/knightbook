@@ -43,6 +43,17 @@ export type LaunchTarget = (typeof LAUNCH_TARGETS)[number]
 
 const https = z.url({ protocol: /^https$/, error: 'must be an https:// URL' })
 
+/**
+ * Where every installer is downloaded from: the release's assets on the public
+ * GitHub repository (D-043), which need no login. The tag is `v<version>`, as
+ * the release workflow creates it.
+ */
+export const RELEASE_DOWNLOADS = 'https://github.com/ninicdennis/knightbook/releases/download'
+
+export function releaseDownloadBase(version: string) {
+  return `${RELEASE_DOWNLOADS}/v${version}/`
+}
+
 const assetSchema = z
   .object({
     os: z.enum(['windows', 'macos', 'linux']),
@@ -100,6 +111,13 @@ const releaseSchema = z
         context.addIssue({ code: 'custom', path: at, message: `a second ${target.key} asset` })
       } else {
         seen.add(target.key)
+      }
+      if (!asset.url.startsWith(releaseDownloadBase(release.version))) {
+        context.addIssue({
+          code: 'custom',
+          path: [...at, 'url'],
+          message: `must be a GitHub Release asset under ${releaseDownloadBase(release.version)}`,
+        })
       }
       if (!asset.url.endsWith(`/${asset.filename}`)) {
         context.addIssue({

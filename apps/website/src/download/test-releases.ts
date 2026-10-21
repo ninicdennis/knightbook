@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto'
+import { releaseDownloadBase } from './release-data'
 
 /**
  * Release data for the download tests, built in code so each state's data is
- * visible beside the test that uses it. The URLs are fictional fixtures.
+ * visible beside the test that uses it. The versions and files are fictional;
+ * the asset URLs have the GitHub Release shape the release data requires.
  */
 type Target = 'windows-x64' | 'macos-arm64' | 'macos-x64' | 'linux-x64'
 
@@ -48,7 +50,7 @@ export function fixtureAsset(version: string, target: Target) {
     format,
     // Widened, so a test can blank it to check the validation.
     minimumOs: minimumOs as string,
-    url: `https://downloads.example.test/releases/${version}/${filename}`,
+    url: `${releaseDownloadBase(version)}${filename}`,
     filename,
     size: 134_335_009,
     // Different for every file, so a test can tell one card's checksum from another's.

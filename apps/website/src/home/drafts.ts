@@ -17,7 +17,6 @@ export const DRAFTS = {
     'Whether the AI tool works with the window closed, confirmed on a clean install (ticket ebc80cc9)',
   faqSupport:
     'Which systems and AI clients are tested, from the validation and client-guide tickets',
-  faqLicense: 'Price and license terms, from the license decision (ticket a677c856)',
 } as const
 
 export type DraftId = keyof typeof DRAFTS

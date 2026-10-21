@@ -78,6 +78,7 @@ describe('the built site', () => {
         'download/index.html',
         'index.html',
         'releases/index.html',
+        'license/index.html',
         ...guides,
       ].sort(),
     )
@@ -167,12 +168,53 @@ describe('the built site', () => {
     }
   })
 
-  it('invents no legal, support, privacy or source links while none exist', async () => {
-    for (const path of ['index.html', '404.html']) {
+  it('links the license and the source code in the footer, and no privacy or support page yet', async () => {
+    for (const path of ['index.html', '404.html', 'license/index.html']) {
       const html = await page(path)
-      expect(html, path).not.toMatch(/class="utility/)
-      expect(html, path).not.toMatch(/href="[^"]*(?:privacy|license|support|github\.com)/i)
+      const utility = slice(html, /<ul class="utility[\s\S]*?<\/ul>/)
+      const links = [...utility.matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g)].map((m) => [
+        m[1],
+        m[2],
+      ])
+      expect(links, path).toEqual([
+        ['/license/', 'License'],
+        ['https://github.com/ninicdennis/knightbook', 'Source code'],
+      ])
+      expect(html, path).not.toMatch(/href="[^"]*(?:privacy|support)/i)
       expect(html, path).not.toMatch(/all rights reserved|©/i)
+    }
+  })
+
+  it('shows the license summary and the full text of LICENSE.md, with one h1', async () => {
+    const html = await page('license/index.html')
+    expect(html).toContain('<title>License · Knightbook</title>')
+    expect(html.match(/<h1[\s>]/g)).toHaveLength(1)
+    expect(html).toMatch(
+      /Knightbook is free\. Its source code is public under the Functional Source License/,
+    )
+    expect(html).toMatch(
+      /cannot offer Knightbook, or something built from it, as a commercial product/,
+    )
+    expect(html).toContain('This summary is not the license.')
+    expect(html).toMatch(
+      /it is also in the <a href="https:\/\/github\.com\/ninicdennis\/knightbook"/,
+    )
+    // Sentences only the license text has, so the page shows the real file.
+    const license = await readFile(join(SITE_ROOT, '..', '..', 'LICENSE.md'), 'utf8')
+    expect(license).toContain('A Competing Use')
+    expect(html).toMatch(
+      /<h2[^>]*>Functional Source License, Version 1\.1, ALv2 Future License<\/h2>/,
+    )
+    expect(html).toContain('A Competing Use')
+    expect(html).toMatch(/Grant of Future License/)
+  })
+
+  it('offers nothing for sale anywhere, and never says open source (D-043): no price, purchase, trial, subscription or sign-up', async () => {
+    for (const path of (await filesUnder(outDir)).filter((name) => name.endsWith('.html'))) {
+      const text = (await page(path)).replace(/<[^>]+>/g, ' ')
+      expect(text, path).not.toMatch(
+        /\$\s?\d|\bpric(?:e|es|ing)\b|\bpurchase|\bbuy\b|free trial|\btrial\b|subscri|sign[ -]?up|create an account|open[ -]source/i,
+      )
     }
   })
 

@@ -1,0 +1,86 @@
+---
+import BaseLayout from '../../layout/BaseLayout.astro'
+import { destinations } from '../../layout/navigation'
+import { compiledContent } from '../../../../../LICENSE.md'
+
+/**
+ * /license/: what the license means in a few plain sentences, then its full
+ * text, rendered from the repository's own LICENSE.md so the two can never
+ * differ (D-043). The summary says it is not the license; the text below is.
+ * The license's headings move one level down, so the page keeps a single h1.
+ * The HTML is the repository's own file, compiled by Astro, not visitor input.
+ */
+const licenseHtml = (await compiledContent()).replace(
+  /<(\/?)h([1-5])\b/g,
+  (_tag, slash: string, level: string) => `<${slash}h${Number(level) + 1}`,
+)
+---
+
+<BaseLayout
+  title="License"
+  description="Knightbook is free. Its source code is available under the Functional Source License, FSL-1.1-ALv2."
+>
+  <div class="kb-page license">
+    <header class="intro">
+      <h1>License</h1>
+      <p>
+        Knightbook is free. Its source code is public under the Functional Source License, version
+        1.1, with the Apache License 2.0 as its future license (FSL-1.1-ALv2).
+      </p>
+      <ul>
+        <li>You can use Knightbook for any purpose, including your work, at no cost.</li>
+        <li>You can read, change and share its source code.</li>
+        <li>
+          You cannot offer Knightbook, or something built from it, as a commercial product or
+          service that competes with it.
+        </li>
+        <li>
+          Two years after each version is released, that version is also available under the Apache
+          License 2.0, without that restriction.
+        </li>
+      </ul>
+      <p>
+        This summary is not the license. The full text below is what applies, and it is also in the{' '}
+        <a href={destinations.source.href}>source code repository</a>.
+      </p>
+    </header>
+
+    <section class="text" aria-label="Full license text">
+      <Fragment set:html={licenseHtml} />
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .license {
+    max-width: 72ch;
+    padding-block: var(--kb-space-8) 0;
+  }
+
+  .intro {
+    margin-bottom: var(--kb-space-7);
+  }
+
+  .intro li {
+    margin-bottom: var(--kb-space-2);
+  }
+
+  .text {
+    padding-top: var(--kb-space-6);
+    border-top: 1px solid var(--kb-border);
+  }
+
+  .text :global(h2) {
+    font-size: 1.5rem;
+  }
+
+  .text :global(h3) {
+    font-size: 1.25rem;
+    margin-top: var(--kb-space-6);
+  }
+
+  .text :global(h4) {
+    font-size: 1.0625rem;
+    margin-top: var(--kb-space-5);
+  }
+</style>

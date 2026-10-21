@@ -39,6 +39,7 @@ const PAGES = [
   ['docs index', '/docs/'],
   ['guide', '/docs/tickets-and-verification/'],
   ['releases', '/releases/'],
+  ['license', '/license/'],
   ['not found', '/no-such-page/'],
 ] as const
 

@@ -61,6 +61,18 @@ describe('validating the release data', () => {
       /sha256: must be 64/,
     ],
     [
+      'an installer that is not a GitHub Release asset of this version',
+      (r: ReturnType<typeof fixtureRelease>) =>
+        (r.assets[0]!.url = r.assets[0]!.url.replace('/v0.3.0/', '/v0.2.0/')),
+      /url: must be a GitHub Release asset under https:\/\/github\.com\/ninicdennis\/knightbook\/releases\/download\/v0\.3\.0\//,
+    ],
+    [
+      'an installer on another host',
+      (r: ReturnType<typeof fixtureRelease>) =>
+        (r.assets[0]!.url = `https://downloads.example.test/${r.assets[0]!.filename}`),
+      /url: must be a GitHub Release asset/,
+    ],
+    [
       'a URL that is not the file',
       (r: ReturnType<typeof fixtureRelease>) => (r.assets[0]!.url += '/latest'),
       /url: must end with the filename/,
