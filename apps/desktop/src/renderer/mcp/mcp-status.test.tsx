@@ -24,6 +24,7 @@ function status(overrides: Partial<McpStatusView> = {}): McpStatusView {
     observedAt: at(0),
     unobservable: null,
     runtimeAvailable: true,
+    runtimeProblem: null,
     live: [],
     stale: [],
     access: { checkoutPath: 'C:\\projects\\demo', enabled: false, checkoutId: null, problem: null },
@@ -87,6 +88,15 @@ describe('describing MCP status', () => {
     const display = describeMcpStatus(status({ runtimeAvailable: false }), NOW)
     expect(display.state).toBe('runtime_missing')
     expect(display.guidance.join(' ')).toContain('Reinstall')
+  })
+
+  it('reports a failed AppImage copy as a failure, with the reason, not as a working setup', () => {
+    const reason = 'The MCP server could not be copied to /x/mcp-runtime: ENOSPC'
+    const display = describeMcpStatus(status({ runtimeProblem: reason }), NOW)
+    expect(display.state).toBe('runtime_missing')
+    expect(display.label).toBe('MCP runtime not copied')
+    expect(display.summary).toContain('That copy failed')
+    expect(display.guidance.join(' ')).toContain('reopen the app')
   })
 
   it('trusts a live connection over a missing bundled runtime', () => {

@@ -12,7 +12,9 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@axe-core/playwright": "^4.13.0",
     "astro": "^7.3.5",
+    "playwright-core": "^1.63.0",
     "sharp": "^0.35.5",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"

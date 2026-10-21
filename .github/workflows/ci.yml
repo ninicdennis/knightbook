@@ -86,11 +86,19 @@ jobs:
       - name: Build the MCP server bundle
         run: pnpm build:mcp
 
+      # The website's browser tests (accessibility, phone width, JavaScript off)
+      # need the Chromium build that matches the website's playwright-core.
+      - name: Install Chromium for the website's browser tests
+        run: pnpm --filter @knightbook/website exec playwright-core install --with-deps chromium
+
       # This includes experiments/packaging. Its staging suites run here for real;
       # the two packaged-app suites skip, because no package exists yet. That skip
-      # is expected and is not coverage: `package` runs those suites.
+      # is expected and is not coverage: `package` runs those suites. The website's
+      # browser tests skip locally without Chromium; here a missing one fails.
       - name: Lint, format check, typecheck and test
         run: pnpm check
+        env:
+          REQUIRE_WEBSITE_BROWSER: '1'
 
   package:
     name: Package and test the app (${{ matrix.os }})

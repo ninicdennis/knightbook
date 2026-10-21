@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: End-of-ticket steps before moving a Knightbook ticket to Verification in this repository - checks, MCP bundle, a board layout pass at two widths, the verifier, and the handoff note. Use when the work on a ticket is finished and before calling ticket_update with status verification.
+description: End-of-ticket steps before moving a Knightbook ticket to Verification in this repository - checks, MCP bundle, a board layout pass at two widths, the verifier, the handoff note, and a local commit on the ticket's branch. Use when the work on a ticket is finished and before calling ticket_update with status verification.
 ---
 
 # Handing off a ticket
@@ -43,5 +43,12 @@ ticket.
      against stub data
    - **For you to check**
 
-6. Move the ticket to Verification and tell the user what to look at. Do not mark
-   it Done.
+6. Move the ticket to Verification. Do not mark it Done.
+
+7. **Commit.** On the ticket's own branch, stage only this ticket's files and its
+   `.projectspace/` record, check the message with
+   `printf '%s\n' "<title>" | pnpm exec commitlint`, and make one commit. If the
+   working tree holds changes from other work, leave them unstaged and say so. Do
+   not push or open a pull request unless asked.
+
+8. Tell the user the branch, the commit and what to look at.

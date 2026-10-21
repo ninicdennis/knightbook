@@ -1,6 +1,7 @@
 import { app } from 'electron'
 import { join } from 'node:path'
 import { accessRegistryPath } from './mcp-access.js'
+import { isAppImage, persistentRuntimeDir } from './appimage-runtime.js'
 
 /**
  * Where the shipped MCP runtime lives once installed. Technical design section 2
@@ -23,6 +24,15 @@ export function mcpResourcesDir(): string {
     : join(app.getAppPath(), 'resources', `mcp-${process.arch}`)
 }
 
+/**
+ * Where the runtime the client is told to start lives. Under an AppImage the
+ * resources folder disappears when the app closes, so it is the persistent copy
+ * kept by appimage-runtime.ts instead.
+ */
+export function mcpRuntimeDir(env: NodeJS.ProcessEnv = process.env): string {
+  return isAppImage(env) ? persistentRuntimeDir(app.getPath('userData')) : mcpResourcesDir()
+}
+
 export interface McpLaunchCommand {
   readonly command: string
   readonly args: string[]
@@ -33,8 +43,8 @@ export interface McpLaunchCommand {
  * names the access list rather than a project, so enabling another project later
  * changes nothing in the client.
  */
-export function mcpLaunchCommand(): McpLaunchCommand {
-  const dir = mcpResourcesDir()
+export function mcpLaunchCommand(env: NodeJS.ProcessEnv = process.env): McpLaunchCommand {
+  const dir = mcpRuntimeDir(env)
   return {
     command: join(dir, NODE_BINARY),
     args: [join(dir, 'server.mjs'), '--registry', accessRegistryPath()],

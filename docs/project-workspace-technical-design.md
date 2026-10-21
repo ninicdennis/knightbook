@@ -210,6 +210,16 @@ Two alternatives are viable but unnecessary initially:
 
 The remaining checks are ordinary distribution details: choose the correct runtime for each target, preserve executable permissions and signing, keep the configured launch path valid across updates, and verify clean stdio/shutdown behavior with the GUI fully exited. For a Linux portable format with a transient mount path, install the helper at a persistent location or choose a stable installed layout; do not put a transient mount path into the client's saved configuration. The small cost of the simple route is an additional runtime to ship and maintain with app releases.
 
+#### The AppImage copy as built (2026-10-06)
+
+An AppImage mounts itself at a new `/tmp/.mount_…` folder on every launch, so its resources folder is not a path a client can keep. When the app runs as an AppImage (`APPIMAGE` is set), `main/mcp/appimage-runtime.ts` copies `node` and `server.mjs` from the mounted resources into `<user data>/mcp-server/` (beside, not inside, the shared server's `mcp-runtime/` session folder) after startup, and `mcpLaunchCommand` names that copy instead. Everywhere else nothing changes: the command still names the installed resources folder.
+
+- A file whose bytes already match is left alone, so a client running the copy is not disturbed by every launch. A changed file is written beside the target and renamed over it, so a client starting mid-copy finds the old file or the new one, never part of one. `node` is kept executable.
+- A copy that fails is not hidden. The MCP status carries the reason as `runtimeProblem`, and the details panel shows that reason on its runtime line. When no client is observed, the footer itself reads **MCP runtime not copied**. A connection that is actually observed still wins, as it does for a missing runtime: a client can be running the copy from an earlier launch. The configuration stays on offer, because its path does not change and the next successful launch fills it.
+- **Known limit:** the copy is refreshed only when the app runs. After an AppImage is replaced by a newer one, an AI client keeps starting the old server until the new AppImage has been opened once. Opening it once is enough; the client's configuration does not change.
+
+Unit tests cover the cases with temporary folders. As of this date the copy has not been run from a real AppImage on Linux, so AppImage stays out of the released targets (D-028) until it has.
+
 Exact dependency versions, OS versions, CPU architectures, and Linux package targets remain release decisions. Documentation establishes this packaging approach; an actual packaged build has not been tested yet.
 
 ## 3. Portable project storage

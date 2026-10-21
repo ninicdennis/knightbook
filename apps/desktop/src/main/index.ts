@@ -8,7 +8,8 @@ import { adoptStateFromPreviousName } from './project/app-state.js'
 import { applyStoredColorScheme, registerSettingsHandlers } from './project/settings-ipc.js'
 import { registerSetupHandlers } from './project/setup-ipc.js'
 import { registerMcpAccessHandlers } from './mcp/mcp-access.js'
-import { mcpLaunchCommand } from './mcp/mcp-resources.js'
+import { mcpLaunchCommand, mcpResourcesDir, NODE_BINARY } from './mcp/mcp-resources.js'
+import { isAppImage, prepareAppImageRuntime } from './mcp/appimage-runtime.js'
 import { applicationMenuTemplate, menuBarIsVisible } from './window/app-menu.js'
 import { followSystemChanges, windowBackground } from './window/window-theme.js'
 import {
@@ -161,6 +162,16 @@ void app.whenReady().then(async () => {
     process.stderr.write(
       `Could not carry state over from ${adopted.from}: ${adopted.reason}\n` +
         'Starting with defaults; the previous file was left untouched.\n',
+    )
+  }
+
+  // After the carry-over above, which must see userData as it was. Not awaited:
+  // the window does not need it, and the MCP panel waits for the outcome itself.
+  if (isAppImage()) {
+    void prepareAppImageRuntime(mcpResourcesDir(), app.getPath('userData'), NODE_BINARY).then(
+      (problem) => {
+        if (problem) process.stderr.write(`${problem}\n`)
+      },
     )
   }
 

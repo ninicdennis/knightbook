@@ -41,6 +41,7 @@ function Fact({ label, value }: { label: string; value: string }) {
 }
 
 function describeRuntime(status: McpStatusView): string {
+  if (status.runtimeProblem !== null) return `Not copied — ${status.runtimeProblem}`
   return status.runtimeAvailable
     ? 'Present — the copied configuration points at a server that exists.'
     : 'Not found where it should be installed.'

@@ -8,7 +8,8 @@ import {
   resolveProjectRoot,
   type McpSessionRecord,
 } from '@knightbook/core'
-import { mcpResourcesDir, NODE_BINARY } from './mcp-resources.js'
+import { mcpRuntimeDir, NODE_BINARY } from './mcp-resources.js'
+import { appImageRuntimeProblem } from './appimage-runtime.js'
 import type { McpAccessView, McpSessionView, McpStatusView } from '../../shared/contract.js'
 
 /**
@@ -28,7 +29,7 @@ import type { McpAccessView, McpSessionView, McpStatusView } from '../../shared/
 
 /** The server cannot run without both of these, so both have to be there. */
 async function runtimeIsPresent(): Promise<boolean> {
-  const dir = mcpResourcesDir()
+  const dir = mcpRuntimeDir()
   try {
     await access(join(dir, NODE_BINARY))
     await access(join(dir, 'server.mjs'))
@@ -98,10 +99,20 @@ export async function readMcpStatus(
   registryPath: string,
 ): Promise<McpStatusView> {
   const observedAt = new Date().toISOString()
+  // The copy is checked first: while it is still running, the files are not
+  // there yet, and that is not the same as their being missing.
+  const runtimeProblem = await appImageRuntimeProblem()
   const runtimeAvailable = await runtimeIsPresent()
   const access = await readMcpAccess(registryPath, rootPath)
   const { shared, lastActivityAt } = await readSharedObservation(registryPath, rootPath)
-  const common = { checkoutPath: rootPath, observedAt, runtimeAvailable, access, shared }
+  const common = {
+    checkoutPath: rootPath,
+    observedAt,
+    runtimeAvailable,
+    runtimeProblem,
+    access,
+    shared,
+  }
 
   try {
     const root = await resolveProjectRoot(rootPath)

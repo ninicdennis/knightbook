@@ -151,11 +151,28 @@ describe('the documentation section', () => {
 
   it('marks placeholder guides as drafts, on the index and on the guide', async () => {
     const index = await page(real, 'docs/index.html')
-    expect(index.match(/<span class="draft[^"]*"[^>]*>Draft</g)).toHaveLength(6)
+    expect(index.match(/<span class="draft[^"]*"[^>]*>Draft</g)).toHaveLength(4)
     const guide = await page(real, 'docs/getting-started/index.html')
     expect(guide).toMatch(
       /data-draft-guide="getting-started"[^>]*>\s*Draft: this guide has not been written yet/,
     )
+  })
+
+  it.each([
+    ['tickets-and-verification', 'deciding-done'],
+    ['projects-and-documents', 'moving-and-sharing-a-project-with-git'],
+  ])('publishes the %s guide as written, for the release it describes', async (slug, heading) => {
+    const guide = await page(real, `docs/${slug}/index.html`)
+    expect(guide).not.toContain('data-draft-guide')
+    expect(guide).toMatch(/>Written for Knightbook 0\.1\.1</)
+    expect(guide).toMatch(new RegExp(`<h2 id="${heading}"`))
+  })
+
+  it('tells readers to commit .projectspace and ignore only its coordination files', async () => {
+    const guide = await page(real, 'docs/projects-and-documents/index.html')
+    expect(guide).toContain('.projectspace/runtime/')
+    expect(guide).toContain('.projectspace/.write-lock')
+    expect(guide).toMatch(/Do not ignore the whole <code>\.projectspace\/<\/code> folder/)
   })
 
   it('gives a guide a sidebar, a no-JavaScript menu, an on-page contents list and anchored headings', async () => {

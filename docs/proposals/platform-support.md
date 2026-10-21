@@ -71,7 +71,7 @@ Ways to fix it, cheapest first:
 | Format | Cost |
 | --- | --- |
 | **deb** | Installs to a fixed path, so the saved MCP command stays valid across updates. Covers Debian and Ubuntu. |
-| **AppImage** | Runs from a temporary mount (`/tmp/.mount_…`) that changes every launch. `mcpLaunchCommand` builds the saved command from `process.resourcesPath`, which is inside that mount, so today the copied configuration breaks after the app closes. |
+| **AppImage** | Runs from a temporary mount (`/tmp/.mount_…`) that changes every launch. Until 2026-10-06 `mcpLaunchCommand` built the saved command from `process.resourcesPath`, inside that mount, so the copied configuration broke after the app closed. It now names a persistent copy (below). |
 | rpm | A third package to build and test on Fedora. Not asked for. |
 
 ### Making AppImage work
@@ -84,6 +84,10 @@ server then runs with the app closed, and an updated AppImage refreshes the copy
 its next launch. The cost is a small main-process change with tests, and one known
 limit: after an AppImage update, a client keeps the old server until the new
 AppImage has been opened once.
+
+The copy was built on 2026-10-06 (ticket `68f54f52`); how it behaves is in
+technical design section 2, "The AppImage copy as built". It has not yet been run
+from a real AppImage on Linux.
 
 ## Recommendation
 

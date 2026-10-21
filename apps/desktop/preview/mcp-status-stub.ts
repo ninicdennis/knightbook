@@ -21,6 +21,7 @@ export function stubMcpStatus(root: string): McpStatusView {
     observedAt: at(0),
     unobservable: null,
     runtimeAvailable: true,
+    runtimeProblem: null,
     live: [],
     stale: [],
     access,
@@ -45,6 +46,14 @@ export function stubMcpStatus(root: string): McpStatusView {
     }
   }
   if (want === 'missing') return { ...base, runtimeAvailable: false }
+  if (want === 'not-copied') {
+    return {
+      ...base,
+      runtimeProblem:
+        'The MCP server could not be copied to /home/you/.config/Knightbook/mcp-server, where the ' +
+        'AppImage keeps it between launches: ENOSPC: no space left on device',
+    }
+  }
   if (want === 'unknown') return { ...base, unobservable: 'EPERM: permission denied' }
   if (want === 'stale') {
     const startedAt = at(3_600_000)

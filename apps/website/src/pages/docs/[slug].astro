@@ -152,6 +152,36 @@ const contents = headings.filter((heading) => heading.depth === 2 || heading.dep
     overflow-wrap: anywhere;
   }
 
+  /* Guide examples are prose-like (a handoff note), so they wrap at a phone's
+     width instead of hiding half of each line behind a sideways scroll. */
+  .prose :global(pre) {
+    margin-block: var(--kb-space-4);
+    padding: var(--kb-space-4);
+    border: 1px solid var(--kb-border);
+    border-radius: var(--kb-radius);
+    white-space: pre-wrap;
+  }
+
+  .prose :global(table) {
+    width: 100%;
+    margin-block: var(--kb-space-4);
+    border-collapse: collapse;
+  }
+
+  .prose :global(th),
+  .prose :global(td) {
+    padding: var(--kb-space-2) var(--kb-space-3);
+    border-bottom: 1px solid var(--kb-border);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  /* A short path in a narrow table column reads better whole than split mid-word. */
+  .prose :global(td code) {
+    overflow-wrap: normal;
+    white-space: nowrap;
+  }
+
   @media (max-width: 860px) {
     .guide-layout {
       grid-template-columns: minmax(0, 1fr);

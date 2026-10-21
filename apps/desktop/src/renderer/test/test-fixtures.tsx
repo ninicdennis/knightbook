@@ -82,6 +82,7 @@ export function mcpStatus(overrides: Partial<McpStatusView> = {}): McpStatusView
     observedAt: new Date().toISOString(),
     unobservable: null,
     runtimeAvailable: true,
+    runtimeProblem: null,
     live: [],
     stale: [],
     access: { checkoutPath: CHECKOUT, enabled: false, checkoutId: null, problem: null },

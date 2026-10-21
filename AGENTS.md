@@ -28,6 +28,27 @@ decide Done or claim a review.
 - If something outside the current ticket needs doing, create a ticket for it rather
   than growing the change.
 
+### One ticket, one branch, one commit
+
+Several tickets in one session and one working tree end as an uncommitted pile that
+has to be split by hand, and one rejected ticket holds up the rest.
+
+- **One ticket per session.** When asked to take several, offer to start a separate
+  session per ticket, each in its own Git worktree (a new worktree needs
+  `pnpm install --frozen-lockfile` first). If the user wants them here instead, work
+  them one after another, each on its own branch.
+- **One branch per ticket:** `feature/<short-name>`, cut from `main`, or from the
+  prerequisite's branch when the ticket builds on work not yet merged. Say which.
+- **Write the test plan before the code.** List each acceptance criterion with the
+  test that will fail without it, and the data that makes the case happen (two
+  releases with different dates, a 0.10.0 beside a 0.9.0, a closed `<details>`). A
+  criterion about what prose says is settled by reading; a check only a person or
+  another OS can do is manual. Mark those instead of writing a test that only finds
+  a heading.
+- **Commit at handoff**, as the `handoff` skill's last step: one Conventional
+  Commit for the ticket on its branch, including its `.projectspace/` record. Never
+  push, open a pull request, merge, or commit to `main` unless asked.
+
 ## Commands
 
 Node 24 and pnpm (the version pinned in `package.json`, via corepack).
@@ -125,8 +146,9 @@ docs/              Specification, technical design, research, experiment finding
   own files. Do not "fix" them.
 - UI copy states what was observed, not what is assumed: unknown is not "off", and
   missing data never looks like zero or success.
-- Work on a `feature/<name>` branch and leave commits and PRs to the user unless
-  asked.
+- Work on a `feature/<name>` branch per ticket and commit there at handoff (see "One
+  ticket, one branch, one commit"). Pushing, pull requests and merging are the
+  user's unless asked.
 - Commit messages and pull-request titles are
   [Conventional Commits](https://www.conventionalcommits.org/): `feat: …`, `fix: …`,
   `docs: …`, `refactor: …`, `test: …`, `ci: …`, `chore: …`, with `!` after the type

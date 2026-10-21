@@ -65,6 +65,17 @@ describe('the MCP status footer', () => {
     expect(screen.getByText(/Client connection/)).toBeTruthy()
   })
 
+  it('shows a failed AppImage copy as a failure in the footer and the details panel', async () => {
+    api.mcpStatus = vi
+      .fn()
+      .mockResolvedValue(mcpStatus({ runtimeProblem: 'Could not copy the server: ENOSPC' }))
+    renderApp()
+    await user.click(await screen.findByRole('button', { name: /MCP runtime not copied/i }))
+
+    expect(await screen.findByText(/Not copied — Could not copy the server: ENOSPC/)).toBeTruthy()
+    expect(screen.queryByText(/Present — the copied configuration points at a server/)).toBeNull()
+  })
+
   it('explains why there is no Start or Stop instead of offering broken ones', async () => {
     renderApp()
     await user.click(await findMcpStatusButton())

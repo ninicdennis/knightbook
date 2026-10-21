@@ -20,7 +20,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
  */
 vi.mock('./mcp-resources.js', () => ({
   NODE_BINARY: 'node.exe',
-  mcpResourcesDir: () => runtimeDir,
+  mcpRuntimeDir: () => runtimeDir,
   mcpLaunchCommand: () => ({ command: 'node.exe', args: [] }),
 }))
 
@@ -79,6 +79,16 @@ describe('observing MCP status', () => {
 
     expect(status.runtimeAvailable).toBe(false)
     expect(status.unobservable).toBeNull()
+  })
+
+  it('carries a failed AppImage copy into the status the panel reads', async () => {
+    const { prepareAppImageRuntime } = await import('./appimage-runtime.js')
+    // No runtime in the source folder, so the copy fails the way a real one would.
+    await prepareAppImageRuntime(join(sandbox, 'empty-mount'), join(sandbox, 'app-data'), 'node')
+
+    const status = await readMcpStatus(projectDir, registryPath)
+
+    expect(status.runtimeProblem).toContain('could not be copied')
   })
 
   it('names the checkout it describes, so a late reply can be discarded', async () => {

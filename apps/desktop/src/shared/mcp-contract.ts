@@ -35,6 +35,11 @@ export interface McpStatusView {
   unobservable: string | null
   /** Whether the bundled server the copied configuration points at is present. */
   runtimeAvailable: boolean
+  /**
+   * Why the runtime could not be put where the configuration points, when the app
+   * has to copy it there itself (an AppImage). Null when nothing went wrong.
+   */
+  runtimeProblem: string | null
   /** Sessions whose heartbeat is current. */
   live: McpSessionView[]
   /** Sessions left behind by a process that stopped without cleaning up. */

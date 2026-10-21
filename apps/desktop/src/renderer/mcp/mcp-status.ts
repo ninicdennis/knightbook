@@ -142,6 +142,20 @@ export function describeMcpStatus(status: McpStatusView, now: number = Date.now(
     }
   }
 
+  if (status.runtimeProblem !== null) {
+    return {
+      state: 'runtime_missing',
+      label: 'MCP runtime not copied',
+      summary:
+        'This app runs as an AppImage, so it copies the bundled server to a folder that lasts ' +
+        'between launches. That copy failed, so the copied configuration may not start anything.',
+      // The reason itself is on the runtime line of the details, not repeated here.
+      guidance: [
+        'Free some space or fix the folder permissions, then reopen the app to try again.',
+      ],
+    }
+  }
+
   if (!status.runtimeAvailable) {
     return {
       state: 'runtime_missing',
