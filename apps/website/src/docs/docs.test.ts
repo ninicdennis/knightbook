@@ -1,11 +1,11 @@
 import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
 import { dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { buildTempDir } from '../test/build-dir.js'
 
 /**
  * Builds the site with the real guides, and with fixture guides that exercise
@@ -92,7 +92,7 @@ let real: string
 let fixture: string
 
 beforeAll(async () => {
-  workDir = await mkdtemp(join(tmpdir(), 'knightbook-docs-'))
+  workDir = await buildTempDir('knightbook-docs-')
   real = await build('real', {})
   const guides = await guideFolder('guides', {
     'working-with-tickets.md': PUBLISHED,

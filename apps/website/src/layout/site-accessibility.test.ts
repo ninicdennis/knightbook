@@ -1,15 +1,15 @@
 import AxeBuilder from '@axe-core/playwright'
 import { execFile } from 'node:child_process'
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, readFile, rm, writeFile } from 'node:fs/promises'
 import { createServer, type Server } from 'node:http'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
 import { dirname, extname, join, normalize, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { chromium, type Browser, type Page } from 'playwright-core'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { fixtureRelease } from '../download/test-releases'
+import { buildTempDir } from '../test/build-dir.js'
 
 /**
  * The site in a real browser (spec §8): every page template at a phone and a wide
@@ -97,7 +97,7 @@ function serve(outDir: string): Promise<Server> {
 
 beforeAll(async () => {
   if (!browserInstalled) return
-  workDir = await mkdtemp(join(tmpdir(), 'knightbook-a11y-'))
+  workDir = await buildTempDir('knightbook-a11y-')
   const dataFile = join(workDir, 'releases.json')
   await writeFile(dataFile, JSON.stringify({ releases: RELEASES }))
   const outDir = join(workDir, 'site')

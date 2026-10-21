@@ -1,12 +1,12 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { readFile, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { fixtureRelease } from './test-releases'
+import { buildTempDir } from '../test/build-dir.js'
 
 /**
  * Builds the real site once per download state, each from its own release data,
@@ -48,7 +48,7 @@ let workDir: string
 const pages = {} as Record<State, string>
 
 beforeAll(async () => {
-  workDir = await mkdtemp(join(tmpdir(), 'knightbook-download-'))
+  workDir = await buildTempDir('knightbook-download-')
   for (const [state, releases] of Object.entries(STATES) as [State, unknown[] | null][]) {
     const outDir = join(workDir, state)
     const env = { ...process.env }

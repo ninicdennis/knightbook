@@ -1,13 +1,13 @@
 import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
 import { dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { metadataProblems, readMetadata } from './metadata-check'
 import { REDIRECTS } from './redirects'
+import { buildTempDir } from '../test/build-dir.js'
 
 /**
  * How the site is found and shared (ticket 0f142dd8): canonical addresses on
@@ -42,7 +42,7 @@ function build(out: string, env: NodeJS.ProcessEnv = process.env) {
 }
 
 beforeAll(async () => {
-  workDir = await mkdtemp(join(tmpdir(), 'knightbook-discovery-'))
+  workDir = await buildTempDir('knightbook-discovery-')
   outDir = join(workDir, 'site')
   await build(outDir)
 })

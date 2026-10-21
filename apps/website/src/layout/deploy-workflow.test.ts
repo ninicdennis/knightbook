@@ -9,7 +9,8 @@ import { describe, expect, it } from 'vitest'
 const WORKFLOW = new URL('../../../../.github/workflows/website.yml', import.meta.url)
 
 async function workflow() {
-  return readFile(WORKFLOW, 'utf8')
+  // A Windows checkout turns line endings into CRLF; the checks below read LF.
+  return (await readFile(WORKFLOW, 'utf8')).replace(/\r\n/g, '\n')
 }
 
 /** The text of one job, from its key to the next job or the end. */

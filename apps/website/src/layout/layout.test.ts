@@ -1,11 +1,11 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
+import { readdir, readFile, rm } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
 import { dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { buildTempDir } from '../test/build-dir.js'
 
 /**
  * Builds the real site once, into a temporary folder, and checks the HTML a
@@ -55,7 +55,7 @@ async function filesUnder(directory: string): Promise<string[]> {
 }
 
 beforeAll(async () => {
-  outDir = await mkdtemp(join(tmpdir(), 'knightbook-website-'))
+  outDir = await buildTempDir('knightbook-website-')
   await run(process.execPath, [ASTRO_BIN, 'build', '--outDir', outDir], { cwd: SITE_ROOT })
 })
 
