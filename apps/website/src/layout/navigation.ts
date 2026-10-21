@@ -4,9 +4,6 @@
  * so no two places can disagree about a URL.
  *
  * Only destinations that exist or are planned as top-level routes are here.
- * Privacy and Support join `utilityLinks` once their page and destination exist
- * (tickets 1aefd5aa, c125336d); until then the footer links neither rather than
- * pointing at an undecided page.
  */
 export interface NavigationLink {
   label: string
@@ -19,7 +16,13 @@ export const destinations = {
   howItWorks: { label: 'How it works', href: '/#how-it-works' },
   documentation: { label: 'Documentation', href: '/docs/' },
   releases: { label: 'Releases', href: '/releases/' },
+  privacy: { label: 'Privacy', href: '/privacy/' },
   license: { label: 'License', href: '/license/' },
+  /** GitHub Issues, the support destination (D-045). */
+  support: {
+    label: 'Support',
+    href: 'https://github.com/ninicdennis/knightbook/issues/new/choose',
+  },
   source: { label: 'Source code', href: 'https://github.com/ninicdennis/knightbook' },
 } satisfies Record<string, NavigationLink>
 
@@ -45,8 +48,13 @@ export const footerGroups: FooterGroup[] = [
   { title: 'Guides', links: [destinations.documentation] },
 ]
 
-/** The footer's bottom row: the license and the public source (D-043). Privacy and Support join it once each exists. */
-export const utilityLinks: NavigationLink[] = [destinations.license, destinations.source]
+/** The footer's bottom row: privacy, the license (D-043), support (D-045) and the public source. */
+export const utilityLinks: NavigationLink[] = [
+  destinations.privacy,
+  destinations.license,
+  destinations.support,
+  destinations.source,
+]
 
 /**
  * Whether `link` is the page being shown, for `aria-current`. An in-page anchor

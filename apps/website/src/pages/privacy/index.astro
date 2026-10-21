@@ -1,0 +1,129 @@
+---
+import BaseLayout from '../../layout/BaseLayout.astro'
+import { destinations } from '../../layout/navigation'
+
+/**
+ * /privacy/: what data the website, the desktop app, a connected AI tool and
+ * support each involve, kept apart (spec §9, ticket 1aefd5aa). Every statement
+ * comes from the host and support decisions (D-044, D-045) or from the app's
+ * code; the sources are listed on the ticket. Change the date when the text
+ * changes.
+ */
+const updated = '2026-10-21'
+const updatedLabel = new Date(`${updated}T00:00:00Z`).toLocaleDateString('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
+---
+
+<BaseLayout
+  title="Privacy"
+  description="What data the Knightbook website, the desktop app, a connected AI tool and support each involve."
+>
+  <article class="kb-page privacy">
+    <header>
+      <h1>Privacy</h1>
+      <p class="updated">
+        Last updated <time datetime={updated}>{updatedLabel}</time>
+      </p>
+      <p>
+        Knightbook involves four separate things: this website, the desktop app, the AI tool you
+        connect to it, and the places you can ask for help. Each handles data differently, so each
+        has its own section.
+      </p>
+    </header>
+
+    <section aria-labelledby="website">
+      <h2 id="website">This website</h2>
+      <p>
+        The website is hosted on GitHub Pages, and installers are downloaded from GitHub Releases.
+        GitHub logs the IP address of every visitor to the website and of every download, for
+        security purposes. What GitHub keeps and for how long is set by
+        <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">
+          GitHub's privacy statement
+        </a>
+        .
+      </p>
+      <p>
+        The website itself runs no analytics or tracking script, sets no cookies, and loads nothing
+        from other sites: its pages are plain HTML, CSS and images served by GitHub Pages.
+      </p>
+    </section>
+
+    <section aria-labelledby="app">
+      <h2 id="app">The desktop app</h2>
+      <p>
+        Your projects stay in the folders you choose. Knightbook keeps its tickets, plans and review
+        records in a <code>.projectspace</code> folder inside each project, beside your own files.
+        On your computer it also keeps its settings, the list of recent projects, the window's size
+        and position, and which projects you allowed AI access to.
+      </p>
+      <p>
+        The app's own code makes no network requests: it sends nothing about you or your projects
+        anywhere, has no account, and checks for no updates. Images in documents are shown only from
+        inside the project, never from the internet. A web link in a document opens in your browser
+        only when you click it.
+      </p>
+      <p>
+        The app is built on Electron, which includes a spell checker. According to Electron's
+        documentation, on Windows and Linux it downloads spell-check dictionaries from Google's
+        servers by default. We have not measured whether Knightbook does this.
+      </p>
+    </section>
+
+    <section aria-labelledby="ai">
+      <h2 id="ai">The AI tool you connect</h2>
+      <p>
+        Knightbook does not include an AI assistant. When you connect an AI tool, it reads and
+        changes the projects you allowed through Knightbook's connection, which runs on your
+        computer. What that tool, and the AI provider behind it, then send, keep or use is up to
+        them and their terms, not Knightbook. Read their privacy terms before allowing a project
+        with private content.
+      </p>
+    </section>
+
+    <section aria-labelledby="support">
+      <h2 id="support">Getting help</h2>
+      <p>
+        Support is through
+        <a href={destinations.support.href}>GitHub Issues</a>. Everything in an issue, including
+        your GitHub username, is public and handled by GitHub under its privacy statement. Leave out
+        private project content, credentials and unredacted logs.
+      </p>
+      <p>
+        A security problem is reported privately through GitHub instead. Only you and the maintainer
+        can read a private report, and it is made public only once a fix is out, if at all.
+      </p>
+    </section>
+
+    <section aria-labelledby="contact">
+      <h2 id="contact">Questions about this page</h2>
+      <p>
+        Knightbook is maintained by Dennis Ninic. Ask about this page in a
+        <a href={destinations.support.href}>GitHub issue</a>.
+      </p>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .privacy {
+    max-width: 72ch;
+    padding-block: var(--kb-space-8) 0;
+  }
+
+  .updated {
+    color: var(--kb-muted);
+    font-size: 0.9375rem;
+  }
+
+  section {
+    margin-top: var(--kb-space-6);
+  }
+
+  h2 {
+    font-size: 1.375rem;
+  }
+</style>

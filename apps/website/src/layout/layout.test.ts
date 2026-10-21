@@ -79,6 +79,7 @@ describe('the built site', () => {
         'index.html',
         'releases/index.html',
         'license/index.html',
+        'privacy/index.html',
         ...guides,
       ].sort(),
     )
@@ -178,8 +179,8 @@ describe('the built site', () => {
     }
   })
 
-  it('links the license and the source code in the footer, and no privacy or support page yet', async () => {
-    for (const path of ['index.html', '404.html', 'license/index.html']) {
+  it('links privacy, the license, support and the source code in the footer', async () => {
+    for (const path of ['index.html', '404.html', 'license/index.html', 'privacy/index.html']) {
       const html = await page(path)
       const utility = slice(html, /<ul class="utility[\s\S]*?<\/ul>/)
       const links = [...utility.matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g)].map((m) => [
@@ -187,12 +188,36 @@ describe('the built site', () => {
         m[2],
       ])
       expect(links, path).toEqual([
+        ['/privacy/', 'Privacy'],
         ['/license/', 'License'],
+        ['https://github.com/ninicdennis/knightbook/issues/new/choose', 'Support'],
         ['https://github.com/ninicdennis/knightbook', 'Source code'],
       ])
-      expect(html, path).not.toMatch(/href="[^"]*(?:privacy|support)/i)
       expect(html, path).not.toMatch(/all rights reserved|©/i)
     }
+  })
+
+  it('explains privacy in four separate sections, with its last-updated date', async () => {
+    const html = await page('privacy/index.html')
+    expect(html).toContain('<title>Privacy · Knightbook</title>')
+    expect(html).toMatch(
+      /Last updated <time datetime="\d{4}-\d{2}-\d{2}"[^>]*>\d{1,2} [A-Z][a-z]+ \d{4}<\/time>/,
+    )
+    const headings = [...html.matchAll(/<h2 id="([^"]+)"[^>]*>([^<]+)<\/h2>/g)].map((m) => m[2])
+    expect(headings.slice(0, 4)).toEqual([
+      'This website',
+      'The desktop app',
+      'The AI tool you connect',
+      'Getting help',
+    ])
+    const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
+    expect(text).toMatch(/GitHub logs the IP address of every visitor/)
+    expect(text).toMatch(/is up to them and their terms, not Knightbook/)
+    expect(text).toMatch(/Everything in an issue, including your GitHub username, is public/)
+    // Claims the evidence does not support (spec §9).
+    expect(text).not.toMatch(
+      /no data (collection|leaves)|zero data|never leaves your (device|computer)|fully offline|secure by default/i,
+    )
   })
 
   it('shows the license summary and the full text of LICENSE.md, with one h1', async () => {
