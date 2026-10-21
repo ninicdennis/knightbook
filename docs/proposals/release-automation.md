@@ -10,25 +10,27 @@ reasoning.
 This section is for maintainers. The decision and its reasons are D-040 in the
 [specification](../project-workspace-spec.md).
 
-**What causes a release.** A push to `main` that changes the desktop app runs
-`.github/workflows/release.yml` (D-041). The app is `apps/desktop`, `packages`,
-`skills/projectspace` and the build setup: root `package.json`, `pnpm-lock.yaml`,
-`pnpm-workspace.yaml`, `tsconfig.base.json`, and the CI and release workflows. That
-list lives in `APP_PATHS` in `apps/desktop/scripts/publishing/app-commits.mjs` and is
-repeated as the workflow's `paths` filter; a test fails if they differ. A push that
-changes only the website, `docs/`, the README or the board starts no release run.
-Its pull request's checks are what cover it.
+**What causes a release.** The maintainer starts one by hand (D-048): on the Actions
+tab, open Release, choose "Run workflow" and leave the branch on `main`. Merging to
+`main` builds and releases nothing, so several merges cost no runner minutes until
+`main` is ready, and then one release carries all of them. A start on any other
+branch stops before building anything.
 
-Pull requests are squash-merged, so the push is one commit whose message is the pull
-request's title. semantic-release reads the commits since the last `v*` tag, skips
-any that changed none of the app paths, and applies these rules to the rest:
+Pull requests are squash-merged, so each merge is one commit whose message is the
+pull request's title. semantic-release reads the commits since the last `v*` tag,
+skips any that changed none of the app paths, and applies these rules to the rest.
+The app is `apps/desktop`, `packages`, `skills/projectspace` and the build setup:
+root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `tsconfig.base.json`,
+and the CI and release workflows, listed in `APP_PATHS` in
+`apps/desktop/scripts/publishing/app-commits.mjs` (D-041). Commits that change only
+the website, `docs/`, the README or the board never count toward a version.
 
 | Commit | Release |
 | --- | --- |
 | `feat!: …`, or a `BREAKING CHANGE:` footer | major |
 | `feat: …` | minor |
 | any other Conventional Commit type (`fix`, `docs`, `chore`, `ci`, `refactor`, `test`, `build`, `perf`, `style`, `revert`) | patch |
-| anything else | none; CI still runs, nothing is published |
+| anything else | none |
 
 The first release is `0.1.0`. Every release is published as a GitHub prerelease. To
 start publishing stable releases, change `--prerelease` in
@@ -47,7 +49,8 @@ in the repository, not in this code.
 2. `ci` calls `ci.yml` with that version. Each platform stamps the version into the
    desktop and MCP `package.json` files on the runner (never committed), runs every
    check, builds the installers with `pnpm pack:installers`, tests the packaged app,
-   and keeps the installers as an artifact.
+   and keeps the installers as an artifact. When `version` finds nothing to release,
+   this stage and the next are skipped, so nothing is built.
 3. `publish` runs `apps/desktop/scripts/publishing/publish-release.mjs` only if every
    platform passed. It refuses to continue unless there is exactly one Windows x64
    installer, one DMG per Mac CPU and one Linux deb, all of this version. It then
@@ -64,17 +67,14 @@ tab is safe:
 - A tag already at a different commit, or a published release whose files differ,
   stops the run with an error and changes nothing. Do not delete published releases
   or move tags to get past it; find out why first.
-- If a build fails, nothing is published. The next merge picks up its commits, since
-  the version is always calculated from the last tag.
-- If a run failed for a reason outside the app, such as a broken check later fixed
-  in a merge that changes no app path, re-running it tests the same old commit and
-  fails again. Start the Release workflow by hand instead ("Run workflow" on the
-  Actions tab, added 2026-10-21 after the website tests broke the Windows check): it
-  releases main as it is now. A manual start on any other branch releases nothing.
+- If a build fails, nothing is published. The next release picks up its commits,
+  since the version is always calculated from the last tag.
+- If a run failed for a reason since fixed on `main`, re-running it tests the same
+  old commit and fails again. Start a new run with "Run workflow" instead: it
+  releases `main` as it is now.
 
-Releases run one at a time. GitHub keeps only one waiting run, so a third merge
-landing while one release runs and another waits replaces the waiting one; the next
-release then includes both merges' changes under one version.
+Releases run one at a time. A second press while one runs waits for it, then finds
+nothing new since the tag the first created and stops without building.
 
 **Credentials.** Only the default `GITHUB_TOKEN` is used: `contents: write` for the
 version check and the publishing job, read-only everywhere else, including every

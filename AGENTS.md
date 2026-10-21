@@ -71,21 +71,22 @@ CI (`.github/workflows/ci.yml`) has two jobs. `check` runs install, `build:mcp` 
 `check`; only if it passes, `package` runs `pack:dir` (`pack:dir:mac` on macOS) and then the packaged-app tests
 (`test:packaged` in `experiments/packaging`) with `REQUIRE_PACKAGED_APP=1`, keeping a
 screenshot and the app's output when the window test fails. Pull requests run on
-Linux only. Windows and macOS are checked on merge to `main` and on a manual run
-("Run workflow" on the Actions tab), not on every pull request, to stay inside the
-free Actions allowance. Windows is where the app is used, so start a manual run on
+Linux only. Windows and macOS are checked when a release is built and on a manual
+run ("Run workflow" on the Actions tab), not on every pull request or merge, to stay
+inside the free Actions allowance. Windows is where the app is used, so start a manual run on
 the branch before merging anything platform-sensitive (window chrome, paths,
 packaging). Locally the packaged-app tests skip when no package exists; say so if
 you did not package.
 
-On a merge to `main` that changes the desktop app (D-041: `apps/desktop`, `packages`,
-`skills/projectspace` or the build setup, listed in
-`apps/desktop/scripts/publishing/app-commits.mjs`), the release workflow
-(`.github/workflows/release.yml`) calls CI for all three platforms. Website, docs and
-board merges start no release, and their commits never count toward the version. When the merged commit is a Conventional Commit it first
-chooses the next version with semantic-release, has CI build the installers stamped
-with it (`pack:installers`), and then publishes a GitHub prerelease with every
-installer and a `SHA256SUMS.txt`. A manual CI run given a version builds the
+Releases are started by hand (D-048): "Run workflow" on the Release workflow
+(`.github/workflows/release.yml`), from `main`. Merging builds and releases nothing.
+The release workflow chooses the next version with semantic-release from the
+Conventional Commits since the last tag, counting only those that change the desktop
+app (D-041: `apps/desktop`, `packages`, `skills/projectspace` or the build setup,
+listed in `apps/desktop/scripts/publishing/app-commits.mjs`). If there is something
+to release, it has CI build the installers stamped with that version
+(`pack:installers`) on all three platforms, and then publishes a GitHub prerelease
+with every installer and a `SHA256SUMS.txt`; otherwise it stops and builds nothing. A manual CI run given a version builds the
 installers on a branch without publishing them. A separate workflow,
 `pr-title.yml`, checks pull-request titles with commitlint. How a release is chosen,
 retried and recovered is in [release automation](docs/proposals/release-automation.md).
@@ -155,8 +156,9 @@ docs/              Specification, technical design, research, experiment finding
   (or a `BREAKING CHANGE:` footer) for a breaking change. Pull requests are
   squash-merged, so the title becomes the commit on `main`, and the release workflow
   reads it to choose the version (D-040): `feat` is a minor release, `!` a major one,
-  every other type a patch, but only when the merge changes the app (D-041). A title that is not a Conventional Commit fails the
-  `Pull request title` check and would release nothing. When suggesting or writing a
+  every other type a patch, counting only commits that change the app (D-041), at the
+  next release started by hand (D-048). A title that is not a Conventional Commit
+  fails the `Pull request title` check and would count toward no release. When suggesting or writing a
   title or message, check it with `printf '%s\n' "<title>" | pnpm exec commitlint`.
   Releases are only ever published by the workflow; never create tags or GitHub
   Releases by hand.

@@ -1,28 +1,9 @@
 // @vitest-environment node
-import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
 import { APP_PATHS, isAppPath } from './app-commits.mjs'
 
-const RELEASE_WORKFLOW = new URL('../../../../.github/workflows/release.yml', import.meta.url)
-
-/** The `paths:` entries under `on.push` in release.yml, read as plain lines. */
-async function workflowPaths() {
-  const workflow = await readFile(RELEASE_WORKFLOW, 'utf8')
-  const block = workflow.match(
-    /^on:\r?\n {2}push:\r?\n(?: {4}.*\r?\n)*? {4}paths:\r?\n((?: {6}- .*\r?\n)+)/m,
-  )
-  if (!block) throw new Error('release.yml has no paths filter under on.push')
-  // Quoted or not, so an entry added without quotes still counts as drift.
-  return [...block[1].matchAll(/- ['"]?([^'"\r\n]+?)['"]?\s*$/gm)].map((match) => match[1])
-}
-
 describe('which changes count as the desktop app', () => {
-  it('matches the release workflow’s path filter, so the two cannot drift apart', async () => {
-    const asGlobs = APP_PATHS.map((path) => (path.endsWith('/') ? `${path}**` : path))
-    expect(await workflowPaths()).toEqual(asGlobs)
-  })
-
-  it('is exactly the list D-041 names, so an entry cannot drop out of both places', () => {
+  it('is exactly the list D-041 names, so an entry cannot be added or dropped unnoticed', () => {
     expect(APP_PATHS).toEqual([
       'apps/desktop/',
       'packages/',
