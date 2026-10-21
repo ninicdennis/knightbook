@@ -1,5 +1,17 @@
 appId: dev.knightbook.app
 productName: Knightbook
+
+# electron-builder names the Linux command and launcher, and the per-user Windows
+# install folder, after the package name rather than the product name. The
+# workspace package is `@knightbook/desktop`, which made them `@knightbookdesktop`.
+# The packaged app is named Knightbook instead, so Windows installs into
+# %LOCALAPPDATA%\Programs\Knightbook, and linux.executableName makes the command
+# /usr/bin/knightbook. Users save these paths in their MCP client configuration,
+# so they must not change again (ticket 3250b7d5). scripts/installed-names.test.mjs
+# checks the names electron-builder derives. The window title and settings folder
+# come from productName and app.setName, not from this.
+extraMetadata:
+  name: Knightbook
 directories:
   output: release
   buildResources: build
@@ -58,6 +70,7 @@ mac:
 # GitHub's no-reply address, so no personal inbox is published.
 linux:
   artifactName: Knightbook-${version}-linux-${arch}.${ext}
+  executableName: knightbook
   maintainer: Knightbook <40923967+ninicdennis@users.noreply.github.com>
   target:
     - target: AppImage

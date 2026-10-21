@@ -78,7 +78,7 @@ menu and the desktop, and opens it when it finishes.
 
 **Not yet checked:**
 
-- The app goes in a folder under `AppData\Local\Programs` in your user folder.
+- The app goes in `AppData\Local\Programs\Knightbook` in your user folder.
 - Its settings go in `AppData\Roaming\Knightbook`.
 - The MCP configuration that Knightbook copies for your AI tool names the
   `resources\mcp\node.exe` file inside the app's folder.
@@ -142,8 +142,8 @@ the publisher, so the checksum is your check that the file is the one published.
 ### Where it goes
 
 - The app goes in `/opt/Knightbook`, and the package is called `knightbook`.
-- The package adds a launcher named Knightbook, in the Development category, for
-  your applications menu. **Not yet checked:** how it shows in a real desktop's menu.
+- It adds the command `knightbook`, and a launcher named Knightbook, in the
+  Development category, for your applications menu. **Not yet checked:** how it shows in a real desktop's menu.
 - Its settings go in `~/.config/Knightbook`.
 - The MCP configuration names `/opt/Knightbook/resources/mcp/node`. That path stays
   the same when you update, so the configuration you copied keeps working.
