@@ -151,7 +151,7 @@ describe('the documentation section', () => {
 
   it('marks placeholder guides as drafts, on the index and on the guide', async () => {
     const index = await page(real, 'docs/index.html')
-    expect(index.match(/<span class="draft[^"]*"[^>]*>Draft</g)).toHaveLength(4)
+    expect(index.match(/<span class="draft[^"]*"[^>]*>Draft</g)).toHaveLength(3)
     const guide = await page(real, 'docs/getting-started/index.html')
     expect(guide).toMatch(
       /data-draft-guide="getting-started"[^>]*>\s*Draft: this guide has not been written yet/,

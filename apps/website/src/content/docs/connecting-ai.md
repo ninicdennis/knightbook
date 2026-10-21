@@ -13,4 +13,7 @@ This guide has not been written yet. It will be written and checked against an i
 - A tested client, step by step
 - Checking the connection
 
+If the status reads **MCP not connected**, see
+[Troubleshooting](../troubleshooting/#mcp-not-connected).
+
 You need the app installed first: see [Getting started](../getting-started/).
