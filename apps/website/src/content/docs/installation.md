@@ -12,3 +12,5 @@ This guide has not been written yet. It will be written and checked against an i
 - Installing on Windows, macOS and Linux
 - Updating
 - Removing Knightbook and what it leaves behind
+
+If the installer will not run, see [Troubleshooting](../troubleshooting/#the-installer-will-not-run).

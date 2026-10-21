@@ -107,6 +107,9 @@ a click of your own:
 | **Recorded by AI** | You told an AI tool it was complete, and it recorded what you said. Its tooltip quotes the AI's summary of your words |
 | **Unattributed** | The ticket is in Done with no recorded decision, usually because its file was edited outside the app. Nothing shows who accepted it |
 
+If a card's label is not what you expect, see
+[Troubleshooting](../troubleshooting/#done-or-review-looks-wrong).
+
 An AI tool cannot set Done any other way. Passing tests, its own review, or the
 ticket reaching Verification are not your decision, and the tools refuse to treat
 them as one.
@@ -153,7 +156,8 @@ Choose **Mark content reviewed**, or **Mark reviewed again**, on the ticket or i
 the card's menu. Review never blocks work: an unreviewed ticket can still move all
 the way to Done. A change to the ticket's wording returns it to Changed since
 review. Moving it between columns does not. Knightbook can tell you the text
-changed, but not whether the meaning did.
+changed, but not whether the meaning did. A review state you do not expect is
+covered in [Troubleshooting](../troubleshooting/#done-or-review-looks-wrong).
 
 AI tools can report the review state but cannot record a review. No tool for it
 exists.

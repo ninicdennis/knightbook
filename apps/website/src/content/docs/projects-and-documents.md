@@ -74,7 +74,8 @@ belonging to a missing folder, until you clear it.
 If an included file or folder is moved, renamed or deleted outside the app, its
 entry says **no longer exists** rather than quietly disappearing. Nothing is
 changed for you. Include the new location and remove the old entry, or put the
-file back.
+file back. If a document is still missing, see
+[Troubleshooting](../troubleshooting/#documents-or-changes-are-missing).
 
 ### Removing versus deleting
 
@@ -116,7 +117,8 @@ saying why.
 Knightbook reads the project again every time its window comes back into focus.
 After you save in your editor, switch back and the change is there. If you work
 with the window side by side and it never loses focus, use **Refresh from disk**
-at the end of the bar along the bottom of the window.
+at the end of the bar along the bottom of the window. If a change still does not
+appear, see [Troubleshooting](../troubleshooting/#documents-or-changes-are-missing).
 
 ## Saving safely
 
@@ -126,7 +128,8 @@ or by another tool, the change is refused and the newer version is never
 overwritten. For example, if you are editing a ticket in
 the app and an AI tool updates it, your edit is not saved. Your text stays on
 screen so you can copy what you want to keep, then load the current version and
-make the change again.
+make the change again. [Troubleshooting](../troubleshooting/#a-change-was-not-saved-or-a-record-cannot-be-read)
+covers what each message means.
 
 Your editor and Git do not take part in this check. They write files directly.
 The check catches those changes the next time the app or an AI tool saves, but it
@@ -139,7 +142,8 @@ it, and opening it in Knightbook shows the same board. Each copy is opened by it
 own path. If you move a folder the app already knew, open it again from its new
 location with **Open folder…**. AI tools need access turned on again for the new
 location, and an AI client set up for that one folder by its path needs its
-configuration updated.
+configuration updated. If an AI tool still reports the old folder, see
+[Troubleshooting](../troubleshooting/#the-wrong-project-appears).
 
 Knightbook does not run Git. Commit, pull, push and switch branches yourself, in
 whatever tool you already use.
@@ -168,7 +172,9 @@ A conflict in `.projectspace/project.md` is different. That file holds the
 Backlog order and the included documents for the whole project, so the project
 does not open until it is resolved, and Knightbook says **Could not open this
 project**. Two branches that both reorder the Backlog or include documents can
-cause this. Resolve it the same way, then open the project again. Do not resolve it by taking one whole side without reading
+cause this. Resolve it the same way, then open the project again
+([Troubleshooting](../troubleshooting/#a-change-was-not-saved-or-a-record-cannot-be-read) has the
+checks). Do not resolve it by taking one whole side without reading
 it: the other side may hold a decision someone recorded.
 
 ## What this is not
