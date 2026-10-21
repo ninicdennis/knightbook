@@ -196,6 +196,7 @@ purpose, because renaming them would migrate files in every existing project
 | [Release automation](docs/proposals/release-automation.md) | How a merge to `main` chooses a version, builds the installers and publishes a release |
 | [AGENTS.md](AGENTS.md) | Working agreement for AI tools changing this repository |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report a problem or propose a change |
+| [CLA.md](CLA.md) | The Contributor License Agreement every contribution needs |
 | [SECURITY.md](SECURITY.md) | How to report a vulnerability privately |
 
 This repository tracks its own work in Knightbook: open this folder in the app to

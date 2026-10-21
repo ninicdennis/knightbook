@@ -16,8 +16,11 @@ Knightbook is maintained by one person. Before writing a pull request, open an
 issue describing the change, so we can agree it fits before you spend time on it.
 Small fixes to typos and broken links are welcome without one.
 
-By contributing, you agree that your contribution is licensed under the same
-license as the project.
+Every contribution needs the [Contributor License Agreement](CLA.md). It lets the
+maintainer keep distributing your contribution with Knightbook, including under a
+different license later, while you keep the copyright in your own work. You agree
+to it once, by checking its box in the pull-request form; it then covers your
+later contributions too. A pull request without it cannot be merged.
 
 When you do send a change:
 
