@@ -2,10 +2,11 @@ import { defineConfig } from 'astro/config'
 
 /**
  * A static site (D-042): every page is HTML at build time, and none ships
- * client-side JavaScript unless a component explicitly opts in. The canonical
- * `site` URL is set once the domain is chosen (ticket 577513c8).
+ * client-side JavaScript unless a component explicitly opts in. `site` is the
+ * production domain (D-046), served by GitHub Pages (D-044).
  */
 export default defineConfig({
+  site: 'https://knightbook.xyz',
   output: 'static',
   trailingSlash: 'always',
   build: { format: 'directory' },
