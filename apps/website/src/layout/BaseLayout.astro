@@ -1,5 +1,6 @@
 ---
 import { getImage } from 'astro:assets'
+import { isProductionBuild } from '../home/drafts'
 import logo from './logo'
 import SiteFooter from './SiteFooter.astro'
 import SiteHeader from './SiteHeader.astro'
@@ -9,6 +10,10 @@ import './base.css'
 /**
  * The frame every page shares: head metadata, a skip link as the first focusable
  * element, the header, the page's own content in <main>, and the footer.
+ *
+ * Any build that is not production is a preview (D-044): every page asks search
+ * engines not to index it and says it is a preview, so a preview someone opens
+ * from a pull request's artifact is never mistaken for the published site.
  */
 interface Props {
   /** The page's own title; " · Knightbook" is added, except on the homepage. */
@@ -19,6 +24,7 @@ interface Props {
 const { title, description } = Astro.props
 const fullTitle = title === 'Knightbook' ? title : `${title} · Knightbook`
 const favicon = await getImage({ src: logo, width: 64, height: 64, format: 'png' })
+const preview = !isProductionBuild()
 ---
 
 <!doctype html>
@@ -29,12 +35,18 @@ const favicon = await getImage({ src: logo, width: 64, height: 64, format: 'png'
     <meta name="color-scheme" content="light dark" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    {preview && <meta name="robots" content="noindex, nofollow" />}
     <link rel="icon" type="image/png" href={favicon.src} />
   </head>
   <body>
     <a class="skip-link" href="#main">
       Skip to content
     </a>
+    {preview && (
+      <p class="preview-banner" role="note">
+        Preview build. This is not the published Knightbook website.
+      </p>
+    )}
     <SiteHeader pathname={Astro.url.pathname} />
     <main id="main" tabindex="-1">
       <slot />
@@ -59,6 +71,17 @@ const favicon = await getImage({ src: logo, width: 64, height: 64, format: 'png'
 
   .skip-link:focus {
     top: var(--kb-space-2);
+  }
+
+  .preview-banner {
+    margin: 0;
+    padding: var(--kb-space-2) var(--kb-space-4);
+    background: var(--kb-surface-quiet);
+    border-bottom: 2px dashed var(--kb-warning);
+    color: var(--kb-text);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
   }
 
   main:focus {

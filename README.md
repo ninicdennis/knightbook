@@ -94,6 +94,17 @@ The public website is a static Astro site in `apps/website` (decision D-042).
 the HTML a visitor receives. Website-only merges do not release the desktop app
 (D-041).
 
+The site is hosted on GitHub Pages (D-044) and deployed by the
+[Website workflow](.github/workflows/website.yml). A pull request that changes the
+site gets a preview build as a `website-preview` artifact on its workflow run:
+unzip it into `apps/website/dist/` and run `pnpm --filter @knightbook/website preview`
+to see it at `http://localhost:4321`. Every
+preview page is `noindex` and says it is a preview. A merge to `main` runs the
+website's tests, and when the repository variable `DEPLOY_WEBSITE` is `true`, makes
+the production build (which refuses drafts) and deploys it. To roll back, open the
+Website run for the earlier commit on `main` in the Actions tab and choose
+**Re-run all jobs**; it builds and deploys that commit again.
+
 ## Checks
 
 ```bash

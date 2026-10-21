@@ -89,6 +89,16 @@ describe('the built site', () => {
     }
   })
 
+  it('marks every page of a preview build noindex and labels it a preview (D-044)', async () => {
+    for (const path of (await filesUnder(outDir)).filter((name) => name.endsWith('.html'))) {
+      const html = await page(path)
+      expect(html, path).toMatch(/<meta name="robots" content="noindex, nofollow"/)
+      expect(html, path).toMatch(
+        /<p class="preview-banner[^"]*" role="note"[^>]*>\s*Preview build\. This is not the published Knightbook website\.\s*<\/p>/,
+      )
+    }
+  })
+
   it('opens every page with a skip link to the main content', async () => {
     for (const path of ['index.html', '404.html']) {
       const html = await page(path)
