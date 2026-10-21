@@ -237,3 +237,38 @@ bound to its own folder and ignoring a `checkout_id`.
 What this does not cover: a packaged installer build with the app's own user-data
 path (the test stages the runtime and writes the registry itself), and a real AI
 client driving the new configuration.
+
+## The Linux deb in a test container (2026-10-21)
+
+Written for the installation guide (ticket `6281905f`). This is not the Linux
+validation (ticket `b2a51f35`): the package was a local build, not the published
+release asset, and the machine was a container with no desktop.
+
+Built with `pnpm pack:installers --linux deb` (version 0.0.0; the run then stopped at
+electron-builder's update metadata, which needs a repository it could not detect, after
+the deb was written) and again with `-c.extraMetadata.version=0.0.1`. Installed on
+Ubuntu 24.04.5 LTS in a cloud container, x64, with Xvfb and no desktop environment,
+no AppArmor and no system D-Bus.
+
+| Check | What was seen |
+| --- | --- |
+| Package | `knightbook`, `Architecture: amd64`, file `Knightbook-0.0.0-linux-amd64.deb`, 134 MB, 418 MB installed |
+| Install | `apt install ./…deb` pulled the libraries it depends on; `dpkg -i` alone left it unconfigured because `libsecret-1-0` was missing. No publisher or signature warning |
+| Where it goes | `/opt/Knightbook`, a launcher at `/usr/share/applications/@knightbookdesktop.desktop` (Name Knightbook, Categories Development) and the command `/usr/bin/@knightbookdesktop` |
+| First launch | Started as an ordinary user under `xvfb-run` and kept running until stopped; the window was not looked at. Settings appeared in `~/.config/Knightbook` (`app-state.json` and Chromium's caches) |
+| MCP command | The app logged `/opt/Knightbook/resources/mcp/node` with `server.mjs` and `--registry ~/.config/Knightbook/mcp-access.json` |
+| MCP with the app closed | With no app process and only `/usr/bin:/bin` on `PATH` (no Node there), the installed runtime with `--root` initialized a project, created a ticket and listed tickets |
+| Upgrade | 0.0.1 unpacked over 0.0.0 in place; `app-state.json` unchanged, and the same MCP command still served the project |
+| Remove | `apt remove` deleted `/opt/Knightbook`, the launcher and the command. `~/.config/Knightbook` and the project's `.projectspace/` stayed |
+| Purge | `apt purge` removed nothing more; `~/.config/Knightbook` stayed |
+
+Two names come from the package name `@knightbook/desktop` rather than the product
+name: the executable and launcher are `@knightbookdesktop`. The same rule makes
+electron-builder's per-user Windows install folder `%LOCALAPPDATA%\Programs\@knightbookdesktop`
+(read from the NSIS template and electron-builder 26.15.3's `getWindowsInstallationDirName`;
+not seen on Windows). Both are saved in users' MCP configurations, so changing them
+after the first public release breaks those configurations.
+
+Not covered: a real desktop and its menu, the window itself, a real AI client, the
+AppArmor profile the package installs on Ubuntu 24 and later, and the published release
+asset.
