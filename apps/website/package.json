@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "astro preview --port 4321",
     "test": "vitest run",
-    "typecheck": "astro check"
+    "typecheck": "astro check",
+    "sample:project": "pnpm --filter @knightbook/mcp exec esbuild ../../apps/website/sample-project/seed.ts --bundle --platform=node --format=esm --log-level=warning --outfile=../../apps/website/sample-project/dist/seed.mjs --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\" && node sample-project/dist/seed.mjs"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
