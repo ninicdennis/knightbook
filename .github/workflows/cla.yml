@@ -1,0 +1,53 @@
+name: Contributor License Agreement
+
+# Checks that the author of each pull request has agreed to CLA.md (D-045, D-049),
+# by checking its box in the pull-request form, and records each agreement on the
+# cla-signatures branch. The owner and bots are exempt.
+#
+# It runs on pull_request_target so a pull request from a fork gets a token that
+# can record the agreement and comment. That token can write, so this workflow
+# never checks out, installs or runs anything from the pull request: the checkout
+# is this repository's default branch (github.sha for this event), and the pull
+# request's description is only read as text.
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: cla-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cla:
+    name: CLA agreed
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Writes signatures.json on the cla-signatures branch.
+      contents: write
+      # Posts and edits the check's one comment on the pull request.
+      pull-requests: write
+
+    steps:
+      - name: Check out the default branch, not the pull request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/cla
+            CLA.md
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Check the agreement
+        run: node .github/scripts/cla/run.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
