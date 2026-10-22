@@ -319,6 +319,13 @@ window was driven over the Chrome DevTools protocol and the GTK folder chooser w
 | Remove | `apt remove` deleted `/opt/Knightbook`, `/usr/bin/knightbook` and the launcher. `~/.config/Knightbook`, the project's `.projectspace/` and the installed skill stayed; `claude mcp list` then failed with `ENOENT … /opt/Knightbook/resources/mcp/node` |
 | Purge | Removed nothing more |
 
+Fixed after 0.2.0 (ticket `75d7db08`): `electron-builder.yml` sets `deb.depends` to
+electron-builder's defaults plus `libasound2t64 | libasound2`
+(`scripts/deb-depends.test.mjs` checks both). A deb built from it, stamped 0.2.2,
+installed `libasound2t64` itself in another fresh `ubuntu:24.04` container; `ldd`
+found no missing library, and the window opened to **Choose a project folder**
+with nothing installed by hand.
+
 Not covered: a real machine with a desktop such as GNOME or KDE, the launcher in its
 menu, refresh on focus, **Edit externally** (no editor in the container), Claude
 Code signed in on the same machine as the app, accepting a handoff as done, the
