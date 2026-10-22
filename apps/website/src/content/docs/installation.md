@@ -135,8 +135,9 @@ Keep the `./`, which tells `apt` you mean a file rather than a package by that n
 Installing with `dpkg -i` instead stops with the package half installed when a
 library is missing, so use `apt`.
 
-The package does not yet ask for the sound library, `libasound2t64`. A desktop
-install of Ubuntu already has it, but on a minimal system Knightbook does not start
+The 0.2.0 package does not ask for the sound library, `libasound2t64`; the next
+release's package does, so `apt` installs it for you. A desktop install of Ubuntu
+already has it, but on a minimal system Knightbook 0.2.0 does not start
 and `knightbook` in a terminal reports `libasound.so.2: cannot open shared object
 file`. Install it, then open Knightbook again:
 
