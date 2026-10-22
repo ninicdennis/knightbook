@@ -7,7 +7,7 @@ name: CI
 # Two jobs: `check` (lint, format, typecheck, every test suite) and `package`
 # (build the real app, then test it). `package` waits for `check`, so a broken
 # lint or test costs no packaging minutes. On a pull request `check` runs as
-# three Linux jobs side by side (D-050), because one 4-core runner running every
+# four Linux jobs side by side (D-050), because one 4-core runner running every
 # suite at once was the slowest part of CI. Given a version, `package` builds the
 # installers instead of a bare folder, stamped with that version, and keeps them
 # as artifacts for release.yml to publish.
@@ -59,12 +59,12 @@ jobs:
         # Defined once here and reused by `package` through the YAML anchor, so
         # the two jobs cannot disagree about platforms.
         os: &platforms ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["windows-latest", "ubuntu-latest", "macos-latest"]') }}
-        # A pull request splits the work into three parts on separate runners
-        # (D-050): the desktop tests and the website tests take about the same
-        # time and each fills a runner, and the rest is short. Every other run
-        # keeps one `pnpm check` per platform, so a release does not pay for
-        # three Windows and macOS runners each.
-        part: ${{ fromJSON(github.event_name == 'pull_request' && '["desktop", "website", "the rest"]' || '["all"]') }}
+        # A pull request splits the work into four parts on separate runners
+        # (D-050): the desktop tests, in two halves because alone they take
+        # about 5 minutes on a runner, the website tests, about 2, and the
+        # rest, under 1. Every other run keeps one `pnpm check` per platform,
+        # so a release does not pay for four Windows and macOS runners each.
+        part: ${{ fromJSON(github.event_name == 'pull_request' && '["desktop 1/2", "desktop 2/2", "website", "the rest"]' || '["all"]') }}
 
     steps:
       # External actions are pinned to reviewed commit SHAs; the comment names the
@@ -113,12 +113,16 @@ jobs:
         env:
           REQUIRE_WEBSITE_BROWSER: '1'
 
-      # The same commands as `pnpm check`, split three ways. "The rest" excludes
+      # The same commands as `pnpm check`, split four ways. "The rest" excludes
       # the two big suites by name rather than listing the others, so a new
       # package's tests run without anyone remembering to add them here.
+      # vitest's --shard divides the test files between the two halves, so
+      # together they run the whole suite.
       - name: Test the desktop app
-        if: matrix.part == 'desktop'
-        run: pnpm --filter @knightbook/desktop test
+        if: startsWith(matrix.part, 'desktop ')
+        run: pnpm --filter @knightbook/desktop exec vitest run --shard="${PART#desktop }"
+        env:
+          PART: ${{ matrix.part }}
 
       - name: Test the website
         if: matrix.part == 'website'
