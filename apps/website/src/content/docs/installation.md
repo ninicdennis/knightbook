@@ -65,10 +65,11 @@ Run `Knightbook-<version>-windows-x64.exe`.
 
 The installer is not signed yet, so Windows does not know who published it and may
 warn before running it, typically with a blue **Windows protected your PC** screen.
-**Not yet checked:** the exact warning has not been recorded. If the checksum
-matches and the warning only says the publisher is unknown, choose **More info**,
-then **Run anyway**. If it says anything else, such as that the file contains a
-virus, stop and [report it](#if-something-looks-wrong).
+**Not yet checked:** the exact warning has not been recorded. This guide does not
+give steps for getting past the warning; whether to run an unsigned installer is
+your decision. If the checksum differs, or the warning says anything other than
+that the publisher is unknown, such as that the file contains a virus, stop and
+[report it](#if-something-looks-wrong).
 
 **Not yet checked:** the installer asks no questions and needs no administrator
 rights. It installs Knightbook for your Windows account only, adds it to the Start
@@ -99,12 +100,10 @@ folder**. That adds one folder, `.projectspace/`, and leaves your files as they 
 
 The app is not signed with an Apple developer certificate or notarized by Apple yet,
 so macOS will not open it straight away the first time. **Not yet checked:** the
-message macOS shows, and what it takes to get past it, have not been recorded on
-either kind of Mac. Apple's usual route for an app it cannot check is to try
-opening it once, then go to **System Settings**, **Privacy & Security**, and choose
-**Open Anyway** for that app. Do not turn off Gatekeeper or other protections for
-the whole Mac to run Knightbook. If macOS says the app is damaged, or offers no way
-to open it, [report it](#if-something-looks-wrong).
+message macOS shows has not been recorded on either kind of Mac. This guide does
+not give steps for getting past it; whether to open an unsigned app is your
+decision. Do not turn off Gatekeeper or other protections for the whole Mac to run
+Knightbook. If macOS says the app is damaged, [report it](#if-something-looks-wrong).
 
 The Intel build has not been opened on an Intel Mac yet.
 
