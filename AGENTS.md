@@ -68,7 +68,9 @@ Node 24 and pnpm (the version pinned in `package.json`, via corepack).
 | `pnpm --filter <package> test` | One package's tests, e.g. `@knightbook/core` |
 
 CI (`.github/workflows/ci.yml`) has two jobs. `check` runs install, `build:mcp` and
-`check`; only if it passes, `package` runs `pack:dir` (`pack:dir:mac` on macOS) and then the packaged-app tests
+`check`; on a pull request it is split into three Linux jobs that run at once (the
+desktop tests, the website tests, and lint, typecheck and the other packages' tests,
+D-050). Only if it passes, `package` runs `pack:dir` (`pack:dir:mac` on macOS) and then the packaged-app tests
 (`test:packaged` in `experiments/packaging`) with `REQUIRE_PACKAGED_APP=1`, keeping a
 screenshot and the app's output when the window test fails. Pull requests run on
 Linux only. Windows and macOS are checked when a release is built and on a manual

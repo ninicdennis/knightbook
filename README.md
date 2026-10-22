@@ -116,7 +116,7 @@ test suite. Run it before handing off a change. `pnpm format` rewrites code to t
 project style; it leaves Markdown and `.projectspace/` alone on purpose.
 
 [CI](.github/workflows/ci.yml) runs install, `pnpm build:mcp` and `pnpm check`
-first. Only when those pass does it run `pnpm pack:dir` and the packaged-app tests
+first; on a pull request the check is split into three jobs that run at once. Only when those pass does it run `pnpm pack:dir` and the packaged-app tests
 against the real package with `REQUIRE_PACKAGED_APP=1`, so they fail rather than
 skip when no package exists. Locally they skip without one. Pull requests run on
 Linux only; pushes to `main` and manual runs (Actions tab, "Run workflow") run on

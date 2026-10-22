@@ -6,7 +6,9 @@ name: CI
 #
 # Two jobs: `check` (lint, format, typecheck, every test suite) and `package`
 # (build the real app, then test it). `package` waits for `check`, so a broken
-# lint or test costs no packaging minutes. Given a version, `package` builds the
+# lint or test costs no packaging minutes. On a pull request `check` runs as
+# three Linux jobs side by side (D-050), because one 4-core runner running every
+# suite at once was the slowest part of CI. Given a version, `package` builds the
 # installers instead of a bare folder, stamped with that version, and keeps them
 # as artifacts for release.yml to publish.
 #
@@ -47,15 +49,22 @@ permissions:
 
 jobs:
   check:
-    name: Check (${{ matrix.os }})
+    name: Check (${{ matrix.os }}${{ matrix.part != 'all' && format(', {0}', matrix.part) || '' }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
-    # Defined once here and reused by `package` through the YAML anchor, so the
-    # two jobs cannot disagree about platforms.
-    strategy: &platforms # One platform failing must not hide the others.
+    # One platform failing must not hide the others.
+    strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["windows-latest", "ubuntu-latest", "macos-latest"]') }}
+        # Defined once here and reused by `package` through the YAML anchor, so
+        # the two jobs cannot disagree about platforms.
+        os: &platforms ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["windows-latest", "ubuntu-latest", "macos-latest"]') }}
+        # A pull request splits the work into three parts on separate runners
+        # (D-050): the desktop tests and the website tests take about the same
+        # time and each fills a runner, and the rest is short. Every other run
+        # keeps one `pnpm check` per platform, so a release does not pay for
+        # three Windows and macOS runners each.
+        part: ${{ fromJSON(github.event_name == 'pull_request' && '["desktop", "website", "the rest"]' || '["all"]') }}
 
     steps:
       # External actions are pinned to reviewed commit SHAs; the comment names the
@@ -91,6 +100,7 @@ jobs:
       # The website's browser tests (accessibility, phone width, JavaScript off)
       # need the Chromium build that matches the website's playwright-core.
       - name: Install Chromium for the website's browser tests
+        if: matrix.part == 'all' || matrix.part == 'website'
         run: pnpm --filter @knightbook/website exec playwright-core install --with-deps chromium
 
       # This includes experiments/packaging. Its staging suites run here for real;
@@ -98,16 +108,41 @@ jobs:
       # is expected and is not coverage: `package` runs those suites. The website's
       # browser tests skip locally without Chromium; here a missing one fails.
       - name: Lint, format check, typecheck and test
+        if: matrix.part == 'all'
         run: pnpm check
         env:
           REQUIRE_WEBSITE_BROWSER: '1'
+
+      # The same commands as `pnpm check`, split three ways. "The rest" excludes
+      # the two big suites by name rather than listing the others, so a new
+      # package's tests run without anyone remembering to add them here.
+      - name: Test the desktop app
+        if: matrix.part == 'desktop'
+        run: pnpm --filter @knightbook/desktop test
+
+      - name: Test the website
+        if: matrix.part == 'website'
+        run: pnpm --filter @knightbook/website test
+        env:
+          REQUIRE_WEBSITE_BROWSER: '1'
+
+      - name: Lint, format check, typecheck and test the other packages
+        if: matrix.part == 'the rest'
+        run: |
+          pnpm lint
+          pnpm format:check
+          pnpm typecheck
+          pnpm -r --filter '!@knightbook/desktop' --filter '!@knightbook/website' test
 
   package:
     name: Package and test the app (${{ matrix.os }})
     needs: check
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
-    strategy: *platforms
+    strategy:
+      fail-fast: false
+      matrix:
+        os: *platforms
 
     steps:
       - *checkout
