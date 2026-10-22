@@ -175,7 +175,7 @@ describe('the homepage', () => {
     const files = visibleText(section(homes.noRelease, 'files-title'))
     expect(files).toMatch(/ordinary Markdown files in your project folder/)
     expect(files).toMatch(/edit it in the editor you already use/)
-    expect(section(homes.noRelease, 'files-title')).toContain('data-draft="documentScreenshot"')
+    expect(section(homes.noRelease, 'files-title')).not.toContain('data-draft=')
     expect(section(homes.noRelease, 'files-title')).toMatch(/<img[^>]+alt="The Documents view/)
     const shared = visibleText(section(homes.noRelease, 'shared-title'))
     expect(shared).toMatch(/context the last one left behind/)
