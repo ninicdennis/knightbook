@@ -85,8 +85,8 @@ and your settings folder are on each system is listed under "Where it goes" in
 
 ## 3. Add it to Claude Code
 
-**Checked with:** Knightbook 0.2.0 and Claude Code 2.1.306 on Linux, on 2026-10-21.
-Not yet on Windows or macOS. [What has been tested](#what-has-been-tested) says
+**Checked with:** Knightbook 0.2.0, from the published Linux package, and Claude
+Code 2.1.308 on Linux, on 2026-10-22. Not yet on Windows or macOS. [What has been tested](#what-has-been-tested) says
 exactly what was checked.
 
 Choose **Claude Code or Claude Desktop** in the copy menu. Then add the entry to
@@ -216,6 +216,30 @@ A configuration saved while the app was called Projectspace names a folder the
 current app does not use. Copy the configuration again and replace it.
 
 ## What has been tested
+
+**Claude Code 2.1.308, the published Knightbook 0.2.0 Linux package, Ubuntu 24.04,
+2026-10-22.** In a fresh test machine without a desktop, with the window on a
+virtual display:
+
+- The project was allowed with **Allow AI access through MCP**, and **Copy MCP
+  configuration** for **Claude Code or Claude Desktop** was pasted into
+  `~/.claude.json` as step 3 says. `claude mcp list` showed `knightbook` as
+  connected, with no Node installed.
+- **Install** on the **Personal** Claude Code row wrote the skill to
+  `~/.claude/skills/projectspace`.
+- While Claude Code worked on the project, the window's status read **MCP
+  available**.
+- Claude Code answered the check prompt with the right project name, folder path,
+  two documents and one ticket, and changed nothing. Given the ticket from the
+  getting-started guide and the installed skill, it moved the ticket to In progress,
+  then to Verification with a handoff note.
+- With the window closed, and again after reinstalling and upgrading the package,
+  `claude mcp list` still showed `knightbook` as connected.
+
+What this did not cover: Claude Code could not sign in inside the test machine, so
+for the check prompt and the handoff it ran on another Linux machine and started
+the app's server inside the test machine, with a copy of the skill file the app
+had installed there. Accepting the handoff as done was not tried.
 
 **Claude Code 2.1.306, Knightbook 0.2.0, Linux (Ubuntu 24.04), 2026-10-21.** In a
 test machine without a desktop, using a Linux build of 0.2.0 made from its source

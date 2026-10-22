@@ -289,3 +289,37 @@ electron-builder's own config loader and naming rules for these names.
 Not covered: a real desktop and its menu, the window itself, a real AI client, the
 AppArmor profile the package installs on Ubuntu 24 and later, and the published release
 asset.
+
+## The published Linux deb in a fresh container (2026-10-22)
+
+For the Linux validation (ticket `b2a51f35`), with the published release asset this
+time. It is still not a real machine: a fresh `ubuntu:24.04` Docker container
+(Ubuntu 24.04.5 LTS, x64), no desktop environment and no window manager, Xvfb at
+1400×900, no AppArmor and no system D-Bus, the app run as an ordinary user. The
+window was driven over the Chrome DevTools protocol and the GTK folder chooser with
+`xdotool`, and screenshots were read.
+
+| Check | What was seen |
+| --- | --- |
+| Package | `Knightbook-0.2.0-linux-amd64.deb` from the v0.2.0 prerelease, 133,659,416 bytes; `sha256sum -c` against the release's `SHA256SUMS.txt` passed |
+| Install | `apt install ./…deb` installed it and 252 libraries, with no signature or publisher warning. `Depends`: `libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libsecret-1-0` |
+| First launch | **Failed:** `knightbook: error while loading shared libraries: libasound.so.2`. The package does not depend on the ALSA library, and a minimal Ubuntu 24.04 does not have it. `apt install libasound2t64` fixed it. A desktop install of Ubuntu has it already, so this mainly hits minimal and server installs |
+| Sandbox | Docker's default seccomp profile blocks Chromium's user-namespace sandbox ("Failed to move to new namespace", then a zygote crash), although the postinst had made `chrome-sandbox` setuid. A container with `seccomp=unconfined` started normally. A container limitation, not expected on a desktop |
+| Window | Opened to **Choose a project folder**. The GTK chooser picked a folder, **Set up this folder** listed `README.md` and the `docs` folder, and setting up wrote only `.projectspace/` |
+| Documents and board | Both documents listed and rendered. A ticket created with **+** showed at the top of Backlog as **Next up** |
+| Outside edits | A change appended to `README.md` from a shell was not shown until **Refresh from disk**, then was. Refresh on focus was not checked: without a window manager, focus could not be moved away and back |
+| MCP switch and copy | **Allow AI access through MCP** wrote `~/.config/Knightbook/mcp-access.json`. **Copy MCP configuration**, **Claude Code or Claude Desktop**, put `/opt/Knightbook/resources/mcp/node` with `server.mjs` and `--registry ~/.config/Knightbook/mcp-access.json` on the clipboard |
+| Skill | **Install** on the Personal Claude Code row wrote `~/.claude/skills/projectspace/SKILL.md` and showed **Up to date** |
+| Claude Code | 2.1.308 (the standalone binary; no Node on the machine). With the copied entry added at the top of `~/.claude.json`, `claude mcp list` showed `knightbook` connected. It could not sign in inside the container, so the check prompt and a handoff ran from Claude Code on the host, starting the installed server inside the container with `docker exec`. It answered the check prompt correctly and changed nothing, and handed the ticket off in Verification with a handoff note. The window read **MCP available** while it worked, and **MCP not connected** after |
+| MCP with the app closed | With no app process and `PATH=/usr/bin:/bin`, `claude mcp list` showed `knightbook` connected, and over stdio the installed server listed tickets and created one, which the app showed when started again |
+| Coming back | Started again, the app reopened the last project; **About** read `Knightbook 0.2.0` |
+| Reinstall | `apt install --reinstall` of the same file: `app-state.json` and `~/.claude.json` byte for byte unchanged, `knightbook` still connected |
+| Upgrade | No newer release exists, so a 0.2.1 deb was built from `main` (`pack:installers --linux deb -c.extraMetadata.version=0.2.1`). `apt` upgraded 0.2.0 to it in place; settings, `mcp-access.json` and `~/.claude.json` unchanged; `knightbook` still connected and serving both tickets; **About** read `Knightbook 0.2.1` |
+| Project made on Windows | This repository's own board, written on Windows (three files keep CRLF line endings), opened through **Open folder…** with no record problems. The root README rendered with its in-project logo image, and its relative link to these findings opened them in the app |
+| Remove | `apt remove` deleted `/opt/Knightbook`, `/usr/bin/knightbook` and the launcher. `~/.config/Knightbook`, the project's `.projectspace/` and the installed skill stayed; `claude mcp list` then failed with `ENOENT … /opt/Knightbook/resources/mcp/node` |
+| Purge | Removed nothing more |
+
+Not covered: a real machine with a desktop such as GNOME or KDE, the launcher in its
+menu, refresh on focus, **Edit externally** (no editor in the container), Claude
+Code signed in on the same machine as the app, accepting a handoff as done, the
+AppArmor profile, and a project made on Linux opened on Windows.
