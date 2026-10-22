@@ -66,6 +66,7 @@ Node 24 and pnpm (the version pinned in `package.json`, via corepack).
 | `pnpm preview:board` | Board against stub data at `http://localhost:5199`, for layout review |
 | `pnpm dev:website` / `pnpm preview:website` | The Astro website at `http://localhost:4321`, live or as built |
 | `pnpm --filter <package> test` | One package's tests, e.g. `@knightbook/core` |
+| `node --test '.github/scripts/**/*.test.mjs'` | Tests for the scripts workflows run, such as the CLA check (D-049); outside `pnpm check` |
 
 CI (`.github/workflows/ci.yml`) has two jobs. `check` runs install, `build:mcp` and
 `check`; on a pull request it is split into three Linux jobs that run at once (the

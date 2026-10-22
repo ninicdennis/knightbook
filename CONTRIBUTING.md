@@ -18,9 +18,22 @@ Small fixes to typos and broken links are welcome without one.
 
 Every contribution needs the [Contributor License Agreement](CLA.md). It lets the
 maintainer keep distributing your contribution with Knightbook, including under a
-different license later, while you keep the copyright in your own work. You agree
-to it once, by checking its box in the pull-request form; it then covers your
-later contributions too. A pull request without it cannot be merged.
+different license later, while you keep the copyright in your own work.
+
+You agree to it once, by checking its box in the pull-request form:
+
+```markdown
+- [x] I have read the [Contributor License Agreement](https://github.com/ninicdennis/knightbook/blob/main/CLA.md) and agree to it for this and my future contributions.
+```
+
+If the box is missing from your description, add that line. The "CLA agreed" check
+fails until you do, and a comment on the pull request says what to do; it runs
+again when you save the description. Only your own checked box counts: a box
+someone else checks for you is not agreement. When you agree, the check records
+your GitHub account, the CLA's version and the date on this repository's
+`cla-signatures` branch, and your later pull requests pass without asking again.
+If the agreement itself changes to a new version, you are asked once more. A pull
+request without an agreement cannot be merged.
 
 When you do send a change:
 
