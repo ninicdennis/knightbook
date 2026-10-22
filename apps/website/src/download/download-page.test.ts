@@ -23,8 +23,8 @@ const ASTRO_BIN = join(
 )
 
 const STATES = {
-  /** The checked-in file, with no releases: no fixture at all. */
-  checkedIn: null,
+  /** No release yet, as before the first one was published. */
+  noRelease: [],
   stable: [fixtureRelease('0.3.0')],
   missingTarget: [
     fixtureRelease('0.3.0', { targets: ['windows-x64', 'macos-arm64', 'linux-x64'] }),
@@ -49,16 +49,11 @@ const pages = {} as Record<State, string>
 
 beforeAll(async () => {
   workDir = await buildTempDir('knightbook-download-')
-  for (const [state, releases] of Object.entries(STATES) as [State, unknown[] | null][]) {
+  for (const [state, releases] of Object.entries(STATES) as [State, readonly unknown[]][]) {
     const outDir = join(workDir, state)
-    const env = { ...process.env }
-    if (releases) {
-      const dataFile = join(workDir, `${state}.json`)
-      await writeFile(dataFile, JSON.stringify({ releases }))
-      env.KNIGHTBOOK_RELEASE_DATA_FOR_TESTS = dataFile
-    } else {
-      delete env.KNIGHTBOOK_RELEASE_DATA_FOR_TESTS
-    }
+    const dataFile = join(workDir, `${state}.json`)
+    await writeFile(dataFile, JSON.stringify({ releases }))
+    const env = { ...process.env, KNIGHTBOOK_RELEASE_DATA_FOR_TESTS: dataFile }
     await run(process.execPath, [ASTRO_BIN, 'build', '--outDir', outDir], { cwd: SITE_ROOT, env })
     pages[state] = await readFile(join(outDir, 'download', 'index.html'), 'utf8')
   }
@@ -82,14 +77,14 @@ function card(html: string, target: string) {
 
 describe('the download page', () => {
   it('says downloads are not available yet when there is no release, and links no installer', () => {
-    const html = pages.checkedIn
+    const html = pages.noRelease
     expect(html).toMatch(/>Downloads are not available yet</)
     expect(installerLinks(html)).toEqual([])
     expect(html).not.toContain('class="card"')
   })
 
   it('explains it is a desktop app and lists every platform, for an unknown or mobile visitor', () => {
-    for (const state of ['checkedIn', 'stable'] as const) {
+    for (const state of ['noRelease', 'stable'] as const) {
       expect(pages[state], state).toContain(
         'Knightbook is a desktop app for Windows, macOS and Linux.',
       )
@@ -238,7 +233,7 @@ describe('the download page', () => {
   }, 120_000)
 
   it("marks the header's Download action as the current page, and nothing else", () => {
-    const header = pages.checkedIn.match(/<header class="site-header[\s\S]*?<\/header>/)?.[0] ?? ''
+    const header = pages.noRelease.match(/<header class="site-header[\s\S]*?<\/header>/)?.[0] ?? ''
     expect(header).toMatch(
       /<a class="kb-button download[^"]*" href="\/download\/" aria-current="page"[^>]*>Download<\/a>/,
     )

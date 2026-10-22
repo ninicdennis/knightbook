@@ -24,7 +24,7 @@ const ASTRO_BIN = join(
 )
 
 const STATES = {
-  checkedIn: null,
+  noRelease: [],
   stable: [fixtureRelease('0.3.0')],
   previewOnly: [fixtureRelease('0.2.0', { channel: 'preview' })],
   stableAndPreview: [fixtureRelease('0.3.0'), fixtureRelease('0.4.0', { channel: 'preview' })],
@@ -42,14 +42,11 @@ function build(outDir: string, env: NodeJS.ProcessEnv) {
 
 beforeAll(async () => {
   workDir = await buildTempDir('knightbook-home-')
-  for (const [state, releases] of Object.entries(STATES) as [State, unknown[] | null][]) {
+  for (const [state, releases] of Object.entries(STATES) as [State, readonly unknown[]][]) {
     const env: NodeJS.ProcessEnv = { ...process.env }
-    delete env.KNIGHTBOOK_RELEASE_DATA_FOR_TESTS
     delete env.KNIGHTBOOK_SITE_STAGE
-    if (releases) {
-      env.KNIGHTBOOK_RELEASE_DATA_FOR_TESTS = join(workDir, `${state}.json`)
-      await writeFile(env.KNIGHTBOOK_RELEASE_DATA_FOR_TESTS, JSON.stringify({ releases }))
-    }
+    env.KNIGHTBOOK_RELEASE_DATA_FOR_TESTS = join(workDir, `${state}.json`)
+    await writeFile(env.KNIGHTBOOK_RELEASE_DATA_FOR_TESTS, JSON.stringify({ releases }))
     await build(join(workDir, state), env)
     homes[state] = await readFile(join(workDir, state, 'index.html'), 'utf8')
   }
@@ -90,7 +87,7 @@ function installerLinks(html: string) {
 
 describe('the homepage', () => {
   it('opens with the agreed hero copy, the download action and the getting-started link', () => {
-    const hero = section(homes.checkedIn, 'hero-title')
+    const hero = section(homes.noRelease, 'hero-title')
     expect(hero).toMatch(/<h1[^>]*>Your project context, beyond the chat\.<\/h1>/)
     expect(visibleText(hero)).toContain(
       'Keep project documents, decisions, and a work board together in a desktop workspace. Connect your existing AI tools, keep your Markdown in your project folder, and decide when the work is done.',
@@ -100,14 +97,14 @@ describe('the homepage', () => {
 
   it('says Knightbook is free and links the license beside each download action', () => {
     for (const id of ['hero-title', 'closing-title']) {
-      expect(section(homes.checkedIn, id), id).toMatch(
+      expect(section(homes.noRelease, id), id).toMatch(
         /<p class="terms"[^>]*>Free, with the source code available under the <a href="\/license\/"[^>]*>FSL<\/a>\.<\/p>/,
       )
     }
   })
 
   it('puts the copy and actions before the image, so they come first when stacked', () => {
-    const hero = section(homes.checkedIn, 'hero-title')
+    const hero = section(homes.noRelease, 'hero-title')
     const order = ['<h1', 'class="lead', 'class="download-action', '<figure'].map((mark) =>
       hero.indexOf(mark),
     )
@@ -116,7 +113,7 @@ describe('the homepage', () => {
   })
 
   it('says downloads are not available yet when there is no release, as status text', () => {
-    const html = homes.checkedIn
+    const html = homes.noRelease
     expect(
       html.match(/<p class="status[^"]*"[^>]*>Downloads are not available yet<\/p>/g),
     ).toHaveLength(2)
@@ -159,7 +156,7 @@ describe('the homepage', () => {
   })
 
   it('explains the four steps at the How it works anchor, with MCP beside the AI step', () => {
-    const how = section(homes.checkedIn, 'how-title')
+    const how = section(homes.noRelease, 'how-title')
     expect(how).toMatch(/<section[^>]*id="how-it-works"/)
     const titles = [...how.matchAll(/<h3[^>]*>([^<]+)<\/h3>/g)].map((match) => match[1])
     expect(titles).toEqual([
@@ -175,19 +172,19 @@ describe('the homepage', () => {
   })
 
   it('explains files you keep using and the shared view, each with its own content', () => {
-    const files = visibleText(section(homes.checkedIn, 'files-title'))
+    const files = visibleText(section(homes.noRelease, 'files-title'))
     expect(files).toMatch(/ordinary Markdown files in your project folder/)
     expect(files).toMatch(/edit it in the editor you already use/)
-    expect(section(homes.checkedIn, 'files-title')).toContain('data-draft="documentScreenshot"')
-    expect(section(homes.checkedIn, 'files-title')).toMatch(/<img[^>]+alt="The Documents view/)
-    const shared = visibleText(section(homes.checkedIn, 'shared-title'))
+    expect(section(homes.noRelease, 'files-title')).toContain('data-draft="documentScreenshot"')
+    expect(section(homes.noRelease, 'files-title')).toMatch(/<img[^>]+alt="The Documents view/)
+    const shared = visibleText(section(homes.noRelease, 'shared-title'))
     expect(shared).toMatch(/context the last one left behind/)
     expect(shared).toMatch(/what it depends on/)
     expect(shared).toMatch(/Example ticket:.*Outcome.*Acceptance criteria.*Handoff/)
   })
 
   it('has the three explanations, with Verification emphasised and the decision left to the user', () => {
-    const headings = [...homes.checkedIn.matchAll(/<h2[^>]*>([^<]+)<\/h2>/g)].map((m) => m[1])
+    const headings = [...homes.noRelease.matchAll(/<h2[^>]*>([^<]+)<\/h2>/g)].map((m) => m[1])
     for (const title of [
       'Files you can keep using',
       'A shared view of the work',
@@ -195,7 +192,7 @@ describe('the homepage', () => {
     ]) {
       expect(headings).toContain(title)
     }
-    const decision = section(homes.checkedIn, 'decision-title')
+    const decision = section(homes.noRelease, 'decision-title')
     expect(visibleText(decision)).toMatch(
       /Backlog In progress Verification You decide what happens next Done/,
     )
@@ -204,7 +201,7 @@ describe('the homepage', () => {
   })
 
   it('keeps each FAQ answer within its boundary', () => {
-    const faq = section(homes.checkedIn, 'faq-title')
+    const faq = section(homes.noRelease, 'faq-title')
     const answer = (question: string) =>
       visibleText(
         faq.match(
@@ -237,7 +234,7 @@ describe('the homepage', () => {
   })
 
   it('answers the eight questions in native expandable rows', () => {
-    const faq = section(homes.checkedIn, 'faq-title')
+    const faq = section(homes.noRelease, 'faq-title')
     const questions = [...faq.matchAll(/<summary[^>]*>([^<]+)<\/summary>/g)].map((m) => m[1])
     expect(questions).toEqual([
       'Does Knightbook include an AI assistant?',
@@ -254,14 +251,14 @@ describe('the homepage', () => {
   })
 
   it('ends with the closing heading, the same download action and the getting-started link', () => {
-    const closing = section(homes.checkedIn, 'closing-title')
+    const closing = section(homes.noRelease, 'closing-title')
     expect(closing).toMatch(/>Keep the next session connected to the project\.</)
     expect(closing).toContain('class="download-action')
     expect(closing).toMatch(/href="\/docs\/getting-started\/"/)
   })
 
   it('makes none of the banned claims, and shows no testimonials or usage counts', () => {
-    const text = `${visibleText(homes.checkedIn)} ${attributeText(homes.checkedIn)}`.toLowerCase()
+    const text = `${visibleText(homes.noRelease)} ${attributeText(homes.noRelease)}`.toLowerCase()
     for (const claim of [
       'works with every ai',
       'fully offline ai',
@@ -282,7 +279,7 @@ describe('the homepage', () => {
       ['hero-title', 'The Knightbook board with four columns'],
       ['files-title', 'The Documents view in Knightbook'],
     ]) {
-      const picture = section(homes.checkedIn, id).match(/<picture[\s\S]*?<\/picture>/)?.[0] ?? ''
+      const picture = section(homes.noRelease, id).match(/<picture[\s\S]*?<\/picture>/)?.[0] ?? ''
       const dark = picture.match(
         /<source media="\(prefers-color-scheme: dark\)"[^>]*srcset="([^"]+)"/,
       )
@@ -293,12 +290,12 @@ describe('the homepage', () => {
       expect(picture, id).toMatch(new RegExp(`<img[^>]+alt="${alt}[^"]+"`))
       expect(picture, id).toMatch(/<img[^>]+width="1280"[^>]+height="800"/)
     }
-    expect(section(homes.checkedIn, 'hero-title')).toMatch(/<img[^>]+loading="eager"/)
-    expect(section(homes.checkedIn, 'files-title')).toMatch(/<img[^>]+loading="lazy"/)
+    expect(section(homes.noRelease, 'hero-title')).toMatch(/<img[^>]+loading="eager"/)
+    expect(section(homes.noRelease, 'files-title')).toMatch(/<img[^>]+loading="lazy"/)
   })
 
   it('marks every draft visibly, and only drafts that are listed', () => {
-    const marked = [...homes.checkedIn.matchAll(/data-draft="([^"]+)"/g)].map((m) => m[1])
+    const marked = [...homes.noRelease.matchAll(/data-draft="([^"]+)"/g)].map((m) => m[1])
     expect(new Set(marked)).toEqual(new Set(Object.keys(DRAFTS)))
   })
 
