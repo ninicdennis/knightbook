@@ -15,8 +15,8 @@ function problemsWith(releases: unknown[]) {
 }
 
 describe('validating the release data', () => {
-  it('accepts the checked-in file, which has no releases yet', () => {
-    expect(parseReleaseData(checkedIn).releases).toEqual([])
+  it('accepts the checked-in file', () => {
+    expect(() => parseReleaseData(checkedIn)).not.toThrow()
   })
 
   it('accepts a complete release', () => {

@@ -1,3 +1,62 @@
 {
-  "releases": []
+  "releases": [
+    {
+      "version": "0.2.0",
+      "channel": "preview",
+      "date": "2026-10-22",
+      "notesUrl": "https://github.com/ninicdennis/knightbook/releases/tag/v0.2.0",
+      "withdrawn": false,
+      "knownIssues": [
+        "The installers are not signed. Windows SmartScreen warns before the installer runs.",
+        "The macOS app is not signed with an Apple developer certificate or notarized, so macOS blocks it the first time it is opened.",
+        "The installers have not yet been tried on a clean computer. Only the Linux package has been installed and opened, on Ubuntu 24.04."
+      ],
+      "assets": [
+        {
+          "os": "windows",
+          "arch": "x64",
+          "format": "nsis",
+          "minimumOs": "Windows 10 or later",
+          "url": "https://github.com/ninicdennis/knightbook/releases/download/v0.2.0/Knightbook-0.2.0-windows-x64.exe",
+          "filename": "Knightbook-0.2.0-windows-x64.exe",
+          "size": 134336022,
+          "sha256": "21b40f16191fe4f7110df9aa01cb2dc7c48cb9ad249580588161ec6a417778a9",
+          "signing": "unsigned"
+        },
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "format": "dmg",
+          "minimumOs": "macOS 13 Ventura or later",
+          "url": "https://github.com/ninicdennis/knightbook/releases/download/v0.2.0/Knightbook-0.2.0-macos-arm64.dmg",
+          "filename": "Knightbook-0.2.0-macos-arm64.dmg",
+          "size": 173099546,
+          "sha256": "6a6c1e5bd11b5dc5f57a7e9129ef004b4bceac9aa95edfb263866823383e2fb7",
+          "signing": "unsigned"
+        },
+        {
+          "os": "macos",
+          "arch": "x64",
+          "format": "dmg",
+          "minimumOs": "macOS 13 Ventura or later",
+          "url": "https://github.com/ninicdennis/knightbook/releases/download/v0.2.0/Knightbook-0.2.0-macos-x64.dmg",
+          "filename": "Knightbook-0.2.0-macos-x64.dmg",
+          "size": 178292846,
+          "sha256": "3f012fedbae67e476047c298257c911a1d0ac6e00df10c85a0aaba76b065f2c3",
+          "signing": "unsigned"
+        },
+        {
+          "os": "linux",
+          "arch": "x64",
+          "format": "deb",
+          "minimumOs": "A current Debian or Ubuntu release still maintained by the distribution",
+          "url": "https://github.com/ninicdennis/knightbook/releases/download/v0.2.0/Knightbook-0.2.0-linux-amd64.deb",
+          "filename": "Knightbook-0.2.0-linux-amd64.deb",
+          "size": 133659416,
+          "sha256": "95703f488f90c0769a0ac26220a027476b42ee77cb197a6829eba299daceedd5",
+          "signing": "unsigned"
+        }
+      ]
+    }
+  ]
 }
