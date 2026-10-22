@@ -213,6 +213,21 @@ describe('the documentation section', () => {
     expect(text).toContain('report it')
   })
 
+  it.each(['installation', 'getting-started', 'connecting-ai', 'troubleshooting'])(
+    'gives no steps for getting past an unsigned-app warning in the %s guide',
+    async (slug) => {
+      const text = (await page(real, `docs/${slug}/index.html`)).replace(/<[^>]+>/g, ' ')
+      for (const step of [
+        /Run anyway/i,
+        /Open Anyway/i,
+        /More info/i,
+        /Privacy\s+&amp;\s+Security/i,
+      ]) {
+        expect(text, String(step)).not.toMatch(step)
+      }
+    },
+  )
+
   it('tells readers to commit .projectspace and ignore only its coordination files', async () => {
     const guide = await page(real, 'docs/projects-and-documents/index.html')
     expect(guide).toContain('.projectspace/runtime/')
