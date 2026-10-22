@@ -175,7 +175,7 @@ describe('the homepage', () => {
     const files = visibleText(section(homes.noRelease, 'files-title'))
     expect(files).toMatch(/ordinary Markdown files in your project folder/)
     expect(files).toMatch(/edit it in the editor you already use/)
-    expect(section(homes.noRelease, 'files-title')).toContain('data-draft="documentScreenshot"')
+    expect(section(homes.noRelease, 'files-title')).not.toContain('data-draft=')
     expect(section(homes.noRelease, 'files-title')).toMatch(/<img[^>]+alt="The Documents view/)
     const shared = visibleText(section(homes.noRelease, 'shared-title'))
     expect(shared).toMatch(/context the last one left behind/)
@@ -328,7 +328,11 @@ describe('the homepage', () => {
   it('refuses a production build while drafts remain, naming every one', async () => {
     const env: NodeJS.ProcessEnv = { ...process.env, KNIGHTBOOK_SITE_STAGE: 'production' }
     delete env.KNIGHTBOOK_RELEASE_DATA_FOR_TESTS
-    const failure = await build(join(workDir, 'production'), env).catch((error) => error)
+    const failure = await build(join(workDir, 'production'), env).then(
+      () => null,
+      (error) => error,
+    )
+    if (Object.keys(DRAFTS).length === 0) return expect(failure).toBeNull()
     expect(failure).toBeInstanceOf(Error)
     for (const id of Object.keys(DRAFTS)) expect(failure.stderr, id).toContain(`${id}: `)
   }, 120_000)

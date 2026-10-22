@@ -7,12 +7,7 @@
  * build while any remain, and names every one, so a placeholder can never be
  * published as if it were the product. Remove an entry once its place is real.
  */
-export const DRAFTS = {
-  boardScreenshot:
-    "Interim board screenshot of Knightbook's own project; replace with a fictional sample project (ticket 90c7aba5)",
-  documentScreenshot:
-    "Interim document screenshot of Knightbook's own project; replace with a fictional sample project (ticket 90c7aba5)",
-} as const
+export const DRAFTS = {} as const
 
 export type DraftId = keyof typeof DRAFTS
 
