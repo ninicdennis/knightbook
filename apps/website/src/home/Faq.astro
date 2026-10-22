@@ -6,11 +6,13 @@ import type { DraftId } from './drafts'
  * The eight questions from the landing-page proposal §4, each answered within
  * its stated boundary. Answers that wait on evidence or a decision say only what
  * is known and carry a draft marker, which a production build refuses.
- * Native <details>, so every answer opens without JavaScript.
+ * Native <details>, so every answer opens without JavaScript. An answer whose
+ * evidence lives in a guide links to it rather than repeating it.
  */
 interface Entry {
   question: string
   answer: string
+  links?: { href: string; label: string }[]
   draft?: DraftId
 }
 
@@ -38,8 +40,13 @@ const entries: Entry[] = [
   {
     question: 'Does the app need to stay open?',
     answer:
-      "It is designed not to: your AI tool starts Knightbook's connection itself, separately from the window.",
-    draft: 'faqWindowClosed',
+      "No. Your AI tool starts Knightbook's connection itself, separately from the window, so it can work in the projects you have allowed while Knightbook is closed. When you open the window again, it shows what changed. Checked so far with Claude Code on Linux, not yet on Windows or macOS.",
+    links: [
+      {
+        href: '/docs/connecting-ai/#working-with-the-window-closed',
+        label: 'Working with the window closed',
+      },
+    ],
   },
   {
     question: 'Does it sync across computers?',
@@ -49,8 +56,11 @@ const entries: Entry[] = [
   {
     question: 'Which systems and AI clients work?',
     answer:
-      'Knightbook is built for Windows, macOS and Linux, and connects to AI tools that support MCP. The systems and tools that have been tested will be listed here.',
-    draft: 'faqSupport',
+      'There are installers for 64-bit Windows 10 and later, macOS 13 and later on Apple silicon and Intel, and 64-bit Debian and Ubuntu Linux. Knightbook connects to AI tools that support MCP, and copies a ready-made configuration for Claude Code, Claude Desktop, Codex and OpenCode. So far it has been tested with Claude Code on Linux; the installers have not yet been tried on a clean computer for each system. If something does not work, report it on GitHub Issues.',
+    links: [
+      { href: '/docs/connecting-ai/#what-has-been-tested', label: 'What has been tested' },
+      { href: '/docs/troubleshooting/#asking-for-help', label: 'Asking for help' },
+    ],
   },
   {
     question: 'Is it free, and what is the license?',
@@ -67,6 +77,13 @@ const entries: Entry[] = [
       <details>
         <summary>{entry.question}</summary>
         <p>{entry.answer}</p>
+        {entry.links && (
+          <p class="links">
+            {entry.links.map((link) => (
+              <a href={link.href}>{link.label}</a>
+            ))}
+          </p>
+        )}
         {entry.draft && <DraftNote id={entry.draft} />}
       </details>
     ))}
@@ -104,6 +121,19 @@ const entries: Entry[] = [
   details p {
     margin-bottom: var(--kb-space-3);
     color: var(--kb-muted);
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--kb-space-4);
+  }
+
+  .links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 500;
   }
 
   details[open] {

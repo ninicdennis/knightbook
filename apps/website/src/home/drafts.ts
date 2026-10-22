@@ -12,10 +12,6 @@ export const DRAFTS = {
     "Interim board screenshot of Knightbook's own project; replace with a fictional sample project (ticket 90c7aba5)",
   documentScreenshot:
     "Interim document screenshot of Knightbook's own project; replace with a fictional sample project (ticket 90c7aba5)",
-  faqWindowClosed:
-    'Whether the AI tool works with the window closed, confirmed on a clean install (ticket ebc80cc9)',
-  faqSupport:
-    'Which systems and AI clients are tested, from the validation and client-guide tickets',
 } as const
 
 export type DraftId = keyof typeof DRAFTS
