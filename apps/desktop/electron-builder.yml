@@ -79,13 +79,14 @@ linux:
       arch: [x64]
   category: Development
 
-# electron-builder's default deb dependencies leave out the ALSA library, which
-# Electron links against, so on a minimal Ubuntu 24.04 the app exited with
-# "libasound.so.2: cannot open shared object file" (ticket 75d7db08). Setting
+# electron-builder's default deb dependencies leave out two libraries Electron
+# links against. Without the ALSA library a minimal Ubuntu 24.04 exited with
+# "libasound.so.2: cannot open shared object file" (ticket 75d7db08), and without
+# libgbm1 a fresh Ubuntu 22.04 exited on "libgbm.so.1" (ticket ec891597). Setting
 # `depends` replaces the defaults, so they are listed again here, as
 # FpmTarget.getDefaultDepends in electron-builder 26.15.3 has them.
-# scripts/deb-depends.test.mjs checks both. The library is libasound2t64 on
-# Ubuntu 24.04 and Debian 13, and libasound2 before them.
+# scripts/deb-depends.test.mjs checks the additions and the defaults. The ALSA
+# library is libasound2t64 on Ubuntu 24.04 and Debian 13, and libasound2 before.
 deb:
   depends:
     - libgtk-3-0
@@ -98,3 +99,4 @@ deb:
     - libuuid1
     - libsecret-1-0
     - libasound2t64 | libasound2
+    - libgbm1

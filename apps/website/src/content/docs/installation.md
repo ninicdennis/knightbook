@@ -135,17 +135,19 @@ Keep the `./`, which tells `apt` you mean a file rather than a package by that n
 Installing with `dpkg -i` instead stops with the package half installed when a
 library is missing, so use `apt`.
 
-The 0.2.0 package does not ask for the sound library, `libasound2t64`; the next
-release's package does, so `apt` installs it for you. A desktop install of Ubuntu
-already has it, but on a minimal system Knightbook 0.2.0 does not start
-and `knightbook` in a terminal reports `libasound.so.2: cannot open shared object
-file`. Install it, then open Knightbook again:
+The 0.2.0 package does not ask for two libraries Knightbook needs: the sound
+library and the graphics library `libgbm1`. The next release's package asks for
+both, so `apt` installs them for you. A desktop install of Ubuntu already has them,
+but on a minimal Ubuntu 24.04 or a fresh Ubuntu 22.04, Knightbook 0.2.0 does not
+start, and `knightbook` in a terminal reports `libasound.so.2` or `libgbm.so.1`:
+`cannot open shared object file`. Install them, then open Knightbook again. On
+Ubuntu 24.04:
 
 ```sh
-sudo apt install libasound2t64
+sudo apt install libasound2t64 libgbm1
 ```
 
-On Debian 12 and Ubuntu 22.04 the package is called `libasound2`.
+On Ubuntu 22.04 and Debian 12 the sound library is called `libasound2` instead.
 
 The package is not signed. In the test, `apt` installed it without any warning about
 the publisher, so the checksum is your check that the file is the one published.

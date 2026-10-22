@@ -6,8 +6,9 @@ import { describe, expect, it } from 'vitest'
 
 /**
  * The packages the Linux deb asks apt to install. electron-builder's defaults leave
- * out the ALSA library Electron links against, so on a minimal Ubuntu 24.04 the
- * installed app could not start (ticket 75d7db08). electron-builder.yml lists the
+ * out the ALSA and GBM libraries Electron links against, so the installed app
+ * could not start on a minimal Ubuntu 24.04 (ticket 75d7db08) or a fresh Ubuntu
+ * 22.04 (ticket ec891597). electron-builder.yml lists the
  * dependencies itself, which replaces the defaults, so these tests check the ALSA
  * library is there and that none of electron-builder's own defaults was lost.
  * A deb built from this config was installed in a fresh container to confirm it
@@ -32,6 +33,10 @@ async function debDepends() {
 describe('the Linux deb dependencies', () => {
   it('ask for the ALSA library under its name before and after the 64-bit time change', async () => {
     expect(await debDepends()).toContain('libasound2t64 | libasound2')
+  })
+
+  it('ask for the GBM library, which Ubuntu 22.04 does not otherwise install', async () => {
+    expect(await debDepends()).toContain('libgbm1')
   })
 
   it("keep every one of electron-builder's default dependencies", async () => {
