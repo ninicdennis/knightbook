@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layout/BaseLayout.astro'
 import DownloadAction from '../download/DownloadAction.astro'
-import DraftNote from '../home/DraftNote.astro'
 import Faq from '../home/Faq.astro'
 import FeatureSections from '../home/FeatureSections.astro'
 import HomeHero from '../home/HomeHero.astro'
@@ -13,13 +12,7 @@ import { refuseDraftsInProduction } from '../home/drafts'
  * explanations, FAQ, closing action. Every draft it shows is listed here, so a
  * production build fails and names them all until each place is real.
  */
-refuseDraftsInProduction([
-  'boardScreenshot',
-  'documentScreenshot',
-  'gettingStartedGuide',
-  'faqWindowClosed',
-  'faqSupport',
-])
+refuseDraftsInProduction(['boardScreenshot', 'documentScreenshot', 'faqWindowClosed', 'faqSupport'])
 ---
 
 <BaseLayout
@@ -36,7 +29,6 @@ refuseDraftsInProduction([
     <DownloadAction />
     <p class="guide">
       <a href="/docs/getting-started/">Read the getting-started guide</a>
-      <DraftNote id="gettingStartedGuide" />
     </p>
   </section>
 </BaseLayout>

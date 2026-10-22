@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -41,10 +41,29 @@ function build(out: string, env: NodeJS.ProcessEnv = process.env) {
   return run(process.execPath, [ASTRO_BIN, 'build', '--outDir', out], { cwd: SITE_ROOT, env })
 }
 
+// Every real guide is written, so the build adds one placeholder beside them to
+// show a draft guide is left out of the sitemap.
+const DRAFT_GUIDE = `---
+title: Writing in progress
+description: A guide that is not written yet.
+group: Start here
+order: 9
+draft: true
+---
+
+Not written yet.
+`
+
 beforeAll(async () => {
   workDir = await buildTempDir('knightbook-discovery-')
   outDir = join(workDir, 'site')
-  await build(outDir)
+  const guides = join(workDir, 'guides')
+  const realGuides = join(SITE_ROOT, 'src', 'content', 'docs')
+  await mkdir(guides)
+  for (const name of await readdir(realGuides))
+    await copyFile(join(realGuides, name), join(guides, name))
+  await writeFile(join(guides, 'writing-in-progress.md'), DRAFT_GUIDE)
+  await build(outDir, { ...process.env, KNIGHTBOOK_DOCS_DIR_FOR_TESTS: guides })
 })
 
 afterAll(async () => {
