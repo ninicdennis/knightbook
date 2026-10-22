@@ -10,12 +10,12 @@ Knightbook is a desktop app for Windows, macOS and Linux. It is free, and you do
 need an account, Node or any developer tools to run it. This guide covers choosing
 the right download, installing it, updating it by hand, and removing it.
 
-**How much of this has been checked.** The installers have not yet been tried on a
-clean computer on any of the three systems. The Linux package has been installed,
-opened, upgraded and removed in a test machine running Ubuntu 24.04 without a
-desktop. Anything else marked **Not yet checked** describes what the installer is
-built to do, not something anyone has watched it do. This guide is updated as each
-system is checked.
+**How much of this has been checked.** The Windows and macOS installers have not
+yet been tried on a clean computer. The published Linux package for 0.2.0 has been
+installed, opened, reinstalled, upgraded and removed in a fresh test machine running
+Ubuntu 24.04 without a desktop, on 2026-10-22. Anything marked **Not yet checked**
+describes what the installer is built to do, not something anyone has watched it
+do. This guide is updated as each system is checked.
 
 ## Choosing a download
 
@@ -135,6 +135,17 @@ Keep the `./`, which tells `apt` you mean a file rather than a package by that n
 Installing with `dpkg -i` instead stops with the package half installed when a
 library is missing, so use `apt`.
 
+The package does not yet ask for the sound library, `libasound2t64`. A desktop
+install of Ubuntu already has it, but on a minimal system Knightbook does not start
+and `knightbook` in a terminal reports `libasound.so.2: cannot open shared object
+file`. Install it, then open Knightbook again:
+
+```sh
+sudo apt install libasound2t64
+```
+
+On Debian 12 and Ubuntu 22.04 the package is called `libasound2`.
+
 The package is not signed. In the test, `apt` installed it without any warning about
 the publisher, so the checksum is your check that the file is the one published.
 
@@ -149,11 +160,12 @@ the publisher, so the checksum is your check that the file is the one published.
 
 ### First launch
 
-Open Knightbook from your applications menu. In the test machine the app started
-on a virtual display, and with the app closed its MCP server ran with no Node
-installed and created and listed tickets. **Not yet checked:** the window itself,
-which should open to **Choose a project folder** as on the other systems, a real
-desktop such as GNOME or KDE, and a real AI tool connecting.
+Open Knightbook from your applications menu. It opens to **Choose a project
+folder**, which opens your desktop's folder chooser; then **Set up this folder** if
+the folder has no board yet. In the test machine, on a virtual display, the window
+did this, and Claude Code connected to the app's MCP server with no Node installed,
+with the app open and with it closed. **Not yet checked:** a real desktop such as
+GNOME or KDE.
 
 ## Updating
 
@@ -178,7 +190,8 @@ the [releases page](/releases/).
    Windows, run the new installer. On macOS, drag the new app into
    **Applications** and choose **Replace**. On Linux, run the same `apt install`
    command with the new file. In the Linux test, `apt` replaced the old version in
-   place, and the settings and the copied MCP configuration kept working. **Not yet
+   place, and the settings and the MCP configuration saved in Claude Code kept
+   working. **Not yet
    checked** on Windows and macOS.
 5. **Reconnect your AI tool.** The app stays in the same place, so the configuration
    you copied before should still be right. Restart the AI tool so it starts the
@@ -201,8 +214,9 @@ checked on any system.
 - **macOS:** quit Knightbook and drag it from **Applications** to the Trash.
   **Not yet checked:** its settings stay.
 - **Linux:** `sudo apt remove knightbook`. In the Linux test this removed
-  `/opt/Knightbook` and the applications menu entry. `sudo apt purge knightbook`
-  removed nothing more: the settings in your home folder stayed in both cases.
+  `/opt/Knightbook`, the `knightbook` command and the applications menu entry.
+  `sudo apt purge knightbook` removed nothing more: the settings in your home
+  folder stayed in both cases.
 
 ### What stays: the app's settings
 

@@ -12,10 +12,12 @@ do not need Git, Node or any developer tools, and steps 1 to 4 need no AI tool a
 all.
 
 **How much of this has been checked.** This guide was written on 2026-10-21 for
-Knightbook 0.2.0, from the app's own screens and labels. It has not yet been
-followed start to finish on a clean install. Steps marked **Not yet checked**
-describe what the app is built to do, not something anyone has watched it do on a
-fresh computer. This note is updated once it has been.
+Knightbook 0.2.0, from the app's own screens and labels. On 2026-10-22 it was
+followed on Linux, in a fresh Ubuntu 24.04 test machine without a desktop, with
+Claude Code, up to accepting the work in step 7, which was not tried. It has not
+yet been followed on a clean Windows or macOS install. Steps marked **Not yet
+checked** describe what the app is built to do, not something anyone has watched it
+do on a fresh computer. This note is updated as each system is checked.
 
 ## 1. Install and open Knightbook
 
@@ -152,7 +154,8 @@ then choose in Knightbook which projects it may reach.
 including exactly where the configuration goes for Claude Code.
 
 **What you should see:** after your AI tool starts, the status reads **MCP
-available**. **Not yet checked** on a clean install.
+available**. Checked on Linux; **Not yet checked** on a clean Windows or macOS
+install.
 
 **If it does not:** see [MCP not connected](../troubleshooting/#mcp-not-connected).
 
@@ -167,8 +170,8 @@ Ask it:
 **What you should see:** the project name you gave in step 2, and a path that is
 exactly the folder you opened. Compare it with the path in Knightbook: click the
 project name at the top left, and the path is under **Open now**. The AI should list
-the documents from step 3 and the ticket from step 4. **Not yet checked** on a
-clean install.
+the documents from step 3 and the ticket from step 4. Checked on Linux; **Not yet
+checked** on a clean Windows or macOS install.
 
 **If the name or path is different:** see [the wrong project
 appears](../troubleshooting/#the-wrong-project-appears). Several copies of one
@@ -201,7 +204,9 @@ The AI cannot move a ticket to Done by itself. Finishing its work, passing tests
 its own review do not count as your decision.
 
 **What you should see:** the ticket in Verification with a handoff note, and after
-you accept it, in Done. **Not yet checked** on a clean install.
+you accept it, in Done. Checked on Linux as far as the handoff note in
+Verification; **Not yet checked:** accepting it, and the whole step on a clean
+Windows or macOS install.
 
 **If Done or the label on the card looks wrong:** see [Done or review looks
 wrong](../troubleshooting/#done-or-review-looks-wrong).

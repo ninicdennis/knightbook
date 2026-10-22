@@ -222,15 +222,41 @@ describe('the homepage', () => {
     expect(answer('Can I edit documents?')).toMatch(
       /edit them in your usual editor.*not part of the current release/,
     )
-    expect(answer('Does the app need to stay open?')).toMatch(/designed not to/)
+    expect(answer('Does the app need to stay open?')).toMatch(
+      /No\. .*separately from the window.*Claude Code on Linux, not yet on Windows or macOS/,
+    )
     expect(answer('Does it sync across computers?')).toMatch(/No\. .*does not sync them or run Git/)
     expect(answer('Which systems and AI clients work?')).toMatch(
-      /have been tested will be listed here/,
+      /Windows 10 and later.*macOS 13 and later.*Debian and Ubuntu.*tested with Claude Code on Linux.*not yet been tried on a clean computer.*GitHub Issues/,
     )
     expect(answer('Which systems and AI clients work?')).not.toMatch(/every|all AI|any AI/i)
     expect(answer('Is it free, and what is the license?')).toMatch(
       /Yes, Knightbook is free\..*Functional Source License \(FSL-1\.1-ALv2\).*except offering it.*competing commercial product.*Apache License 2\.0/,
     )
+  })
+
+  it('links the window and support answers to guide sections that exist', async () => {
+    const faq = section(homes.noRelease, 'faq-title')
+    const links = (question: string) => {
+      const entry = faq.match(
+        new RegExp(
+          `<summary[^>]*>${question.replace(/[?]/g, '\\?')}</summary>[\\s\\S]*?</details>`,
+        ),
+      )?.[0]
+      return [...(entry ?? '').matchAll(/<a href="([^"]+)"/g)].map((m) => m[1])
+    }
+    const window = links('Does the app need to stay open?')
+    const support = links('Which systems and AI clients work?')
+    expect(window).toEqual(['/docs/connecting-ai/#working-with-the-window-closed'])
+    expect(support).toEqual([
+      '/docs/connecting-ai/#what-has-been-tested',
+      '/docs/troubleshooting/#asking-for-help',
+    ])
+    for (const href of [...window, ...support]) {
+      const [path, id] = href.split('#')
+      const page = await readFile(join(workDir, 'noRelease', path, 'index.html'), 'utf8')
+      expect(page, href).toContain(`id="${id}"`)
+    }
   })
 
   it('answers the eight questions in native expandable rows', () => {
@@ -302,7 +328,11 @@ describe('the homepage', () => {
   it('refuses a production build while drafts remain, naming every one', async () => {
     const env: NodeJS.ProcessEnv = { ...process.env, KNIGHTBOOK_SITE_STAGE: 'production' }
     delete env.KNIGHTBOOK_RELEASE_DATA_FOR_TESTS
-    const failure = await build(join(workDir, 'production'), env).catch((error) => error)
+    const failure = await build(join(workDir, 'production'), env).then(
+      () => null,
+      (error) => error,
+    )
+    if (Object.keys(DRAFTS).length === 0) return expect(failure).toBeNull()
     expect(failure).toBeInstanceOf(Error)
     for (const id of Object.keys(DRAFTS)) expect(failure.stderr, id).toContain(`${id}: `)
   }, 120_000)

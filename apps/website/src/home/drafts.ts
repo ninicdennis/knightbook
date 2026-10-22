@@ -7,12 +7,7 @@
  * build while any remain, and names every one, so a placeholder can never be
  * published as if it were the product. Remove an entry once its place is real.
  */
-export const DRAFTS = {
-  faqWindowClosed:
-    'Whether the AI tool works with the window closed, confirmed on a clean install (ticket ebc80cc9)',
-  faqSupport:
-    'Which systems and AI clients are tested, from the validation and client-guide tickets',
-} as const
+export const DRAFTS = {} as const
 
 export type DraftId = keyof typeof DRAFTS
 
