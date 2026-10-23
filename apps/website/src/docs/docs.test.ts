@@ -10,7 +10,8 @@ import { buildTempDir } from '../test/build-dir.js'
 /**
  * Builds the site with the real guides, and with fixture guides that exercise
  * what the placeholders cannot: headings, a published guide's version, links
- * between guides, a production build that drops drafts, and a broken link.
+ * between guides, link syntax shown in code, a production build that drops
+ * drafts, and a broken link.
  */
 
 const run = promisify(execFile)
@@ -32,6 +33,12 @@ appVersion: 0.3.0
 ---
 
 Read [the draft guide](../writing-in-progress/) first, or go [back to all guides](/docs/).
+
+A link is written \`[the spec](spec.md)\`, or \`\` \`[a ticket](ticket.md)\` \`\`, like [this one](../writing-in-progress/):
+
+\`\`\`markdown
+See [the installation guide](../not-a-guide/).
+\`\`\`
 
 ## The four states
 
@@ -295,7 +302,10 @@ describe('the documentation section', () => {
 
   it('stops the build and names a link to a guide that does not exist', async () => {
     const guides = await guideFolder('broken', {
-      'working-with-tickets.md': PUBLISHED.replace('../writing-in-progress/', '../no-such-guide/'),
+      'working-with-tickets.md': PUBLISHED.replace('../writing-in-progress/', '../no-such-guide/')
+        // A real link beside code spans, after a backtick with no partner.
+        .replace('A link is written', 'Press ` to open the board.\n\nA link is written')
+        .replace('[this one](../writing-in-progress/)', '[this one](../also-missing/)'),
       'writing-in-progress.md': DRAFT,
     })
     const failure = await build('broken-out', { KNIGHTBOOK_DOCS_DIR_FOR_TESTS: guides }).catch(
@@ -306,5 +316,12 @@ describe('the documentation section', () => {
     expect(failure.stderr).toMatch(
       /working-with-tickets: \.\.\/no-such-guide\/ \(\/docs\/no-such-guide\/\)/,
     )
+    expect(failure.stderr).toMatch(
+      /working-with-tickets: \.\.\/also-missing\/ \(\/docs\/also-missing\/\)/,
+    )
+    // Link syntax shown in code in the same guide is an example, not a link.
+    for (const example of ['spec.md', 'ticket.md', 'not-a-guide']) {
+      expect(failure.stderr, example).not.toContain(example)
+    }
   }, 120_000)
 })
