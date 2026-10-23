@@ -4,6 +4,7 @@ import { documentsStub } from './documents-stub.js'
 import { setStubAllowed, stubMcpStatus } from './mcp-status-stub.js'
 import { record } from './record.js'
 import { boardPlansStub, plansStub } from './plans-stub.js'
+import { routinesStub } from './routines-stub.js'
 import { skillSetupStub } from './skill-setup-stub.js'
 import { stubReviewChanges } from './review-changes-stub.js'
 import { stubTicketDetail } from './ticket-detail-stub.js'
@@ -359,6 +360,7 @@ export const stubApi: KnightbookApi = {
   },
   ...skillSetupStub,
   ...plansStub,
+  ...routinesStub,
 
   mcpLaunchCommand: async () => ({
     command: String.raw`C:\Program Files\Knightbook\resources\mcp\node.exe`,

@@ -113,6 +113,17 @@ export const ticketFrontmatterSchema = z.object({
    * saying the acceptance never happened. It is history, not a current state:
    * nothing reads it to decide readiness, selection, or review.
    */
+  /**
+   * Set only on a ticket started from a routine: the routine it is a run of.
+   * The link lives on the ticket, so starting a run is one new file and the
+   * routine's history is read from the tickets that point at it. An object
+   * so it can gain a field later without a migration.
+   */
+  routine: z
+    .object({
+      id: uuidSchema,
+    })
+    .optional(),
   previous_completions: z
     .array(
       completionSchema.extend({
@@ -161,6 +172,22 @@ export const planFrontmatterSchema = z.object({
 })
 
 export type PlanFrontmatter = z.infer<typeof planFrontmatterSchema>
+
+/**
+ * A routine is recurring work kept as permanent instructions in its Markdown
+ * body. It stores nothing about its runs: each run is a ticket carrying
+ * `routine.id`, and the history, including when runs were accepted, is read
+ * from those tickets so it can never disagree with the board (D-051).
+ */
+export const routineFrontmatterSchema = z.object({
+  schema_version: z.int().positive(),
+  id: uuidSchema,
+  title: z.string().min(1),
+  created_at: z.iso.datetime(),
+  updated_at: z.iso.datetime(),
+})
+
+export type RoutineFrontmatter = z.infer<typeof routineFrontmatterSchema>
 
 export const projectFrontmatterSchema = z.object({
   schema_version: z.int().positive(),

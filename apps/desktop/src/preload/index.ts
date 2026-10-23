@@ -59,6 +59,12 @@ const api: KnightbookApi = {
   createPlan: (rootPath, title) => ipcRenderer.invoke('plan:create', rootPath, title),
   setPlanPhases: (rootPath, planId, phases, revision) =>
     ipcRenderer.invoke('plan:setPhases', rootPath, planId, phases, revision),
+  listRoutines: (rootPath) => ipcRenderer.invoke('routines:list', rootPath),
+  createRoutine: (rootPath, edit) => ipcRenderer.invoke('routine:create', rootPath, edit),
+  updateRoutine: (rootPath, id, edit, revision) =>
+    ipcRenderer.invoke('routine:update', rootPath, id, edit, revision),
+  startRoutineRun: (rootPath, id, anotherRun) =>
+    ipcRenderer.invoke('routine:startRun', rootPath, id, anotherRun),
 
   listDocuments: (rootPath) => ipcRenderer.invoke('documents:list', rootPath),
   includeDocumentFiles: (rootPath) => ipcRenderer.invoke('documents:includeFiles', rootPath),

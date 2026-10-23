@@ -44,6 +44,8 @@ export interface CreateTicketInput {
   readonly relatedDocuments?: string[]
   /** Optional. Omitting it leaves the ticket untyped rather than guessing one. */
   readonly type?: TicketType
+  /** Only for a run started from a routine (routines/routines.ts). */
+  readonly routine?: { readonly id: string }
 }
 
 /**
@@ -86,6 +88,7 @@ export async function createTicket(project: Project, input: CreateTicketInput): 
     created_at: now,
     updated_at: now,
     related_documents: input.relatedDocuments ?? [],
+    ...(input.routine !== undefined ? { routine: { id: input.routine.id } } : {}),
   }
 
   const body = input.body ?? defaultTicketBody(input.title)
@@ -343,6 +346,7 @@ function renderTicket(frontmatter: TicketFrontmatter, body: string): string {
     `created_at: ${frontmatter.created_at}`,
     `updated_at: ${frontmatter.updated_at}`,
     `related_documents: ${JSON.stringify(frontmatter.related_documents)}`,
+    ...(frontmatter.routine ? ['routine:', `  id: ${frontmatter.routine.id}`] : []),
     '---',
     '',
     body,

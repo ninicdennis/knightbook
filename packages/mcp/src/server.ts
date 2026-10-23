@@ -13,6 +13,7 @@ import {
 } from '@knightbook/core'
 import { registerDocumentTools } from './document-tools.js'
 import { registerPlanTools } from './plan-tools.js'
+import { registerRoutineTools } from './routine-tools.js'
 import { instructionsFor } from './instructions.js'
 import { parseLaunchMode, type LaunchMode } from './launch-mode.js'
 import { registerProjectsTool } from './projects-tool.js'
@@ -146,6 +147,7 @@ function main(): void {
     registerTools(server, scope)
     registerDocumentTools(server, scope)
     registerPlanTools(server, scope)
+    registerRoutineTools(server, scope)
     return server
   })
 }

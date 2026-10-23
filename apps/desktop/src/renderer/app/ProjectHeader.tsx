@@ -22,7 +22,7 @@ import { SEARCH_SHORTCUT_LABEL } from './shortcuts.js'
  * Layout, including the narrow-window reflow, is in shell.css.
  */
 
-export type View = 'board' | 'documents' | 'plans' | 'archive'
+export type View = 'board' | 'documents' | 'plans' | 'routines' | 'archive'
 
 interface Props {
   name: string
@@ -85,6 +85,7 @@ export function ProjectHeader({
             <Tabs.Tab value="board">Board</Tabs.Tab>
             <Tabs.Tab value="documents">Documents</Tabs.Tab>
             <Tabs.Tab value="plans">Plans</Tabs.Tab>
+            <Tabs.Tab value="routines">Routines</Tabs.Tab>
             {/*
              * Set apart at the far end because it is not another way of looking at
              * current work but where finished-with tickets are kept. The count is

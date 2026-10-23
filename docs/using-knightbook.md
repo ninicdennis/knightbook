@@ -136,6 +136,27 @@ reference to a ticket that is missing or unreadable is shown as such and never
 counted as done, and a plan or phase with no tickets reads as nothing planned
 rather than finished. Linking a ticket to a phase changes nothing on the ticket.
 
+## Routines
+
+A routine is recurring work, such as a weekly package review or a monthly security
+check, kept as instructions that stay put however many times the work is done. The
+**Routines** tab lists them. Create one with **New routine**, and change its title
+or instructions with **Edit**.
+
+**Start run** creates a Backlog ticket with a copy of the routine's title and
+instructions. It is an ordinary ticket: work it, hand it off in Verification, and
+accept it when you are satisfied. Editing the routine later does not change runs
+already started. If a run is still open, Start run asks before making a second one
+and offers to open the open run instead. An AI tool can do the same with
+`routine_create`, `routine_update` and `routine_start_run`, and reads routines with
+`routine_list` and `routine_read`.
+
+The routine's history lists its runs, newest first, and when each was accepted. It
+is read from the run tickets, so a run in Verification reads as not accepted yet,
+and a Done ticket with no recorded acceptance is shown as exactly that. The
+instructions can say "weekly", but Knightbook never starts a run on its own; that
+is up to you or a scheduler you run yourself.
+
 ## Three rules the code enforces
 
 **Only the user decides completion.** `ticket_update` cannot set a ticket to Done,

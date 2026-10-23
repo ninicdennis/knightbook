@@ -33,6 +33,7 @@ export type {
 } from './documents-contract.js'
 import type { DocumentsApi } from './documents-contract.js'
 import type { PlansApi } from './plans-contract.js'
+import type { RoutinesApi } from './routines-contract.js'
 import type { SkillSetupApi } from './skill-setup-contract.js'
 import type { TicketCreateApi } from './ticket-create-contract.js'
 import type { TicketEditApi } from './ticket-edit-contract.js'
@@ -214,6 +215,7 @@ export interface KnightbookApi
     ReviewChangesApi,
     SkillSetupApi,
     PlansApi,
+    RoutinesApi,
     TicketCreateApi,
     TicketEditApi,
     DocumentSearchApi,
