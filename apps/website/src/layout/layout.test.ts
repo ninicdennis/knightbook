@@ -233,6 +233,11 @@ describe('the built site', () => {
     )
     expect(text).not.toMatch(/runs no analytics/)
     expect(text).toMatch(/approximate location, and it sets no cookies/)
+    expect(text).toMatch(/Umami also counts clicks on the download buttons/)
+    expect(text).toMatch(
+      /records the version offered and whether it is a stable or preview release/,
+    )
+    expect(text).toMatch(/also records which platform's installer it was/)
     expect(text).toMatch(/Apart from that script, the website sets no cookies and loads nothing/)
     // Claims the evidence does not support (spec §9).
     expect(text).not.toMatch(

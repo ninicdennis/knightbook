@@ -155,6 +155,24 @@ describe('the homepage', () => {
     }
   })
 
+  it("counts a click on the download button in Umami with the release's version and channel", () => {
+    for (const [state, version, channel] of [
+      ['stable', '0.3.0', 'stable'],
+      ['previewOnly', '0.2.0', 'preview'],
+    ] as const) {
+      const buttons = homes[state].match(/<a class="kb-button primary[^>]*>/g) ?? []
+      expect(buttons, state).toHaveLength(2)
+      for (const button of buttons) {
+        expect(button).toContain('data-umami-event="download-page"')
+        expect(button).toContain(`data-umami-event-version="${version}"`)
+        expect(button).toContain(`data-umami-event-channel="${channel}"`)
+      }
+      // "All downloads" goes to the same page and is counted as a page view only.
+      expect(homes[state].match(/data-umami-event="/g), state).toHaveLength(2)
+    }
+    expect(homes.noRelease).not.toContain('data-umami-event')
+  })
+
   it('explains the four steps at the How it works anchor, with MCP beside the AI step', () => {
     const how = section(homes.noRelease, 'how-title')
     expect(how).toMatch(/<section[^>]*id="how-it-works"/)

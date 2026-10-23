@@ -52,7 +52,7 @@ const released = new Date(`${release.date}T00:00:00Z`).toLocaleDateString('en', 
 
   <ul class="cards">
     {choices.map((choice) => (
-      <TargetCard choice={choice} version={release.version} />
+      <TargetCard choice={choice} version={release.version} channel={release.channel} />
     ))}
   </ul>
 </section>

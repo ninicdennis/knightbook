@@ -158,6 +158,29 @@ describe('the download page', () => {
     }
   })
 
+  it("counts each Download click in Umami with that card's platform, version and channel", () => {
+    for (const [state, version, channel] of [
+      ['stableAndPreview', '0.3.0', 'stable'],
+      ['stableAndPreview', '0.4.0', 'preview'],
+    ] as const) {
+      const offer =
+        pages[state].match(
+          new RegExp(`<section class="offer"[^>]*data-version="${version}"[\\s\\S]*?</section>`),
+        )?.[0] ?? ''
+      for (const target of ['windows-x64', 'macos-arm64', 'macos-x64', 'linux-x64']) {
+        const link = card(offer, target).match(/<a class="kb-button[^>]*>/)?.[0] ?? ''
+        expect(installerLinks(link), `${version} ${target}`).toHaveLength(1)
+        expect(link).toContain('data-umami-event="download"')
+        expect(link).toContain(`data-umami-event-target="${target}"`)
+        expect(link).toContain(`data-umami-event-version="${version}"`)
+        expect(link).toContain(`data-umami-event-channel="${channel}"`)
+      }
+    }
+    // A card with no build has no link, so nothing to count.
+    expect(card(pages.missingTarget, 'macos-x64')).not.toContain('data-umami-event')
+    expect(pages.missingTarget.match(/data-umami-event="download"/g)).toHaveLength(3)
+  })
+
   it('never puts an Intel Mac build in the Apple silicon slot', () => {
     const html = pages.intelOnly
     const appleSilicon = card(html, 'macos-arm64')

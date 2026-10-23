@@ -6,18 +6,22 @@ import {
   SIGNING_LABEL,
   type TargetChoice,
 } from './download-view'
+import { DOWNLOAD_EVENTS, umamiEvent } from '../layout/analytics'
 
 /**
  * One platform's download. When the release has no build for this platform the
  * card says so and links nothing: another platform's file is never offered in
- * its place, and an Intel build is never labelled Apple silicon.
+ * its place, and an Intel build is never labelled Apple silicon. A click on
+ * Download is counted in Umami as "download", with the platform, version and
+ * channel (D-054).
  */
 interface Props {
   choice: TargetChoice
   version: string
+  channel: string
 }
 
-const { choice, version } = Astro.props
+const { choice, version, channel } = Astro.props
 const { target, asset } = choice
 const label = `${target.name}, ${target.cpu}`
 ---
@@ -34,6 +38,7 @@ const label = `${target.name}, ${target.cpu}`
         class="kb-button"
         href={asset.url}
         aria-label={`Download Knightbook ${version} for ${label}`}
+        {...umamiEvent(DOWNLOAD_EVENTS.installer, { target: target.key, version, channel })}
       >
         Download
       </a>
