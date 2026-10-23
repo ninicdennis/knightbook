@@ -181,6 +181,7 @@ export function App() {
                 actions={actions}
                 archive={archive}
                 onNewTicket={newTicket.open}
+                onProjectChanged={() => void refresh()}
               />
             </div>
           </Stack>

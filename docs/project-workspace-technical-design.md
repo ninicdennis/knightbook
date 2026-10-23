@@ -239,6 +239,8 @@ repository/
     tickets/<stable-id>.md           one canonical file per ticket
     plans/<stable-id>.md             one file per plan: phases referencing tickets (D-022);
                                      the board filters by them as view state only (D-035)
+    routines/<stable-id>.md          one file per routine: title and instructions; its runs
+                                     are tickets carrying routine.id (D-051)
     documents/<stable-id>.md         metadata pointing to an existing document
     reviews/tickets/<ticket-id>/<reviewed-at>.md
     reviews/documents/<document path>/<reviewed-at>.md
@@ -577,6 +579,8 @@ These are proposed operations, not finalized tool schemas:
 | `ticket_list` | List filtered tickets, dependency reasons, or the next eligible candidate. |
 | `ticket_create` / `ticket_update` | Create or update task content and ordinary lifecycle fields with validation. |
 | `ticket_record_user_completion` | Record the user's explicit completion instruction with honest provenance. |
+| `routine_list` / `routine_read` / `routine_create` / `routine_update` | Read and write routines: recurring instructions plus a history read from their runs (D-051). |
+| `routine_start_run` | Create the next run as a Backlog ticket; refused with `run_already_open` unless `another_run` (D-051). |
 
 The minimal read surface returns metadata/snippets by default and full content on request. Ticket reads include direct document references and prerequisite statuses. Use simple text search initially; add embeddings only if measured retrieval failures justify them. Managed metadata is changed through validated record operations, not unrestricted whole-file writes.
 
@@ -592,6 +596,16 @@ The packaged app carries `skills/projectspace/` in `extraResources` as `resource
 - **The state is re-checked at write time**, so a folder edited after the dialog showed it is refused. New folders are built beside the target and moved into place, so a client never loads a half-written skill.
 - **Export** writes a new `projectspace` folder into a folder the user picks and refuses if one is already there. **Copy skill text** covers clients without skills.
 - **A file on disk is not activation.** The dialog says it can confirm placement only; whether a client loaded the skill is visible only in the client.
+
+### Routines as built (2026-10-23, D-051)
+
+Ticket 59585106. Core's `routines/routines.ts` reads and writes routine files the way `plans.ts` does plans: one file per routine, parsed and validated on every read and write, edits at the revision the caller read, and unreadable files listed as problems without hiding the rest. `startRoutineRun` reads the routine, checks for an open run, and calls `createTicket` with the routine's title, its body, and `routine: { id }`. It never writes the routine file. The ticket schema gains the optional `routine` object; `updateTicket` edits through the YAML document, so the link survives every later edit, move and acceptance.
+
+`routines/routine-history.ts` derives the history from a ticket listing, the same function for the app (`routines:list`) and MCP (`routine_list`, `routine_read`). Runs are sorted newest first; completions are the runs whose ticket is Done and not unattributed (`isUnattributedCompletion`), dated by `completion.recorded_at`. Open runs are those not Done and not archived. Ticket files that could not be read are counted, because any of them could be a run, and the pane says its history may be partial when the count is not zero.
+
+The duplicate check and the ticket write are not one atomic step: two processes starting a run at the same instant could both pass the check. The cost is a second Backlog ticket the user can archive, and the check exists to stop a scheduler that fires twice by mistake, not to be a lock.
+
+The Routines tab sits beside Plans and uses the same list-and-reader layout. Its host operations are `listRoutines`, `createRoutine`, `updateRoutine` and `startRoutineRun` (`shared/routines-contract.ts`, `main/routines/`). A new routine's instructions start with the title as a heading, as a new ticket's body does. Starting a run re-reads the project so the ticket appears on the board. A run opens in the usual ticket dialog. Routines are not included in header search yet.
 
 ### Header search covers documents (2026-09-25)
 

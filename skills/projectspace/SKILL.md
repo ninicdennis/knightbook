@@ -274,6 +274,30 @@ have several.
   quietly dropping them. A plan reaching `complete` is not a decision either: only
   the user accepts each ticket.
 
+## Routines
+
+A routine is recurring work, such as a weekly package review or a security check,
+kept as permanent instructions. Each time it is done, a run is started, and the run
+is an ordinary ticket.
+
+- `routine_list` shows every routine with its runs and when one was last accepted.
+  `routine_read` returns one with its `instructions` and the `revision` that
+  `routine_update` needs. `routine_create` needs only a title.
+- `routine_start_run` creates a Backlog ticket with a copy of the routine's title and
+  instructions. Its `routine_id` (in `ticket_list` and `ticket_read`) points back at
+  the routine. Editing the routine later does not change runs already started.
+- Work a run like any other ticket: ask before starting it, and hand off in
+  Verification. A check that found nothing to change still records what was checked
+  and what it found in the handoff note, so the user has something to accept.
+- While a run is unfinished, `routine_start_run` refuses with `run_already_open` and
+  names it. Work on that run instead. Pass `another_run: true` only when the user
+  wants a second run alongside it.
+- A run is completed only when its ticket is Done with the user's acceptance. A run in
+  Verification is not completed, and the routine has no completion flag of its own.
+- Instructions can mention a cadence such as "weekly", but Knightbook never schedules
+  or starts a run. If the user has an external scheduler, it can call
+  `routine_start_run`; do not imply Knightbook will.
+
 ## Conflicts
 
 Every write carries a revision. If a tool returns `revision_conflict`, someone else

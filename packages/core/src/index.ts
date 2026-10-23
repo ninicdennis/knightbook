@@ -74,6 +74,20 @@ export {
   type ProgressState,
 } from './plans/plan-progress.js'
 export {
+  createRoutine,
+  listRoutineRecords,
+  readRoutine,
+  startRoutineRun,
+  updateRoutine,
+  type CreateRoutineInput,
+  type Routine,
+  type RoutineListing,
+  type RoutineProblem,
+  type StartRunInput,
+  type UpdateRoutineInput,
+} from './routines/routines.js'
+export { routineHistory, type RoutineHistory, type RoutineRun } from './routines/routine-history.js'
+export {
   describeReason,
   evaluateReadiness,
   failedPrerequisites,
@@ -98,6 +112,7 @@ export {
   type PlanFrontmatter,
   type PlanPhase,
   type ProjectFrontmatter,
+  type RoutineFrontmatter,
   type TicketFrontmatter,
   type TicketStatus,
   type TicketType,

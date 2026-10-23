@@ -7,6 +7,7 @@ import { DocumentsView } from '../documents/DocumentsView.js'
 import type { BackTarget } from '../markdown/BackToSource.js'
 import type { useLinkNavigation } from '../markdown/useLinkNavigation.js'
 import { PlansView } from '../plans/PlansView.js'
+import { RoutinesView } from '../routines/RoutinesView.js'
 import type { useTicketActions } from '../tickets/useTicketActions.js'
 import type { useProjectNavigation } from './useProjectNavigation.js'
 
@@ -22,9 +23,11 @@ interface Props {
   actions: ReturnType<typeof useTicketActions>
   archive: ReturnType<typeof useArchiveActions>
   onNewTicket: () => void
+  /** Re-reads the project, after something outside the board added a ticket. */
+  onProjectChanged: () => void
 }
 
-/** The open project's current view: the board, its documents, plans, or archive. */
+/** The open project's current view: the board, its documents, plans, routines, or archive. */
 export function ProjectViewSwitch({
   rootPath,
   project,
@@ -36,6 +39,7 @@ export function ProjectViewSwitch({
   actions,
   archive,
   onNewTicket,
+  onProjectChanged,
 }: Props) {
   switch (navigation.view) {
     case 'documents':
@@ -64,6 +68,16 @@ export function ProjectViewSwitch({
             rememberPlanFilter(project.checkoutPath, { kind: 'plan', id: planId })
             navigation.setView('board')
           }}
+        />
+      )
+    case 'routines':
+      return (
+        <RoutinesView
+          rootPath={rootPath}
+          refreshToken={refreshToken}
+          onOpenTicket={navigation.openTicket}
+          onFollowLink={links.follow}
+          onRunStarted={onProjectChanged}
         />
       )
     case 'archive':

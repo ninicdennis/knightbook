@@ -213,6 +213,12 @@ export function makeApi(): KnightbookApi {
     openPlanExternally: vi.fn().mockResolvedValue({ ok: true, value: null }),
     createPlan: vi.fn(),
     setPlanPhases: vi.fn(),
+    listRoutines: vi
+      .fn()
+      .mockResolvedValue({ ok: true, value: { routines: [], problems: [], unreadableTickets: 0 } }),
+    createRoutine: vi.fn(),
+    updateRoutine: vi.fn(),
+    startRoutineRun: vi.fn(),
     listDocuments: vi
       .fn()
       .mockResolvedValue({ ok: true, value: { documents: [], problems: [], folderTitles: [] } }),

@@ -31,6 +31,7 @@ import { registerSkillSetupHandlers } from './mcp/skill-setup-ipc.js'
 import { registerTicketFileHandler } from './tickets/ticket-file-ipc.js'
 import { registerPlanHandlers } from './documents/plans-ipc.js'
 import { registerPlanEditHandlers } from './documents/plan-edit-ipc.js'
+import { registerRoutineHandlers } from './routines/routines-ipc.js'
 import { registerTicketCreateHandler } from './tickets/ticket-create-ipc.js'
 import { registerTicketEditHandlers } from './tickets/ticket-edit-ipc.js'
 import { registerDocumentSearchHandler } from './documents/document-search-ipc.js'
@@ -143,6 +144,7 @@ void app.whenReady().then(async () => {
   registerTicketFileHandler()
   registerPlanHandlers()
   registerPlanEditHandlers()
+  registerRoutineHandlers()
   registerTicketCreateHandler()
   registerTicketEditHandlers()
   registerDocumentSearchHandler()

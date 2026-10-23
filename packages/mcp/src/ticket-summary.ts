@@ -49,6 +49,11 @@ export function summarize(ticket: Ticket, index: TicketIndex) {
     /** Optional work type. Null means untyped, which is not a kind of work. */
     type: ticket.frontmatter.type ?? null,
     revision: ticket.revision,
+    /**
+     * The routine this ticket is a run of, or null. A run is an ordinary ticket;
+     * read the routine with routine_read.
+     */
+    routine_id: ticket.frontmatter.routine?.id ?? null,
     depends_on: ticket.frontmatter.depends_on,
     /** Project-relative paths of the documents this ticket points at; read them with document_read. */
     related_documents: ticket.frontmatter.related_documents,
