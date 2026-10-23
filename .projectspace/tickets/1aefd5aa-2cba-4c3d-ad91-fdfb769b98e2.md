@@ -2,12 +2,18 @@
 schema_version: 1
 id: 1aefd5aa-2cba-4c3d-ad91-fdfb769b98e2
 title: "Write the privacy page"
-status: verification
+status: done
 type: documentation
 depends_on: [ "1e8e5e3b-41b2-4463-b344-784e8a72ab89", "577513c8-4a21-4014-ba6e-bc51fdb35294", "c125336d-16c3-4f70-8a76-0b6e00a2be10" ]
 created_at: 2026-09-30T02:39:30.679Z
-updated_at: 2026-10-21T15:28:51.163Z
+updated_at: 2026-10-23T01:08:12.653Z
 related_documents: [ "docs/proposals/landing-page-and-user-documentation.md", "docs/project-workspace-technical-design.md" ]
+completion:
+  decision_source: reported_user_instruction
+  recorded_by: agent
+  recorded_at: 2026-10-23T01:08:12.653Z
+  instruction: 'Denny, 2026-10-23, after the Verification review listed this ticket as ready for Done: "Move the ones that are done!"'
+  accepted_revision: 1dc1a4b47a244deb0a0aaf91fce96c78
 ---
 
 # Write the privacy page

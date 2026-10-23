@@ -3,7 +3,7 @@ title: Tickets, verification and review
 description: Ticket states, dependencies, AI handoffs, your completion decision and content review.
 group: Everyday use
 order: 2
-appVersion: 0.1.1
+appVersion: 0.2.0
 ---
 
 A ticket says what work is wanted and where it stands. This guide follows two small
