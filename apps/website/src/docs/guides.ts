@@ -33,14 +33,16 @@ export function groupGuides(guides: Guide[]) {
  * Every link from one guide to another must reach a guide this build publishes.
  * Links are written relative to a guide's own address, such as
  * `[Installation](../installation/)`, or as `/docs/installation/`. Anything else
- * under /docs/ is a broken link, and the build stops and names each one.
+ * under /docs/ is a broken link, and the build stops and names each one. Link
+ * syntax shown as an example, in inline code or a fenced code block, is not a
+ * link and is not checked.
  */
 export function brokenGuideLinks(guides: Guide[]) {
   const published = new Set(guides.map((guide) => guideHref(guide)))
   published.add('/docs/')
   const broken: string[] = []
   for (const guide of guides) {
-    for (const match of (guide.body ?? '').matchAll(/\[[^\]]*\]\(([^)\s]+)[^)]*\)/g)) {
+    for (const match of withoutCode(guide.body ?? '').matchAll(/\[[^\]]*\]\(([^)\s]+)[^)]*\)/g)) {
       const href = match[1] ?? ''
       if (/^[a-z]+:/i.test(href) || href.startsWith('#')) continue
       const { pathname } = new URL(href, `https://site.invalid${guideHref(guide)}`)
@@ -50,6 +52,27 @@ export function brokenGuideLinks(guides: Guide[]) {
     }
   }
   return broken
+}
+
+/**
+ * The Markdown with its fenced code blocks and inline code spans removed. A fence
+ * closes on a line of the same character, at least as long as the one that
+ * opened it; an unclosed fence runs to the end. A code span closes on a run of
+ * backticks exactly as long as the one that opened it, within one paragraph; a
+ * backtick with no partner is plain text, so links after it are still checked.
+ */
+export function withoutCode(markdown: string) {
+  const kept: string[] = []
+  let fence: { char: string; length: number } | null = null
+  for (const line of markdown.split('\n')) {
+    const marker = line.match(/^ {0,3}(`{3,}|~{3,})/)?.[1]
+    if (fence) {
+      const closes = line.match(/^ {0,3}(`{3,}|~{3,})\s*$/)?.[1]
+      if (closes?.[0] === fence.char && closes.length >= fence.length) fence = null
+    } else if (marker) fence = { char: marker[0] ?? '`', length: marker.length }
+    else kept.push(line)
+  }
+  return kept.join('\n').replace(/(?<!`)(`+)(?!`)(?:(?!\n[ \t]*\n)[\s\S])*?(?<!`)\1(?!`)/g, ' ')
 }
 
 export function refuseBrokenGuideLinks(guides: Guide[]) {
