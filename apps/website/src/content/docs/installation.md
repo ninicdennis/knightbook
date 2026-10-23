@@ -13,7 +13,8 @@ the right download, installing it, updating it by hand, and removing it.
 **How much of this has been checked.** The Windows and macOS installers have not
 yet been tried on a clean computer. The published Linux package for 0.2.0 has been
 installed, opened, reinstalled, upgraded and removed in a fresh test machine running
-Ubuntu 24.04 without a desktop, on 2026-10-22. Anything marked **Not yet checked**
+Ubuntu 24.04 without a desktop, on 2026-10-22. The 0.3.0 package has not been
+installed on a clean machine yet. Anything marked **Not yet checked**
 describes what the installer is built to do, not something anyone has watched it
 do. This guide is updated as each system is checked.
 
@@ -135,13 +136,14 @@ Keep the `./`, which tells `apt` you mean a file rather than a package by that n
 Installing with `dpkg -i` instead stops with the package half installed when a
 library is missing, so use `apt`.
 
-The 0.2.0 package does not ask for two libraries Knightbook needs: the sound
-library and the graphics library `libgbm1`. The next release's package asks for
-both, so `apt` installs them for you. A desktop install of Ubuntu already has them,
-but on a minimal Ubuntu 24.04 or a fresh Ubuntu 22.04, Knightbook 0.2.0 does not
-start, and `knightbook` in a terminal reports `libasound.so.2` or `libgbm.so.1`:
-`cannot open shared object file`. Install them, then open Knightbook again. On
-Ubuntu 24.04:
+From 0.3.0 the package asks for every library Knightbook needs, including the sound
+library and the graphics library `libgbm1`, so `apt` installs them for you.
+
+The 0.2.0 package did not ask for those two. A desktop install of Ubuntu already has
+them, but on a minimal Ubuntu 24.04 or a fresh Ubuntu 22.04, Knightbook 0.2.0 does
+not start, and `knightbook` in a terminal reports `libasound.so.2` or `libgbm.so.1`:
+`cannot open shared object file`. Install 0.3.0 or later instead, or install the two
+libraries, then open Knightbook again. On Ubuntu 24.04:
 
 ```sh
 sudo apt install libasound2t64 libgbm1
