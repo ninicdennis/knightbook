@@ -326,6 +326,14 @@ installed `libasound2t64` itself in another fresh `ubuntu:24.04` container; `ldd
 found no missing library, and the window opened to **Choose a project folder**
 with nothing installed by hand.
 
+That was not enough on Ubuntu 22.04: a fresh `ubuntu:22.04` container installed the
+0.2.2 deb, with `libasound2` 1.2.6.1 for the ALSA alternative, but `knightbook`
+exited on `libgbm.so.1`. electron-builder's defaults leave out `libgbm1` too, and
+on Ubuntu 24.04 it only arrives through other packages. Fixed by adding `libgbm1`
+to `deb.depends` (ticket `ec891597`). A deb built from that, stamped 0.2.3,
+installed in fresh Ubuntu 22.04.5 and 24.04.5 containers with no missing library
+under `ldd`, and its window opened on Xvfb in both. Debian 12 and 13 were not tried.
+
 Not covered: a real machine with a desktop such as GNOME or KDE, the launcher in its
 menu, refresh on focus, **Edit externally** (no editor in the container), Claude
 Code signed in on the same machine as the app, accepting a handoff as done, the
