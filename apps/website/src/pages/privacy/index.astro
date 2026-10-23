@@ -9,7 +9,7 @@ import { destinations } from '../../layout/navigation'
  * code; the sources are listed on the ticket. Change the date when the text
  * changes.
  */
-const updated = '2026-10-21'
+const updated = '2026-10-23'
 const updatedLabel = new Date(`${updated}T00:00:00Z`).toLocaleDateString('en-GB', {
   day: 'numeric',
   month: 'long',
@@ -47,8 +47,17 @@ const updatedLabel = new Date(`${updated}T00:00:00Z`).toLocaleDateString('en-GB'
         .
       </p>
       <p>
-        The website itself runs no analytics or tracking script, sets no cookies, and loads nothing
-        from other sites: its pages are plain HTML, CSS and images served by GitHub Pages.
+        The website counts visits with Umami, an analytics tool we run ourselves at
+        data.aikoworks.com, not a third-party service. Each page loads one script from that server.
+        According to
+        <a href="https://docs.umami.is/docs/faq">Umami's documentation</a>, it records the pages
+        viewed, the site that linked you here, your browser, operating system and device type, and
+        your approximate location, and it sets no cookies.
+      </p>
+      <p>
+        Apart from that script, the website sets no cookies and loads nothing from other sites: its
+        pages are plain HTML, CSS and images served by GitHub Pages, and they work the same with
+        JavaScript turned off.
       </p>
     </section>
 
