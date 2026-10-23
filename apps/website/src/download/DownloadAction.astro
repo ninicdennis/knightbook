@@ -1,6 +1,7 @@
 ---
 import { downloadView } from './download-view'
 import { loadReleaseData } from './load-release-data'
+import { DOWNLOAD_EVENTS, umamiEvent } from '../layout/analytics'
 
 /**
  * The homepage's download action, from the same release data as /download/.
@@ -11,6 +12,8 @@ import { loadReleaseData } from './load-release-data'
  * download page lists every build. With no release it is plain status text, not
  * a disabled button posing as a download. "All downloads" is always present,
  * and so is the line saying Knightbook is free and under which license (D-043).
+ * The button is counted in Umami as "download-page" (D-054); the installer links
+ * on /download/ are counted as "download".
  */
 const { recommended } = downloadView(await loadReleaseData())
 const release = recommended?.release
@@ -18,7 +21,11 @@ const release = recommended?.release
 
 <div class="download-action">
   {release ? (
-    <a class="kb-button primary" href="/download/">
+    <a
+      class="kb-button primary"
+      href="/download/"
+      {...umamiEvent(DOWNLOAD_EVENTS.page, { version: release.version, channel: release.channel })}
+    >
       Download Knightbook {release.version}
     </a>
   ) : (
