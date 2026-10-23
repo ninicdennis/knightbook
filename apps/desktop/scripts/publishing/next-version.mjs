@@ -1,4 +1,5 @@
 import { appendFile, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 /**
@@ -24,7 +25,17 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  */
 const PATCH_TYPES = ['docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert']
 
-const PRESET = 'conventionalcommits'
+/**
+ * The changelog preset, as the file apps/desktop's own dependency resolves to. Given
+ * only the name `conventionalcommits`, semantic-release's plugins look for it from
+ * their own folders, which finds whichever version pnpm hoists into
+ * `node_modules/.pnpm/node_modules`. commitlint brings in a newer major there, and
+ * that version refuses the changelog writer these plugins use. A path passed as
+ * `config` is loaded as it is.
+ */
+export const PRESET_PATH = createRequire(import.meta.url).resolve(
+  'conventional-changelog-conventionalcommits',
+)
 
 /**
  * The first release is 0.1.0, not semantic-release's 1.0.0: releases start as
@@ -47,7 +58,7 @@ export const releaseOptions = {
   tagFormat: 'v${version}',
   dryRun: true,
   ci: true,
-  plugins: [[APP_COMMITS_PLUGIN, { preset: PRESET, releaseRules }]],
+  plugins: [[APP_COMMITS_PLUGIN, { config: PRESET_PATH, releaseRules }]],
 }
 
 /**

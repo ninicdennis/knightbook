@@ -1,15 +1,17 @@
 // @vitest-environment node
 import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { realpathSync } from 'node:fs'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { pathToFileURL } from 'node:url'
-import { dirname, join } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { dirname, join, sep } from 'node:path'
 import { promisify } from 'node:util'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import semanticRelease from 'semantic-release'
 import {
   decideRelease,
   FIRST_VERSION,
+  PRESET_PATH,
   releaseOptions,
   withoutVersionHeading,
 } from './next-version.mjs'
@@ -187,5 +189,27 @@ describe('reading semantic-release’s answer', () => {
   it('removes only the leading version heading from the notes', () => {
     const notes = '## [0.2.0](https://example.com) (2026-10-01)\n\n### Bug Fixes\n\n## kept'
     expect(withoutVersionHeading(notes)).toBe('### Bug Fixes\n\n## kept')
+  })
+})
+
+describe('the changelog preset', () => {
+  it('is the version apps/desktop declares, loaded by path rather than found by name', async () => {
+    const [, pluginConfig] = releaseOptions.plugins[0]
+    expect(pluginConfig).not.toHaveProperty('preset')
+    expect(pluginConfig.config).toBe(PRESET_PATH)
+
+    const read = async (url) => JSON.parse(await readFile(url, 'utf8'))
+    const desktop = await read(new URL('../../package.json', import.meta.url))
+    const declared = desktop.devDependencies['conventional-changelog-conventionalcommits']
+    const loaded = await read(join(dirname(PRESET_PATH), '..', 'package.json'))
+    // The copy apps/desktop links to, not one found from another package's folder.
+    const own = realpathSync(
+      fileURLToPath(
+        new URL('../../node_modules/conventional-changelog-conventionalcommits', import.meta.url),
+      ),
+    )
+    expect(realpathSync(PRESET_PATH).startsWith(own + sep)).toBe(true)
+    expect(loaded.name).toBe('conventional-changelog-conventionalcommits')
+    expect(loaded.version.split('.')[0]).toBe(declared.replace(/^\^/, '').split('.')[0])
   })
 })
