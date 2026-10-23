@@ -1,6 +1,64 @@
 {
   "releases": [
     {
+      "version": "0.3.0",
+      "channel": "preview",
+      "date": "2026-10-23",
+      "notesUrl": "https://github.com/ninicdennis/knightbook/releases/tag/v0.3.0",
+      "withdrawn": false,
+      "knownIssues": [
+        "The installers are not signed. Windows SmartScreen warns before the installer runs.",
+        "The macOS app is not signed with an Apple developer certificate or notarized, so macOS blocks it the first time it is opened.",
+        "The installers for this release have not yet been tried on a clean computer."
+      ],
+      "assets": [
+        {
+          "os": "windows",
+          "arch": "x64",
+          "format": "nsis",
+          "minimumOs": "Windows 10 or later",
+          "url": "https://github.com/ninicdennis/knightbook/releases/download/v0.3.0/Knightbook-0.3.0-windows-x64.exe",
+          "filename": "Knightbook-0.3.0-windows-x64.exe",
+          "size": 135579878,
+          "sha256": "1f0fa86bc6aec764311f8e6b877848c016a101bfe69c2730e301b06ef933da8b",
+          "signing": "unsigned"
+        },
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "format": "dmg",
+          "minimumOs": "macOS 13 Ventura or later",
+          "url": "https://github.com/ninicdennis/knightbook/releases/download/v0.3.0/Knightbook-0.3.0-macos-arm64.dmg",
+          "filename": "Knightbook-0.3.0-macos-arm64.dmg",
+          "size": 173140355,
+          "sha256": "84a030123c33e4b4ddd81e64a9a2ae788e3c125536943e6b386af7ad7ea1af7e",
+          "signing": "unsigned"
+        },
+        {
+          "os": "macos",
+          "arch": "x64",
+          "format": "dmg",
+          "minimumOs": "macOS 13 Ventura or later",
+          "url": "https://github.com/ninicdennis/knightbook/releases/download/v0.3.0/Knightbook-0.3.0-macos-x64.dmg",
+          "filename": "Knightbook-0.3.0-macos-x64.dmg",
+          "size": 178288939,
+          "sha256": "096c8f42d419044cc27c3e75843c1fb0a1642fefa447f7a7509fd6845e370854",
+          "signing": "unsigned"
+        },
+        {
+          "os": "linux",
+          "arch": "x64",
+          "format": "deb",
+          "minimumOs": "A current Debian or Ubuntu release still maintained by the distribution",
+          "url": "https://github.com/ninicdennis/knightbook/releases/download/v0.3.0/Knightbook-0.3.0-linux-amd64.deb",
+          "filename": "Knightbook-0.3.0-linux-amd64.deb",
+          "size": 133682480,
+          "sha256": "43eac3fd2d4eda2bedf5cd82f52769a06ba3f4e2c079da32a327e4052ea591af",
+          "signing": "unsigned"
+        }
+      ]
+    },
+    {
       "version": "0.2.0",
       "channel": "preview",
       "date": "2026-10-22",
