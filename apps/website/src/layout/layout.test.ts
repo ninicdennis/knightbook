@@ -5,6 +5,7 @@ import { dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { UMAMI } from './analytics'
 import { buildTempDir } from '../test/build-dir.js'
 
 /**
@@ -100,6 +101,9 @@ describe('the built site', () => {
         continue
       }
       expect(html, path).toMatch(/<meta name="robots" content="noindex, nofollow"/)
+      // Only production counts visits (D-052); analytics.test.ts checks that half.
+      expect(html, path).not.toContain(UMAMI.src)
+      expect(html, path).not.toContain(UMAMI.websiteId)
       expect(html, path).toMatch(
         /<p class="preview-banner[^"]*" role="note"[^>]*>\s*Preview build\. This is not the published Knightbook website\.\s*<\/p>/,
       )
@@ -220,6 +224,12 @@ describe('the built site', () => {
     expect(text).toMatch(/GitHub logs the IP address of every visitor/)
     expect(text).toMatch(/is up to them and their terms, not Knightbook/)
     expect(text).toMatch(/Everything in an issue, including your GitHub username, is public/)
+    expect(text).toMatch(
+      /counts visits with Umami, an analytics tool we run ourselves at data\.aikoworks\.com/,
+    )
+    expect(text).not.toMatch(/runs no analytics/)
+    expect(text).toMatch(/approximate location, and it sets no cookies/)
+    expect(text).toMatch(/Apart from that script, the website sets no cookies and loads nothing/)
     // Claims the evidence does not support (spec §9).
     expect(text).not.toMatch(
       /no data (collection|leaves)|zero data|never leaves your (device|computer)|fully offline|secure by default/i,
