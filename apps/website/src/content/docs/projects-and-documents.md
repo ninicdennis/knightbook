@@ -3,7 +3,7 @@ title: Projects and documents
 description: How Knightbook works with your project folder, your Markdown files and Git.
 group: Everyday use
 order: 1
-appVersion: 0.1.1
+appVersion: 0.2.0
 ---
 
 A Knightbook project is an ordinary folder on your computer, often a code

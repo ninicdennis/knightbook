@@ -164,7 +164,7 @@ describe('the documentation section', () => {
   ])('publishes the %s guide as written, for the release it describes', async (slug, heading) => {
     const guide = await page(real, `docs/${slug}/index.html`)
     expect(guide).not.toContain('data-draft-guide')
-    expect(guide).toMatch(/>Written for Knightbook 0\.1\.1</)
+    expect(guide).toMatch(/>Written for Knightbook 0\.2\.0</)
     expect(guide).toMatch(new RegExp(`<h2 id="${heading}"`))
   })
 

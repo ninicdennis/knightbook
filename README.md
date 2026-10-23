@@ -9,7 +9,8 @@ person decides what is done.
 
 Knightbook is free, and its source is available under the
 [Functional Source License](#license). Installers for Windows, macOS and Linux are
-on the [releases page](https://github.com/ninicdennis/knightbook/releases). To
+on the [download page](https://knightbook.xyz/download/), and every version is on the
+[releases page](https://github.com/ninicdennis/knightbook/releases). To
 report a problem, open an [issue](https://github.com/ninicdennis/knightbook/issues/new/choose);
 for a security problem, see [SECURITY.md](SECURITY.md).
 

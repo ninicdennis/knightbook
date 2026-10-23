@@ -81,10 +81,10 @@ version check and the publishing job, read-only everywhere else, including every
 pull-request run. There are no signing secrets yet; builds are unsigned (ticket
 a415fdb2).
 
-**Not covered.** The repository is private, so a release's files download only for
-signed-in accounts with access. Public downloads come from a separate bucket (ticket
-1ef49bc4). The app does not check for or install updates. A GitHub Release is only
-where the files are kept.
+**Not covered.** The app does not check for or install updates. The repository is
+public, so a release's files on GitHub are the public download, linked from the
+website's download page once the release is added to its release data
+(`apps/website/src/download/releases.json`); no separate bucket is needed.
 
 **Building installers without publishing.** On the Actions tab, run CI on a branch
 with a version (for example `0.0.1`). It builds and tests the installers on all three

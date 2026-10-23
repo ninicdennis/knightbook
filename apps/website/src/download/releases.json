@@ -9,7 +9,8 @@
       "knownIssues": [
         "The installers are not signed. Windows SmartScreen warns before the installer runs.",
         "The macOS app is not signed with an Apple developer certificate or notarized, so macOS blocks it the first time it is opened.",
-        "The installers have not yet been tried on a clean computer. Only the Linux package has been installed and opened, on Ubuntu 24.04."
+        "The installers have not yet been tried on a clean computer. Only the Linux package has been installed and opened, on Ubuntu 24.04.",
+        "The Linux package does not ask for two libraries the app needs, so on a minimal Ubuntu or Debian system the app does not start until libasound2t64 (libasound2 on older releases) and libgbm1 are installed. The installation guide gives the command."
       ],
       "assets": [
         {
