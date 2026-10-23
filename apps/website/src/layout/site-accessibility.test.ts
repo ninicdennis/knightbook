@@ -1,15 +1,16 @@
 import AxeBuilder from '@axe-core/playwright'
 import { execFile } from 'node:child_process'
-import { access, readFile, rm, writeFile } from 'node:fs/promises'
-import { createServer, type Server } from 'node:http'
+import { access, rm, writeFile } from 'node:fs/promises'
+import type { Server } from 'node:http'
 import { createRequire } from 'node:module'
-import { dirname, extname, join, normalize, sep } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { chromium, type Browser, type Page } from 'playwright-core'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { fixtureRelease } from '../download/test-releases'
 import { buildTempDir } from '../test/build-dir.js'
+import { serveBuild } from '../test/static-server.js'
 
 /**
  * The site in a real browser (spec §8): every page template at a phone and a wide
@@ -49,18 +50,6 @@ const VIEWPORTS = [
   { name: 'wide', width: 1440, height: 900 },
 ] as const
 
-const TYPES: Record<string, string> = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css',
-  '.js': 'text/javascript',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.webp': 'image/webp',
-  '.ico': 'image/x-icon',
-  '.xml': 'application/xml',
-  '.txt': 'text/plain',
-}
-
 // A Chromium already on this machine can stand in for Playwright's own build, so a
 // local run need not download one. CI leaves this unset and installs the right build.
 const browserPath = process.env['KNIGHTBOOK_CHROMIUM_PATH'] || chromium.executablePath()
@@ -75,26 +64,6 @@ let server: Server
 let origin: string
 let browser: Browser
 
-/** Serves the built folder the way a static host would, including the 404 page. */
-function serve(outDir: string): Promise<Server> {
-  const host = createServer(async (request, response) => {
-    const path = decodeURIComponent(new URL(request.url ?? '/', 'http://site.invalid').pathname)
-    const file = normalize(join(outDir, path.endsWith('/') ? `${path}index.html` : path))
-    if (!file.startsWith(`${outDir}${sep}`)) return void response.writeHead(400).end()
-    try {
-      const body = await readFile(file)
-      response.writeHead(200, {
-        'content-type': TYPES[extname(file)] ?? 'application/octet-stream',
-      })
-      response.end(body)
-    } catch {
-      response.writeHead(404, { 'content-type': TYPES['.html'] })
-      response.end(await readFile(join(outDir, '404.html')))
-    }
-  })
-  return new Promise((resolve) => host.listen(0, '127.0.0.1', () => resolve(host)))
-}
-
 beforeAll(async () => {
   if (!browserInstalled) return
   workDir = await buildTempDir('knightbook-a11y-')
@@ -105,9 +74,7 @@ beforeAll(async () => {
   delete env['KNIGHTBOOK_DOCS_DIR_FOR_TESTS']
   delete env['KNIGHTBOOK_SITE_STAGE']
   await run(process.execPath, [ASTRO_BIN, 'build', '--outDir', outDir], { cwd: SITE_ROOT, env })
-  server = await serve(outDir)
-  const address = server.address()
-  origin = `http://127.0.0.1:${typeof address === 'object' && address ? address.port : 0}`
+  ;({ server, origin } = await serveBuild(outDir))
   browser = await chromium.launch({ executablePath: browserPath })
   // A build plus a browser launch, beside other packages' suites: more than the
   // shared two minutes on a slow Windows runner (see commit a20df5f).

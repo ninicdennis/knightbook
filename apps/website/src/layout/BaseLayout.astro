@@ -2,6 +2,7 @@
 import { getImage } from 'astro:assets'
 import { isProductionBuild } from '../home/drafts'
 import { UMAMI } from './analytics'
+import { contentSecurityPolicy, REFERRER_POLICY } from './security-policy'
 import logo from './logo'
 import SiteFooter from './SiteFooter.astro'
 import SiteHeader from './SiteHeader.astro'
@@ -16,7 +17,9 @@ import './base.css'
  * engines not to index it and says it is a preview, so a preview someone opens
  * from a pull request's artifact is never mistaken for the published site.
  * Only production loads the Umami visit counter (D-052); nothing on a page
- * depends on it, so every page still works without JavaScript.
+ * depends on it, so every page still works without JavaScript. The
+ * Content-Security-Policy comes first in the head so it covers everything after
+ * it (D-053).
  */
 interface Props {
   /** The page's own title; " · Knightbook" is added, except on the homepage. */
@@ -40,6 +43,11 @@ const socialImageUrl = new URL(socialImage.src, Astro.site)
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content={contentSecurityPolicy({ analytics: !preview })}
+    />
+    <meta name="referrer" content={REFERRER_POLICY} />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
     <title>{fullTitle}</title>

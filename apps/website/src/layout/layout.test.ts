@@ -104,6 +104,10 @@ describe('the built site', () => {
       // Only production counts visits (D-052); analytics.test.ts checks that half.
       expect(html, path).not.toContain(UMAMI.src)
       expect(html, path).not.toContain(UMAMI.websiteId)
+      // So the policy names no other site either (D-053); security-policy.test.ts has production.
+      const policy = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)?.[1]
+      expect(policy, path).toMatch(/^default-src 'self'; script-src 'self'; connect-src 'self';/)
+      expect(policy, path).not.toContain(new URL(UMAMI.src).host)
       expect(html, path).toMatch(
         /<p class="preview-banner[^"]*" role="note"[^>]*>\s*Preview build\. This is not the published Knightbook website\.\s*<\/p>/,
       )
