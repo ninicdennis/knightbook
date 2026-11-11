@@ -77,8 +77,8 @@ Releases run one at a time. A second press while one runs waits for it, then fin
 nothing new since the tag the first created and stops without building.
 
 **Credentials.** Only the default `GITHUB_TOKEN` is used: `contents: write` for the
-version check and the publishing job, read-only everywhere else, including every
-pull-request run. There are no signing secrets yet. Windows and Linux builds are unsigned and the
+version check, the publishing job and the website job that pushes its branch,
+read-only everywhere else, including every pull-request run. There are no signing secrets yet. Windows and Linux builds are unsigned and the
 macOS app is signed ad-hoc, which needs no certificate (D-052); Developer ID
 signing and notarization are ticket a415fdb2.
 
@@ -86,6 +86,18 @@ signing and notarization are ticket a415fdb2.
 public, so a release's files on GitHub are the public download, linked from the
 website's download page once the release is added to its release data
 (`apps/website/src/download/releases.json`); no separate bucket is needed.
+
+**Updating the website (D-055).** After publishing, the run's last job writes the
+release into `releases.json` from the published release, with each installer's size
+and its checksum from `SHA256SUMS.txt`, and pushes it to a branch named
+`website/release-<version>`. The run summary has a link to open the pull request.
+Before merging, edit the known issues, which are copied from the previous release,
+and the installation guide if it names versions. Merging deploys the website. The job
+opens no pull request itself, because one opened with the workflow's token runs no
+checks. If the job fails, the release stands; run
+`node apps/website/src/download/add-release.mjs <releases.json> <release.json> <SHA256SUMS.txt>`
+locally, where `release.json` is the output of
+`gh release view <tag> --json tagName,publishedAt,isPrerelease,assets`.
 
 **Building installers without publishing.** On the Actions tab, run CI on a branch
 with a version (for example `0.0.1`). It builds and tests the installers on all three
