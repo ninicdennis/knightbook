@@ -144,3 +144,82 @@ jobs:
           VERSION: ${{ needs.version.outputs.version }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+
+  # The website's download and releases pages list a release only once it is in
+  # apps/website/src/download/releases.json (D-055). This job writes that entry
+  # from the published release, with each installer's size and the checksum from
+  # SHA256SUMS.txt, and pushes it to a branch. It opens no pull request: one
+  # opened with this token would run no checks, so the maintainer opens it from
+  # the link in the run summary, edits the copied known issues there, and merging
+  # it deploys the site. A failure here leaves the published release as it is.
+  website:
+    name: Prepare the website update
+    needs: [version, publish]
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      # The latest main, not the released commit: the branch must merge cleanly.
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Read the published release
+        run: |
+          gh release view "$TAG" --json tagName,publishedAt,isPrerelease,assets > "$RUNNER_TEMP/release.json"
+          gh release download "$TAG" --pattern SHA256SUMS.txt --dir "$RUNNER_TEMP"
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+
+      # No dependencies, so nothing is installed. Adds nothing if already listed.
+      - name: Add it to the website's release data
+        run: >-
+          node apps/website/src/download/add-release.mjs
+          apps/website/src/download/releases.json
+          "$RUNNER_TEMP/release.json" "$RUNNER_TEMP/SHA256SUMS.txt"
+
+      # Never pushes to main. A branch left by an earlier run, perhaps already
+      # edited, is kept rather than overwritten.
+      - name: Push a branch for the pull request
+        run: |
+          if git diff --quiet; then
+            echo "Knightbook $VERSION is already on the website's releases; nothing to do." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git"
+          if git ls-remote --exit-code --heads "$remote" "$BRANCH" > /dev/null; then
+            echo "The branch $BRANCH already exists; it was left as it is." >> "$GITHUB_STEP_SUMMARY"
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git switch --create "$BRANCH"
+            git commit --all --message "docs: add Knightbook $VERSION to the website's releases"
+            git push "$remote" "HEAD:refs/heads/$BRANCH"
+          fi
+          title="docs: add Knightbook $VERSION to the website's releases"
+          link="https://github.com/${GH_REPO}/compare/main...${BRANCH}?expand=1&title=$(jq -rn --arg t "$title" '$t|@uri')"
+          {
+            echo "## Website update"
+            echo
+            echo "[Open the pull request]($link) that adds Knightbook $VERSION to the download and releases pages."
+            echo
+            echo "Before merging, check its known issues, which were copied from the previous release,"
+            echo "and whether the installation guide needs a change. Merging deploys the website."
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          BRANCH: website/release-${{ needs.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
