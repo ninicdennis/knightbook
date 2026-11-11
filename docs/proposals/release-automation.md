@@ -78,8 +78,9 @@ nothing new since the tag the first created and stops without building.
 
 **Credentials.** Only the default `GITHUB_TOKEN` is used: `contents: write` for the
 version check and the publishing job, read-only everywhere else, including every
-pull-request run. There are no signing secrets yet; builds are unsigned (ticket
-a415fdb2).
+pull-request run. There are no signing secrets yet. Windows and Linux builds are unsigned and the
+macOS app is signed ad-hoc, which needs no certificate (D-052); Developer ID
+signing and notarization are ticket a415fdb2.
 
 **Not covered.** The app does not check for or install updates. The repository is
 public, so a release's files on GitHub are the public download, linked from the

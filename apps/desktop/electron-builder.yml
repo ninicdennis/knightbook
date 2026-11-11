@@ -63,6 +63,14 @@ mac:
     - target: dmg
       arch: [arm64, x64]
   category: public.app-category.developer-tools
+  # Ad-hoc signed until there is a Developer ID (ticket a415fdb2). Unsigned, only
+  # the main binary kept the linker's ad-hoc stamp and the bundle was not sealed,
+  # so macOS on Apple Silicon reported the downloaded 0.3.0 as "damaged".
+  # Identity "-" makes electron-builder sign the whole bundle ad-hoc. The hardened
+  # runtime is off because it only matters for notarization, and with an ad-hoc
+  # signature its library validation can refuse Electron's own frameworks.
+  identity: '-'
+  hardenedRuntime: false
 
 # The deb refuses to build without a homepage (package.json `homepage`) and a
 # maintainer with an email. Both are shown by `apt show`. The homepage is the

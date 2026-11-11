@@ -185,8 +185,9 @@ jobs:
       # The installers D-028 ships: Windows NSIS x64, both macOS DMGs, and the
       # Linux deb (AppImage is configured but not released yet). They also leave
       # the unpacked app beside them, which the packaged tests below use.
-      # Unsigned for now (ticket a415fdb2): discovery is off so a signing
-      # certificate that happens to be on a runner is never used by accident.
+      # No certificate for now (ticket a415fdb2): discovery is off so a signing
+      # certificate that happens to be on a runner is never used by accident. The
+      # macOS app is still signed ad-hoc by electron-builder.yml (D-052).
       - name: Build the installers
         if: inputs.version
         shell: bash
