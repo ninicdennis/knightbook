@@ -42,6 +42,7 @@ import type { ArchiveApi } from './archive-contract.js'
 import type { ProjectSetupApi } from './project-setup-contract.js'
 import type { SettingsApi } from './settings-contract.js'
 import type { TicketSearchApi } from './ticket-search-contract.js'
+import type { UpdatesApi } from './updates-contract.js'
 
 export type TicketStatus = 'backlog' | 'in_progress' | 'verification' | 'done'
 
@@ -223,6 +224,7 @@ export interface KnightbookApi
     ArchiveApi,
     ProjectSetupApi,
     SettingsApi,
+    UpdatesApi,
     McpApi {
   readProject(rootPath: string): Promise<Result<ProjectView>>
   setTicketStatus(

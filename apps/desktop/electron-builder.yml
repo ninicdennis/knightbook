@@ -47,6 +47,18 @@ extraResources:
 
 asar: true
 
+# In-app updates (D-056). With this, electron-builder writes latest.yml and the
+# installer's block map beside the Windows installer, and app-update.yml (the
+# updater's cache folder name) into the installed app. It never publishes
+# anything: the build runs with `--publish never` and the Release workflow
+# uploads the files. The app finds releases through GitHub's API itself and
+# points the updater at one release at a time (src/main/updates/).
+publish:
+  provider: github
+  owner: ninicdennis
+  repo: knightbook
+  releaseType: prerelease
+
 # Installer names carry the version, OS and CPU and no spaces, so they work as
 # download URLs and the release workflow can check it has one of each
 # (scripts/publishing/release-assets.mjs). Windows is x64 only (D-028), so its CPU

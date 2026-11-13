@@ -10,6 +10,7 @@ import { stubReviewChanges } from './review-changes-stub.js'
 import { stubTicketDetail } from './ticket-detail-stub.js'
 import { stubDocumentSearch, stubTicketSearch } from './ticket-search-stub.js'
 import { SAMPLE_DOCUMENT } from './sample-document.js'
+import { updatesStub } from './updates-stub.js'
 
 /**
  * A stand-in host for the design preview. It serves the same shapes the real
@@ -385,6 +386,7 @@ export const stubApi: KnightbookApi = {
   },
 
   ...documentsStub,
+  ...updatesStub,
   ticketChanges: async (_root, id) => {
     record('ticketChanges', id)
     return stubReviewChanges(PROJECT.tickets.find((t) => t.id === id)?.revision ?? 'rev-unknown')

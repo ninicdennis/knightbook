@@ -82,10 +82,24 @@ read-only everywhere else, including every pull-request run. There are no signin
 macOS app is signed ad-hoc, which needs no certificate (D-052); Developer ID
 signing and notarization are ticket a415fdb2.
 
-**Not covered.** The app does not check for or install updates. The repository is
-public, so a release's files on GitHub are the public download, linked from the
-website's download page once the release is added to its release data
-(`apps/website/src/download/releases.json`); no separate bucket is needed.
+**In-app updates (D-056).** The repository is public, so a release's files on GitHub
+are the public download, linked from the website's download page once the release
+is added to its release data (`apps/website/src/download/releases.json`); no
+separate bucket or update server is needed. Installed apps read the release list
+from GitHub's API. The Windows build also uploads `latest.yml` and the installer's
+`.exe.blockmap`, which electron-builder writes from the `publish` section of
+`electron-builder.yml`; the publishing job refuses a release without them, or whose
+`latest.yml` names another version, another installer or another SHA-512. Windows
+installs read that file to download and check the installer; macOS and Linux
+installs only announce the release and link to the download page.
+
+**Withdrawing a release from the app.** Edit the GitHub release and start its title
+with "Withdrawn" (for example "Withdrawn: Knightbook 0.5.0"). Installed apps stop
+offering it at their next check and offer the newest release before it instead, if
+that is newer than what they have. Withdraw it from the website's release data too.
+Do not delete the release, its tag or its files: an install that already
+downloaded it keeps it until it is replaced, and there is no automatic rollback, so
+the fix is a higher version.
 
 **Updating the website (D-055).** After publishing, the run's last job writes the
 release into `releases.json` from the published release, with each installer's size

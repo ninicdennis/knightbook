@@ -9,7 +9,7 @@ import { destinations } from '../../layout/navigation'
  * code; the sources are listed on the ticket. Change the date when the text
  * changes.
  */
-const updated = '2026-10-23'
+const updated = '2026-11-13'
 const updatedLabel = new Date(`${updated}T00:00:00Z`).toLocaleDateString('en-GB', {
   day: 'numeric',
   month: 'long',
@@ -76,10 +76,14 @@ const updatedLabel = new Date(`${updated}T00:00:00Z`).toLocaleDateString('en-GB'
         and position, and which projects you allowed AI access to.
       </p>
       <p>
-        The app's own code makes no network requests: it sends nothing about you or your projects
-        anywhere, has no account, and checks for no updates. Images in documents are shown only from
-        inside the project, never from the internet. A web link in a document opens in your browser
-        only when you click it.
+        The app sends nothing about you or your projects anywhere and has no account. Its only
+        network request of its own is the update check: when it opens, every six hours while it
+        stays open, and when you choose Check for updates in Settings, it reads the public list of
+        Knightbook releases from GitHub. GitHub sees your IP address and that the request came from
+        Knightbook, as with any visit to GitHub; the request carries nothing about your projects. If
+        you choose to download an update, the installer comes from GitHub too. Images in documents
+        are shown only from inside the project, never from the internet. A web link in a document
+        opens in your browser only when you click it.
       </p>
       <p>
         The app is built on Electron, which includes a spell checker. According to Electron's

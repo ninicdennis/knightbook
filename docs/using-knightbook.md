@@ -85,6 +85,34 @@ Only a server from this build is visible. A client running a different build
 against the same folder shows as no connection, which is why the wording is about
 what was observed rather than about what is true.
 
+## Updating Knightbook
+
+Knightbook checks GitHub for a newer release when it opens, every six hours while
+it stays open, and when you click **Check for updates** in Settings. Finding one
+only tells you; nothing is downloaded until you choose to.
+
+- **Windows:** click **Download** in the notice. When it is ready, **Restart now**
+  installs it and reopens Knightbook; **Later** installs it the next time you quit.
+  Save any text you are editing first.
+- **macOS and Linux:** the notice links to the download page. Install the new
+  version over the old one as you did the first time. (In-place updates need a
+  Developer ID-signed Mac app, and the Linux deb is updated by its package
+  manager.)
+
+Your projects, settings and the list of projects AI tools may use are left as
+they are, and the MCP command saved in your AI tool keeps the same path.
+
+**If an AI tool is connected.** While an AI tool is running Knightbook's MCP
+server, Windows will not let the installer replace it, so Knightbook says the
+update cannot be installed yet and waits. It does not stop the server for you.
+Close the AI tool, or turn off its Knightbook MCP connection, then click
+**Try again**. After the update, the AI tool starts the new server from the same
+path the next time it connects.
+
+**Versions from before in-app updates** cannot update themselves. Install the
+first version with updates from the download page once; later versions arrive in
+the app.
+
 ## Teaching an AI tool the workflow
 
 Connecting the server gives an AI the tools. The workflow skill tells it how to use
