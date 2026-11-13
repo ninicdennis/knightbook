@@ -18,12 +18,16 @@ import { fixtureRelease } from './test-releases'
 const run = promisify(execFile)
 const here = import.meta.dirname
 
-/** Fictional installer names, as electron-builder names them; the deb says amd64. */
+/**
+ * Fictional installer names, as electron-builder names them; the deb says amd64. The
+ * version is one no real release will reach soon: the tests add it to the checked-in
+ * releases.json, so a real release of the same version would already be listed.
+ */
 const FILES = {
-  'windows-x64': 'Knightbook-0.4.0-windows-x64.exe',
-  'macos-arm64': 'Knightbook-0.4.0-macos-arm64.dmg',
-  'macos-x64': 'Knightbook-0.4.0-macos-x64.dmg',
-  'linux-x64': 'Knightbook-0.4.0-linux-amd64.deb',
+  'windows-x64': 'Knightbook-9.9.0-windows-x64.exe',
+  'macos-arm64': 'Knightbook-9.9.0-macos-arm64.dmg',
+  'macos-x64': 'Knightbook-9.9.0-macos-x64.dmg',
+  'linux-x64': 'Knightbook-9.9.0-linux-amd64.deb',
 }
 const SIZES = { 'windows-x64': 101, 'macos-arm64': 202, 'macos-x64': 303, 'linux-x64': 404 }
 const HASHES = {
@@ -38,7 +42,7 @@ const KEYS = Object.keys(FILES) as Key[]
 /** What `gh release view --json tagName,publishedAt,isPrerelease,assets` prints. */
 function ghRelease(overrides: Record<string, unknown> = {}) {
   return {
-    tagName: 'v0.4.0',
+    tagName: 'v9.9.0',
     // Late evening in the Americas is already the next day in UTC.
     publishedAt: '2026-11-12T03:15:00Z',
     isPrerelease: true,
@@ -64,7 +68,7 @@ describe('building the entry for a published release', () => {
     expect(added).toBe(true)
     const parsed = parseReleaseData(data)
     expect(parsed.releases.map((release) => release.version)).toEqual([
-      '0.4.0',
+      '9.9.0',
       ...checkedIn.releases.map((release) => release.version),
     ])
   })
@@ -78,16 +82,16 @@ describe('building the entry for a published release', () => {
         filename: FILES[key],
         size: SIZES[key],
         sha256: HASHES[key],
-        url: `https://github.com/ninicdennis/knightbook/releases/download/v0.4.0/${FILES[key]}`,
+        url: `https://github.com/ninicdennis/knightbook/releases/download/v9.9.0/${FILES[key]}`,
       })
     }
     expect(byTarget['linux-x64']?.format).toBe('deb')
   })
 
   it('dates it by the UTC day it was published and links its notes', () => {
-    expect(entry.version).toBe('0.4.0')
+    expect(entry.version).toBe('9.9.0')
     expect(entry.date).toBe('2026-11-12')
-    expect(entry.notesUrl).toBe('https://github.com/ninicdennis/knightbook/releases/tag/v0.4.0')
+    expect(entry.notesUrl).toBe('https://github.com/ninicdennis/knightbook/releases/tag/v9.9.0')
     expect(entry.withdrawn).toBe(false)
   })
 
@@ -133,7 +137,7 @@ describe('refusing what cannot be added', () => {
       .filter((line) => !line.endsWith(FILES['linux-x64']))
       .join('\n')
     expect(() => releaseEntry({ release, checksums, releases: checkedIn.releases })).toThrow(
-      /no macos x64 dmg installer\n.*no checksum for Knightbook-0\.4\.0-linux-amd64\.deb/,
+      /no macos x64 dmg installer\n.*no checksum for Knightbook-9\.9\.0-linux-amd64\.deb/,
     )
   })
 
@@ -188,12 +192,12 @@ describe('the file it writes', () => {
     const script = join(here, 'add-release.mjs')
 
     const first = await run('node', [script, releasesFile, releaseFile, checksumsFile])
-    expect(first.stdout).toMatch(/Added 0\.4\.0/)
+    expect(first.stdout).toMatch(/Added 9\.9\.0/)
     const written = await readFile(releasesFile, 'utf8')
-    expect(parseReleaseData(JSON.parse(written)).releases[0]?.version).toBe('0.4.0')
+    expect(parseReleaseData(JSON.parse(written)).releases[0]?.version).toBe('9.9.0')
 
     const second = await addReleaseToFile({ releasesFile, releaseFile, checksumsFile })
-    expect(second).toEqual({ version: '0.4.0', added: false })
+    expect(second).toEqual({ version: '9.9.0', added: false })
     expect(await readFile(releasesFile, 'utf8')).toBe(written)
   })
 })
