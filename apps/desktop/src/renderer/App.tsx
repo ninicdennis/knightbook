@@ -24,6 +24,7 @@ import { useSearchShortcut } from './search/useSearchShortcut.js'
 import { TicketDetailModal } from './tickets/detail/TicketDetailModal.js'
 import { useNewTicket } from './tickets/new/useNewTicket.js'
 import { useTicketActions } from './tickets/useTicketActions.js'
+import { UpdateNotice } from './updates/UpdateNotice.js'
 
 /**
  * Two rows at every width (shell.css): 48px for project, search and settings,
@@ -252,6 +253,8 @@ export function App() {
           onOpenDocument={navigation.openDocument}
         />
       )}
+
+      <UpdateNotice />
     </AppShell>
   )
 }

@@ -3,7 +3,13 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
-import { CHECKSUMS_FILE, checkInstallers, listAssets, writeChecksums } from './release-assets.mjs'
+import {
+  CHECKSUMS_FILE,
+  checkInstallers,
+  checkUpdateMetadata,
+  listAssets,
+  writeChecksums,
+} from './release-assets.mjs'
 
 /**
  * Publishes one GitHub prerelease for a tested commit, once, with every asset.
@@ -80,6 +86,7 @@ async function refuseMovedTag(run, tag, sha) {
  */
 export async function publishRelease({ tag, version, sha, notesFile, assetsDir, run, log }) {
   const installers = checkInstallers(await listAssets(assetsDir), version)
+  await checkUpdateMetadata(assetsDir, version)
   await writeChecksums(assetsDir, installers)
   const assets = await listAssets(assetsDir)
 

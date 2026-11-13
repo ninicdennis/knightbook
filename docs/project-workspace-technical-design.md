@@ -230,6 +230,18 @@ Unit tests cover the cases with temporary folders. As of this date the copy has 
 
 Exact dependency versions, OS versions, CPU architectures, and Linux package targets remain release decisions. Documentation establishes this packaging approach; an actual packaged build has not been tested yet.
 
+### In-app updates as built (2026-11-13, D-056)
+
+Ticket b56f35ba. The main process owns updates in `src/main/updates/`; the window reaches them only through `updateView`, `checkForUpdates`, `downloadUpdate`, `installUpdate` and the `onUpdateView` event (`shared/updates-contract.ts`).
+
+- `release-feed.ts` is pure: `pickUpdate` takes GitHub's `GET /repos/ninicdennis/knightbook/releases` answer and returns the newest release newer than the running version, skipping drafts, titles starting "Withdrawn" and tags that are not versions, comparing versions numerically (0.10.0 after 0.9.0). A release is installable in place only if it has a `latest.yml` asset. An answer that is not a list throws, so a rate-limit message is a failed check, not "up to date". `updateMode` is `install` on a packaged Windows release, `notify` on a packaged macOS or Linux release, and `off` for a development run or an unstamped 0.0.0.
+- `update-service.ts` holds the states (`idle`, `checking`, `up-to-date`, `available`, `downloading`, `ready`, `in-use`, `failed` with its stage) with no Electron in it, so `update-service.test.ts` drives each one. A check never downloads. A download points the updater at that release's download folder (`releases/download/<tag>/`), refuses a `latest.yml` naming another version, and reports a SHA-512 mismatch or a broken connection as a failed download that can be tried again. Installing first awaits `appStateChangesSettled`, then probes `resources/mcp` with `held-files.ts` (open for writing without truncating, as the packaging guard does); anything held turns into `in-use` and the installer is not started. On `will-quit`, the same probe decides whether electron-updater's install-on-quit runs.
+- `updates-ipc.ts` wires that to `net.fetch` (20 s timeout), electron-updater's `NsisUpdater` (`autoDownload` off, downgrades refused, generic feed set per release) and the window. Restart now runs the installer silently and reopens the app. `app-update.yml`, which electron-updater needs for its cache folder name, is written into the package because `electron-builder.yml` has a `publish` section; the build still runs with `--publish never`.
+- The window shows a corner card (`renderer/updates/UpdateNotice.tsx`) for an available release, a download in progress, a ready or held update, and a failed download or install; Later hides it until the state changes. A failed scheduled check is not shown there, only in Settings, where `UpdateSection.tsx` gives the last result and the Check for updates button.
+- The release side is in `release-assets.mjs`: `latest.yml` and the Windows `.exe.blockmap` are required assets, and `checkUpdateMetadata` checks `latest.yml`'s version, installer name and SHA-512 against the built installer before anything is published.
+
+What the tests do not show is a real installer replacing a real installation. That is checked by hand on an installed Windows build going from one version to the next, with and without an AI client running the MCP server (ticket b56f35ba's handoff note says what was and was not checked). The installed MCP path (`%LOCALAPPDATA%\Programs\Knightbook\resources\mcp`) is the same before and after, so a client's saved command keeps working once it restarts the server.
+
 ## 3. Portable project storage
 
 Propose one reserved folder, provisionally named `.projectspace/`. It contains app-owned Markdown records; existing documentation stays wherever it already lives in the repository.

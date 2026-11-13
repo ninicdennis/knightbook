@@ -14,6 +14,7 @@ import { IconAlertTriangle, IconInfoCircle, IconSettings } from '@tabler/icons-r
 import { useState } from 'react'
 import type { ColorSchemeChoice } from '../../shared/settings-contract.js'
 import { AppVersion } from './AppVersion.js'
+import { UpdateSection } from '../updates/UpdateSection.js'
 
 /**
  * Settings for this installation, not for the project. It is laid out as a list
@@ -102,7 +103,10 @@ export function SettingsDrawer() {
             </Text>
           </Group>
 
-          <AppVersion />
+          <Stack gap="xs">
+            <AppVersion />
+            <UpdateSection />
+          </Stack>
         </Stack>
       </Drawer>
     </>

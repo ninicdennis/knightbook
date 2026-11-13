@@ -36,6 +36,7 @@
     "dompurify": "^3.4.15",
     "electron": "44.4.2",
     "electron-builder": "^26.15.3",
+    "electron-updater": "^6.8.11",
     "electron-vite": "^5.0.0",
     "jsdom": "^27.0.0",
     "marked": "^18.0.13",

@@ -13,6 +13,7 @@ import type {
 } from '../../shared/contract.js'
 import type { RememberedProject } from '../../shared/project-setup-contract.js'
 import type { SkillSetupView } from '../../shared/skill-setup-contract.js'
+import type { UpdateView } from '../../shared/updates-contract.js'
 
 /** Shared by the component tests so each file states only what it is about. */
 
@@ -165,6 +166,9 @@ export function noBaseline(): ReviewChangesView {
   }
 }
 
+/** A development build: it never checks, so the update notice stays away. */
+const UP_TO_DATE: UpdateView = { currentVersion: '0.0.0', mode: 'off', status: { phase: 'idle' } }
+
 export function makeApi(): KnightbookApi {
   return {
     rememberedProjects: vi.fn().mockResolvedValue([REMEMBERED]),
@@ -206,6 +210,11 @@ export function makeApi(): KnightbookApi {
     saveSettings: vi.fn().mockResolvedValue({ ok: true, value: { colorScheme: 'auto' } }),
     appVersion: vi.fn().mockResolvedValue('0.0.0'),
     showProjectInWindowTitle: vi.fn().mockResolvedValue(undefined),
+    updateView: vi.fn().mockResolvedValue(UP_TO_DATE),
+    checkForUpdates: vi.fn().mockResolvedValue(UP_TO_DATE),
+    downloadUpdate: vi.fn().mockResolvedValue(UP_TO_DATE),
+    installUpdate: vi.fn().mockResolvedValue(UP_TO_DATE),
+    onUpdateView: vi.fn().mockReturnValue(() => undefined),
     skillSetup: vi.fn().mockResolvedValue({ ok: true, value: skillSetup() }),
     installSkill: vi.fn(),
     exportSkill: vi.fn().mockResolvedValue({ ok: true, value: null }),

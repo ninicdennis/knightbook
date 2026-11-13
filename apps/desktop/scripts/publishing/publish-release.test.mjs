@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { createHash } from 'node:crypto'
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
@@ -98,13 +99,33 @@ beforeEach(async () => {
   await writeFile(notesFile, '### Features\n')
   await mkdir(assetsDir)
   for (const name of INSTALLERS) await writeFile(join(assetsDir, name), `contents of ${name}`)
+  await writeUpdateFiles(VERSION)
 })
+
+/** What electron-builder writes beside the Windows installer for the updater (D-056). */
+async function writeUpdateFiles(version) {
+  const installer = await readFile(join(assetsDir, INSTALLERS[0]))
+  const sha512 = createHash('sha512').update(installer).digest('base64')
+  await writeFile(join(assetsDir, `${INSTALLERS[0]}.blockmap`), 'block map')
+  await writeFile(
+    join(assetsDir, 'latest.yml'),
+    `version: ${version}\npath: Knightbook-${version}-windows-x64.exe\nsha512: ${sha512}\n`,
+  )
+}
 
 afterEach(async () => {
   await rm(dir, { recursive: true, force: true })
 })
 
 describe('publishing a release', () => {
+  it('refuses, without writing, when latest.yml describes another build', async () => {
+    await writeFile(join(assetsDir, INSTALLERS[0]), 'an installer rebuilt after latest.yml')
+    const github = fakeGitHub()
+
+    await expect(publish(github)).rejects.toThrow(/latest\.yml does not match/)
+    expect(github.writes).toEqual([])
+  })
+
   it('stages a draft prerelease, attaches every file, then publishes it at the tested commit', async () => {
     const github = fakeGitHub()
     expect(await publish(github)).toBe('published')
@@ -113,7 +134,7 @@ describe('publishing a release', () => {
     const release = github.releases.get(TAG)
     expect(release.isDraft).toBe(false)
     expect(release.assets.map(({ name }) => name).sort()).toEqual(
-      [...INSTALLERS, 'SHA256SUMS.txt'].sort(),
+      [...INSTALLERS, `${INSTALLERS[0]}.blockmap`, 'latest.yml', 'SHA256SUMS.txt'].sort(),
     )
     expect(github.tags.get(TAG)).toBe(SHA)
   })
@@ -147,7 +168,7 @@ describe('publishing a release', () => {
     const github = fakeGitHub()
     await publish(github)
     github.writes.length = 0
-    await writeFile(join(assetsDir, INSTALLERS[0]), 'a rebuilt installer of another size')
+    await writeFile(join(assetsDir, INSTALLERS[1]), 'a rebuilt installer of another size')
 
     await expect(publish(github)).rejects.toThrow(/different files/)
     expect(github.writes).toEqual([])
@@ -157,8 +178,8 @@ describe('publishing a release', () => {
     const github = fakeGitHub()
     await publish(github)
     github.writes.length = 0
-    const original = await readFile(join(assetsDir, INSTALLERS[0]), 'utf8')
-    await writeFile(join(assetsDir, INSTALLERS[0]), original.replace('contents', 'CONTENTS'))
+    const original = await readFile(join(assetsDir, INSTALLERS[1]), 'utf8')
+    await writeFile(join(assetsDir, INSTALLERS[1]), original.replace('contents', 'CONTENTS'))
 
     await expect(publish(github)).rejects.toThrow(/different files/)
     expect(github.writes).toEqual([])
@@ -179,7 +200,8 @@ describe('publishing a release', () => {
       'release upload',
       'release edit',
     ])
-    expect(github.releases.get(TAG).assets).toHaveLength(INSTALLERS.length + 1)
+    // The installers, the checksum list, latest.yml and the block map.
+    expect(github.releases.get(TAG).assets).toHaveLength(INSTALLERS.length + 3)
   })
 
   it('publishes nothing when an installer is missing', async () => {

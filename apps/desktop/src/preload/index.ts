@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { KnightbookApi } from '../shared/contract.js'
+import type { UpdateView } from '../shared/updates-contract.js'
 
 /**
  * The only bridge between the renderer and the host. Each method is a named
@@ -84,6 +85,16 @@ const api: KnightbookApi = {
   readProjectImage: (rootPath, path) => ipcRenderer.invoke('image:read', rootPath, path),
   createDocument: (rootPath, path, content) =>
     ipcRenderer.invoke('document:create', rootPath, path, content),
+
+  updateView: () => ipcRenderer.invoke('update:view'),
+  checkForUpdates: () => ipcRenderer.invoke('update:check'),
+  downloadUpdate: () => ipcRenderer.invoke('update:download'),
+  installUpdate: () => ipcRenderer.invoke('update:install'),
+  onUpdateView: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, view: UpdateView) => listener(view)
+    ipcRenderer.on('update:changed', handler)
+    return () => ipcRenderer.removeListener('update:changed', handler)
+  },
 }
 
 contextBridge.exposeInMainWorld('knightbook', api)
